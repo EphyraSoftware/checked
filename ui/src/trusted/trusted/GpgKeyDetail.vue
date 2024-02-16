@@ -26,7 +26,7 @@
 import { defineComponent, inject, ComputedRef } from 'vue';
 import { decode } from '@msgpack/msgpack';
 import { AppAgentClient, Record, AgentPubKey, EntryHash, ActionHash, DnaHash } from '@holochain/client';
-import { GpgKey } from './types';
+import { GpgKeyDist } from './types';
 import '@material/mwc-circular-progress';
 import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
@@ -48,7 +48,7 @@ export default defineComponent({
   computed: {
     gpgKey() {
       if (!this.record) return undefined;
-      return decode((this.record.entry as any).Present.entry) as GpgKey;
+      return decode((this.record.entry as any).Present.entry) as GpgKeyDist;
     }
   },
   async mounted() {
@@ -67,7 +67,7 @@ export default defineComponent({
         cap_secret: null,
         role_name: 'trusted',
         zome_name: 'trusted',
-        fn_name: 'get_gpg_key',
+        fn_name: 'get_gpg_key_dist',
         payload: this.gpgKeyHash,
       });
 

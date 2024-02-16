@@ -30,7 +30,20 @@
               packages = [
                 pkgs.nodejs_20
                 pkgs.gnupg
+                pkgs.pinentry
               ];
+
+              shellHook = ''
+                export GNUPGHOME=$(pwd)/.gnupg
+
+                if [[ ! -d $GNUPGHOME ]]; then
+                  gpg --list-keys --no-keyring 2>&1 > /dev/null
+                  rm $GNUPGHOME/common.conf
+                  echo "pinentry-program $(which pinentry)" > $GNUPGHOME/gpg-agent.conf
+                  pkill gpg-agent
+                  gpg-agent --daemon
+                fi
+              '';
             };
           };
       };

@@ -2,80 +2,125 @@
   <mwc-snackbar ref="create-error"></mwc-snackbar>
 
   <div style="display: flex; flex-direction: column">
-    <span style="font-size: 18px">Create Gpg Key</span>
-  
-    <div style="margin-bottom: 16px">
-      <mwc-textarea outlined label="Fingerprint" :value="fingerprint" @input="fingerprint = $event.target.value" required></mwc-textarea>
-    </div>
+    <span style="font-size: 18px">Distribute GPG public key</span>
 
-  
-    <mwc-button 
-      raised
-      label="Create Gpg Key"
-      :disabled="!isGpgKeyValid"
-      @click="createGpgKey"
-    ></mwc-button>
+    <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField" />
+
+    <template v-if="fingerprint">
+      <p>Selected key has fingerprint: <span style="font-style: italic;">{{ fingerprint }}</span></p>
+      <p>Selected key expires on: <span style="font-style: italic;">{{ expirationDate }}</span></p>
+    </template>
+
+    <mwc-button raised :label="creating ? 'Creating...' : 'Distribute Gpg Key'" :disabled="!isGpgKeyValid || creating" @click="distributeGpgKey"></mwc-button>
   </div>
 </template>
 <script lang="ts">
 import { defineComponent, inject, ComputedRef } from 'vue';
 import { AppAgentClient, Record, AgentPubKey, EntryHash, ActionHash, DnaHash } from '@holochain/client';
-import { GpgKey } from './types';
+import { DistributeGpgKeyRequest } from './types';
 import '@material/mwc-button';
 import '@material/mwc-icon-button';
 import '@material/mwc-snackbar';
 import { Snackbar } from '@material/mwc-snackbar';
 import '@material/mwc-textarea';
+import { readKey } from 'openpgp'
 
 export default defineComponent({
   data(): {
     fingerprint: string;
+    expirationDate: Date | null;
+    selectedKey: string;
+    creating: boolean;
   } {
-    return { 
+    return {
       fingerprint: '',
+      expirationDate: null,
+      selectedKey: '',
+      creating: false,
     }
-  },
-
-  props: {    publicKey: {
-      type: null,
-      required: true
-    },
   },
   computed: {
     isGpgKeyValid() {
-    return true && this.fingerprint !== '';
+      return true && this.fingerprint !== '';
     },
   },
   mounted() {
-    if (this.publicKey === undefined) {
-      throw new Error(`The publicKey input is required for the CreateGpgKey element`);
-    }
   },
   methods: {
-    async createGpgKey() {
-      const gpgKey: GpgKey = { 
-        public_key: this.publicKey as Array<number>,
+    async onPublicKeySelect(event: Event) {
+      if (!event.target) return;
 
-        fingerprint: this.fingerprint!,
-      };
+      const files = (event.target as HTMLInputElement).files
+
+      if (!files || files.length === 0) return;
+
+      const file = files[0];
+
+      const reader = new FileReader();
+      reader.readAsText(file);
+
+      reader.onload = (evt) => {
+        const armoredKey = evt.target?.result;
+
+        if (!armoredKey) return;
+
+        this.selectedKey = armoredKey as string;
+
+        readKey({ armoredKey: this.selectedKey }).then(async (key) => {
+          this.fingerprint = key.getFingerprint();
+
+          const expirationDate = await key.getExpirationTime();
+          if (typeof expirationDate == 'object') {
+            this.expirationDate = expirationDate;
+          }
+        }).catch((e) => {
+          const errorSnackbar = this.$refs['create-error'] as Snackbar;
+          errorSnackbar.labelText = `${e}`;
+          errorSnackbar.show();
+        });
+      }
+
+      reader.onerror = (evt) => {
+        const errorSnackbar = this.$refs['create-error'] as Snackbar;
+        errorSnackbar.labelText = `Error reading the key file: ${evt}`;
+        errorSnackbar.show();
+      }
+    },
+    async distributeGpgKey() {
+      this.creating = true;
 
       try {
+        const distributeGpgKeyRequest: DistributeGpgKeyRequest = {
+          public_key: this.selectedKey,
+        };
+
         const record: Record = await this.client.callZome({
           cap_secret: null,
           role_name: 'trusted',
           zome_name: 'trusted',
-          fn_name: 'create_gpg_key',
-          payload: gpgKey,
+          fn_name: 'distribute_gpg_key',
+          payload: distributeGpgKeyRequest,
         });
-        this.$emit('gpg-key-created', record.signed_action.hashed.hash);
+        this.$emit('gpg-key-dist-created', record.signed_action.hashed.hash);
+
+        this.fingerprint = '';
+        this.expirationDate = null;
+        this.selectedKey = '';
+
+        const inputField = this.$refs['inputField'] as HTMLInputElement | null;
+        if (inputField) {
+          inputField.value = '';
+        }
       } catch (e: any) {
         const errorSnackbar = this.$refs['create-error'] as Snackbar;
         errorSnackbar.labelText = `Error creating the gpg key: ${e.data}`;
         errorSnackbar.show();
+      } finally {
+        this.creating = false;
       }
     },
   },
-  emits: ['gpg-key-created'],
+  emits: ['gpg-key-dist-created'],
   setup() {
     const client = (inject('client') as ComputedRef<AppAgentClient>).value;
     return {

@@ -1,13 +1,20 @@
-pub mod gpg_key;
-pub use gpg_key::*;
+mod gpg_key_dist;
+
 use hdi::prelude::*;
+
+pub mod prelude {
+    pub use crate::gpg_key_dist::*;
+    pub use crate::EntryTypes;
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    GpgKey(GpgKey),
+    GpgKeyDist(gpg_key_dist::GpgKeyDist),
 }
+
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
 // There *is no* access to network calls in this callback
 #[hdk_extern]
@@ -16,6 +23,7 @@ pub fn genesis_self_check(
 ) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Valid)
 }
+
 // Validation the network performs when you try to join, you can't perform this validation yourself as you are not a member yet.
 // There *is* access to network calls in this function
 pub fn validate_agent_joining(
@@ -24,6 +32,7 @@ pub fn validate_agent_joining(
 ) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Valid)
 }
+
 // This is the unified validation callback for all entries and link types in this integrity zome
 // Below is a match template for all of the variants of `DHT Ops` and entry and link types
 //
@@ -51,8 +60,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             match store_entry {
                 OpEntry::CreateEntry { app_entry, action } => {
                     match app_entry {
-                        EntryTypes::GpgKey(gpg_key) => {
-                            validate_create_gpg_key(
+                        EntryTypes::GpgKeyDist(gpg_key) => {
+                            gpg_key_dist::validate_create_gpg_key_dist(
                                 EntryCreationAction::Create(action),
                                 gpg_key,
                             )
@@ -61,8 +70,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 }
                 OpEntry::UpdateEntry { app_entry, action, .. } => {
                     match app_entry {
-                        EntryTypes::GpgKey(gpg_key) => {
-                            validate_create_gpg_key(
+                        EntryTypes::GpgKeyDist(gpg_key) => {
+                            gpg_key_dist::validate_create_gpg_key_dist(
                                 EntryCreationAction::Update(action),
                                 gpg_key,
                             )
@@ -82,10 +91,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 } => {
                     match (app_entry, original_app_entry) {
                         (
-                            EntryTypes::GpgKey(gpg_key),
-                            EntryTypes::GpgKey(original_gpg_key),
+                            EntryTypes::GpgKeyDist(gpg_key),
+                            EntryTypes::GpgKeyDist(original_gpg_key),
                         ) => {
-                            validate_update_gpg_key(
+                            gpg_key_dist::validate_update_gpg_key_dist(
                                 action,
                                 gpg_key,
                                 original_action,
@@ -109,8 +118,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             match delete_entry {
                 OpDelete::Entry { original_action, original_app_entry, action } => {
                     match original_app_entry {
-                        EntryTypes::GpgKey(gpg_key) => {
-                            validate_delete_gpg_key(action, original_action, gpg_key)
+                        EntryTypes::GpgKeyDist(gpg_key) => {
+                            gpg_key_dist::validate_delete_gpg_key_dist(action, original_action, gpg_key)
                         }
                     }
                 }
@@ -151,8 +160,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `StoreEntry` validation failed
                 OpRecord::CreateEntry { app_entry, action } => {
                     match app_entry {
-                        EntryTypes::GpgKey(gpg_key) => {
-                            validate_create_gpg_key(
+                        EntryTypes::GpgKeyDist(gpg_key) => {
+                            gpg_key_dist::validate_create_gpg_key_dist(
                                 EntryCreationAction::Create(action),
                                 gpg_key,
                             )
@@ -183,13 +192,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match app_entry {
-                        EntryTypes::GpgKey(gpg_key) => {
-                            let result = validate_create_gpg_key(
+                        EntryTypes::GpgKeyDist(gpg_key) => {
+                            let result = gpg_key_dist::validate_create_gpg_key_dist(
                                 EntryCreationAction::Update(action.clone()),
                                 gpg_key.clone(),
                             )?;
                             if let ValidateCallbackResult::Valid = result {
-                                let original_gpg_key: Option<GpgKey> = original_record
+                                let original_gpg_key: Option<gpg_key_dist::GpgKeyDist> = original_record
                                     .entry()
                                     .to_app_option()
                                     .map_err(|e| wasm_error!(e))?;
@@ -204,7 +213,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                         );
                                     }
                                 };
-                                validate_update_gpg_key(
+                                gpg_key_dist::validate_update_gpg_key_dist(
                                     action,
                                     gpg_key,
                                     original_action,
@@ -271,8 +280,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match original_app_entry {
-                        EntryTypes::GpgKey(original_gpg_key) => {
-                            validate_delete_gpg_key(
+                        EntryTypes::GpgKeyDist(original_gpg_key) => {
+                            gpg_key_dist::validate_delete_gpg_key_dist(
                                 action,
                                 original_action,
                                 original_gpg_key,

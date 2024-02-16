@@ -1,11 +1,12 @@
-pub mod gpg_key;
+pub mod gpg_key_dist;
 use hdk::prelude::*;
 use trusted_integrity::*;
-// Called the first time a zome call is made to the cell containing this zome
+
 #[hdk_extern]
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     Ok(InitCallbackResult::Pass)
 }
+
 // Don't modify this enum if you want the scaffolding tool to generate appropriate signals for your entries and links
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type")]
@@ -18,6 +19,7 @@ pub enum Signal {
     },
     EntryDeleted { action: SignedActionHashed, original_app_entry: EntryTypes },
 }
+
 // Whenever an action is committed, we emit a signal to the UI elements to reactively update them
 #[hdk_extern(infallible)]
 pub fn post_commit(committed_actions: Vec<SignedActionHashed>) {
@@ -28,6 +30,7 @@ pub fn post_commit(committed_actions: Vec<SignedActionHashed>) {
         }
     }
 }
+
 // Don't modify this function if you want the scaffolding tool to generate appropriate signals for your entries and links
 fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
     match action.hashed.content.clone() {
@@ -68,6 +71,7 @@ fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
         _ => Ok(()),
     }
 }
+
 fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTypes>> {
     let record = match get_details(action_hash.clone(), GetOptions::default())? {
         Some(Details::Record(record_details)) => record_details.record,

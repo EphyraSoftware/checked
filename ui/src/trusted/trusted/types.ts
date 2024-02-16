@@ -36,13 +36,13 @@ export type TrustedSignal = {
 };
 
 export type EntryTypes =
- | ({  type: 'GpgKey'; } & GpgKey);
+ | ({  type: 'GpgKeyDist'; } & GpgKeyDist);
 
-
-
-export interface GpgKey { 
-  public_key: Array<number>;
-
-  fingerprint: string;
+export interface DistributeGpgKeyRequest {
+  public_key: string;
 }
 
+export interface GpgKeyDist { 
+  public_key: string;
+  fingerprint: string;
+}
