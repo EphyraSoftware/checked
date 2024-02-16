@@ -1,5 +1,5 @@
 {
-  description = "Template for Holochain app development";
+  description = "Flake for Holochain app development";
 
   inputs = {
     versions.url  = "github:holochain/holochain?dir=versions/weekly";
@@ -28,8 +28,8 @@
             devShells.default = pkgs.mkShell {
               inputsFrom = [ inputs'.holochain-flake.devShells.holonix ];
               packages = [
-                pkgs.nodejs-18_x
-                # more packages go here
+                pkgs.nodejs_20
+                pkgs.gnupg
               ];
             };
           };
