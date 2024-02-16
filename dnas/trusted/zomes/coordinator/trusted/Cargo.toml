@@ -1,0 +1,15 @@
+[package]
+name = "trusted"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "trusted"
+
+[dependencies]
+hdk = { workspace = true }
+
+serde = { workspace = true }
+
+trusted_integrity = { workspace = true } 
