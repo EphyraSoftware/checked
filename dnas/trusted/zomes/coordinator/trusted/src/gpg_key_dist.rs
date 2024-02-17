@@ -31,7 +31,7 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
     }
 
     let gpg_key_dist_hash = create_entry(&EntryTypes::GpgKeyDist(GpgKeyDist {
-        public_key: request.public_key,
+        public_key: request.public_key.trim().to_string(),
         fingerprint: summary.fingerprint.clone(),
         name: summary.name.clone(),
         email: summary.email.clone(),
@@ -62,6 +62,8 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
             (),
         )?;
     }
+
+    tracing::info!("Fingerprint: {}", summary.fingerprint);
 
     create_link(
         make_base_hash(summary.fingerprint)?,
@@ -115,7 +117,9 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
     )?;
 
     links.extend(email_links);
-    links.extend(fingerprint_links);
+    links.extend(fingerprint_links.clone());
+
+    tracing::info!("Found {} links and {} by fingerprint", links.len(), fingerprint_links.len());
 
     let mut out = Vec::with_capacity(links.len());
     for target in links

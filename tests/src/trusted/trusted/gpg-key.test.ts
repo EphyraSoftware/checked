@@ -4,66 +4,68 @@ import { runScenario, dhtSync, CallableCell } from '@holochain/tryorama';
 import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeDnaHash, fakeActionHash, fakeAgentPubKey, fakeEntryHash } from '@holochain/client';
 import { decode } from '@msgpack/msgpack';
 
-import { createGpgKey, sampleGpgKey } from './common.js';
+import { distributeGpgKey, sampleGpgKey } from './common.js';
 
-test('create GpgKey', async () => {
+test('Distribute GPG Key', async () => {
   await runScenario(async scenario => {
-    // Construct proper paths for your app.
-    // This assumes app bundle created by the `hc app pack` command.
     const testAppPath = process.cwd() + '/../workdir/hWOT.happ';
-
-    // Set up the app to be installed 
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    // Add 2 players with the test app to the Scenario. The returned players
-    // can be destructured.
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice] = await scenario.addPlayersWithApps([appSource]);
 
-    // Shortcut peer discovery through gossip and register all agents in every
-    // conductor of the scenario.
-    await scenario.shareAllAgents();
-
-    // Alice creates a GpgKey
-    const record: Record = await createGpgKey(alice.cells[0]);
+    // Alice distributes a GpgKey
+    const record: Record = await distributeGpgKey(alice.cells[0], sampleGpgKey());
     assert.ok(record);
   });
 });
 
-test('create and read GpgKey', async () => {
+test('Get my keys', async () => {
   await runScenario(async scenario => {
-    // Construct proper paths for your app.
-    // This assumes app bundle created by the `hc app pack` command.
     const testAppPath = process.cwd() + '/../workdir/hWOT.happ';
-
-    // Set up the app to be installed 
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    // Add 2 players with the test app to the Scenario. The returned players
-    // can be destructured.
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice] = await scenario.addPlayersWithApps([appSource]);
 
-    // Shortcut peer discovery through gossip and register all agents in every
-    // conductor of the scenario.
-    await scenario.shareAllAgents();
-
-    const sample = await sampleGpgKey(alice.cells[0]);
-
-    // Alice creates a GpgKey
-    const record: Record = await createGpgKey(alice.cells[0], sample);
+    // Alice distributes a GpgKey
+    const record: Record = await distributeGpgKey(alice.cells[0], sampleGpgKey());
     assert.ok(record);
-
-    // Wait for the created entry to be propagated to the other node.
-    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob gets the created GpgKey
-    const createReadOutput: Record = await bob.cells[0].callZome({
+    const keys: Record[] = await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "get_gpg_key",
-      payload: record.signed_action.hashed.hash,
+      fn_name: "get_my_keys",
+      payload: null,
     });
-    assert.deepEqual(sample, decode((createReadOutput.entry as any).Present.entry) as any);
-
+    assert.equal(1, keys.length);
+    assert.deepEqual(sampleGpgKey().trim(), (decode((keys[0].entry as any).Present.entry) as any).public_key);
   });
 });
 
+test('Search for a key', async () => {
+  await runScenario(async scenario => {
+    const testAppPath = process.cwd() + '/../workdir/hWOT.happ';
+    const appSource = { appBundleSource: { path: testAppPath } };
 
+    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+
+    await scenario.shareAllAgents();
+
+    // Alice distributes a GPG key
+    const record: Record = await distributeGpgKey(alice.cells[0], sampleGpgKey());
+    assert.ok(record);
+
+    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
+
+    // Bob searches for Alice's GPG key
+    const keys: Record[] = await bob.cells[0].callZome({
+      zome_name: "trusted",
+      fn_name: "search_keys",
+      payload: {
+        // Assume Alice has told Bob the fingerprint
+        query: "A000A1C5F4A9CC4669B59EFE7984D3461767A2A8"
+      },
+    });
+    assert.equal(1, keys.length);
+    assert.deepEqual(sampleGpgKey().trim(), (decode((keys[0].entry as any).Present.entry) as any).public_key);
+  });
+});
