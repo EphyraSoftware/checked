@@ -17,7 +17,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, inject, ComputedRef } from 'vue';
-import { AppAgentClient, Record, AgentPubKey, EntryHash, ActionHash, DnaHash } from '@holochain/client';
+import { AppAgentClient, Record } from '@holochain/client';
 import { DistributeGpgKeyRequest } from './types';
 import '@material/mwc-button';
 import '@material/mwc-icon-button';

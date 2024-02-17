@@ -1,15 +1,18 @@
 <template>
   <div>
     <div v-if="loading">
-      <mwc-circular-progress indeterminate></mwc-circular-progress>
+      <p class="text-lg p-12">Connecting to Holochain</p>
+      <span class="loading loading-infinity loading-lg"></span>
     </div>
     <div v-else>
-      <div id="content" style="display: flex; flex-direction: column; flex: 1;">
+      <div id="content">
         <DistributeGpgKey @gpg-key-dist-created="() => {}"></DistributeGpgKey>
 
         <MyKeys></MyKeys>
 
         <SearchKeys></SearchKeys>
+
+        <Notify></Notify>
       </div>
     </div>
   </div>
@@ -22,12 +25,14 @@ import '@material/mwc-button';
 import DistributeGpgKey from './trusted/trusted/DistributeGpgKey.vue';
 import MyKeys from './trusted/trusted/MyKeys.vue';
 import SearchKeys from './trusted/trusted/SearchKeys.vue';
+import Notify from './component/Notify.vue';
 
 export default defineComponent({
   components: {
     DistributeGpgKey,
     MyKeys,
-    SearchKeys
+    SearchKeys,
+    Notify,
 },
   data(): {
     client: AppAgentClient | undefined;
