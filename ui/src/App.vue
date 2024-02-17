@@ -4,9 +4,9 @@ import { AppAgentClient, AppAgentWebsocket } from '@holochain/client';
 import DistributeGpgKey from './trusted/trusted/DistributeGpgKey.vue';
 import MyKeys from './trusted/trusted/MyKeys.vue';
 import SearchKeys from './trusted/trusted/SearchKeys.vue';
-import Notify from './component/Notify.vue';
+import NotifyContainer from './component/NotifyContainer.vue';
 import { useThemeStore } from './store/theme-store';
-import Settings from './component/Settings.vue';
+import SettingsEditor from './component/SettingsEditor.vue';
 
 const themeStore = useThemeStore();
 
@@ -80,7 +80,7 @@ onMounted(async () => {
       </div>
       <div v-else-if="showScreen === 'settings'">
         <div class="container mx-auto w-1/2 mt-5">
-          <Settings></Settings>
+          <SettingsEditor></SettingsEditor>
         </div>
       </div>
       <div v-else-if="showScreen === 'search'">
@@ -98,7 +98,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <Notify></Notify>
+      <NotifyContainer></NotifyContainer>
     </div>
   </div>
 </template>

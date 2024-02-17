@@ -4,7 +4,6 @@ import { ComputedRef, inject, ref } from 'vue';
 import { GpgKeyDist, SearchKeysRequest } from './types';
 import { decode } from '@msgpack/msgpack';
 import { useNotificationsStore } from '../../store/notifications-store';
-import { useMyKeysStore } from '../../store/my-keys-store';
 import KeyList from '../../component/KeyList.vue';
 
 const searchQuery = ref('');
@@ -14,7 +13,6 @@ const results = ref<GpgKeyDist[]>([]);
 const client = inject('client') as ComputedRef<AppAgentClient>;
 
 const notifications = useNotificationsStore();
-const myKeysStore = useMyKeysStore();
 
 const searchKeys = async () => {
     if (!client.value || searching.value) return;
@@ -46,10 +44,6 @@ const searchKeys = async () => {
             searching.value = false;
         }, 500)
     }
-}
-
-const isMine = (keyDist: GpgKeyDist) => {
-    return myKeysStore.myKeys.some((r) => r.fingerprint === keyDist.fingerprint);
 }
 
 </script>

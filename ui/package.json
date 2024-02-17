@@ -5,7 +5,9 @@
     "start": "vite --port $UI_PORT --clearScreen false",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "package": "NODE_ENV=production npm run build && cd dist && bestzip ../dist.zip *"
+    "package": "NODE_ENV=production npm run build && cd dist && bestzip ../dist.zip *",
+    "lint": "eslint ./ --ext .vue,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path ../.gitignore",
+    "format": "prettier --write --cache ./src"
   },
   "dependencies": {
     "@holochain/client": "^0.17.0-dev.3",
@@ -17,11 +19,16 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/eslint-config-typescript": "^12.0.0",
     "autoprefixer": "^10.4.17",
     "bestzip": "^2.2.0",
     "cssnano": "^6.0.3",
     "daisyui": "^4.7.2",
+    "eslint": "^8.56.0",
+    "eslint-plugin-vue": "^9.21.1",
     "postcss": "^8.4.35",
+    "prettier": "^3.2.5",
     "tailwindcss": "^3.4.1",
     "typescript": "^4.9.3",
     "vite": "^4.0.4",

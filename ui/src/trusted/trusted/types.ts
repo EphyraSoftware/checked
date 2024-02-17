@@ -1,10 +1,5 @@
 import { 
-  Record, 
-  ActionHash, 
   SignedActionHashed,
-  DnaHash,
-  EntryHash, 
-  AgentPubKey,
   Create,
   Update,
   Delete,
