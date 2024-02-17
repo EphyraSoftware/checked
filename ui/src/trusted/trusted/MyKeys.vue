@@ -8,7 +8,7 @@ const myKeysStore = useMyKeysStore()
 <template>
     <mwc-snackbar ref="fetchError"></mwc-snackbar>
     <div>
-        <h1>My Keys</h1>
+        <h3>My Keys</h3>
         <div v-for="record in myKeysStore.myKeys" :key="record.fingerprint">
             <div>{{ record.fingerprint }}</div>
             <div>{{ record.user_id }}</div>

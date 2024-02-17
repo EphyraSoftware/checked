@@ -2,7 +2,7 @@
   <mwc-snackbar ref="create-error"></mwc-snackbar>
 
   <div style="display: flex; flex-direction: column">
-    <span style="font-size: 18px">Distribute GPG public key</span>
+    <h3>Distribute GPG public key</h3>
 
     <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField" />
 
@@ -12,6 +12,7 @@
     </template>
 
     <mwc-button raised :label="creating ? 'Creating...' : 'Distribute Gpg Key'" :disabled="!isGpgKeyValid || creating" @click="distributeGpgKey"></mwc-button>
+    <mwc-button raised label="Cancel" :disabled="!fingerprint" @click="resetForm"></mwc-button>
   </div>
 </template>
 <script lang="ts">
@@ -108,14 +109,7 @@ export default defineComponent({
 
         this.myKeysStore.insertRecord(record);
 
-        this.fingerprint = '';
-        this.expirationDate = null;
-        this.selectedKey = '';
-
-        const inputField = this.$refs['inputField'] as HTMLInputElement | null;
-        if (inputField) {
-          inputField.value = '';
-        }
+        this.resetForm();
       } catch (e: any) {
         const errorSnackbar = this.$refs['create-error'] as Snackbar;
         errorSnackbar.labelText = `Error creating the gpg key: ${e}`;
@@ -124,6 +118,16 @@ export default defineComponent({
         this.creating = false;
       }
     },
+    async resetForm() {
+      this.fingerprint = '';
+      this.expirationDate = null;
+      this.selectedKey = '';
+
+      const inputField = this.$refs['inputField'] as HTMLInputElement | null;
+      if (inputField) {
+        inputField.value = '';
+      }
+    }
   },
   emits: ['gpg-key-dist-created'],
   setup() {
