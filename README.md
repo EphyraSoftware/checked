@@ -66,4 +66,3 @@ Create a GPG key for testing
 gpg --quick-generate-key tester
 gpg --export --armor tester > tester_key.asc
 ```
-
