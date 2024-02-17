@@ -13,3 +13,7 @@ hdk = { workspace = true }
 serde = { workspace = true }
 
 trusted_integrity = { workspace = true } 
+
+pgp = "0.10.2"
+hex = "0.4.3"
+regex = "1.10.3"

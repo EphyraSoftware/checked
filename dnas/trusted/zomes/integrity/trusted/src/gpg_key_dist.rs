@@ -4,6 +4,8 @@ use hdi::prelude::*;
 pub struct GpgKeyDist {
     pub public_key: String,
     pub fingerprint: String,
+    pub user_id: String,
+    pub email: Option<String>,
 }
 
 pub fn validate_create_gpg_key_dist(

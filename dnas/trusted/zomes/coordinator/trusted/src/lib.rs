@@ -1,4 +1,6 @@
-pub mod gpg_key_dist;
+mod gpg_key_dist;
+mod gpg_util;
+
 use hdk::prelude::*;
 use trusted_integrity::*;
 

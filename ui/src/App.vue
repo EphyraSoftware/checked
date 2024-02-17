@@ -6,6 +6,8 @@
     <div v-else>
       <div id="content" style="display: flex; flex-direction: column; flex: 1;">
         <CreateGpgKey @gpg-key-dist-created="() => {}"></CreateGpgKey>
+
+        <MyKeys></MyKeys>
       </div>
     </div>
   </div>
@@ -16,11 +18,13 @@ import { AppAgentClient, AppAgentWebsocket } from '@holochain/client';
 import '@material/mwc-circular-progress';
 import '@material/mwc-button';
 import CreateGpgKey from './trusted/trusted/CreateGpgKey.vue';
+import MyKeys from './trusted/trusted/MyKeys.vue';
 
 export default defineComponent({
   components: {
-    CreateGpgKey
-  },
+    CreateGpgKey,
+    MyKeys
+},
   data(): {
     client: AppAgentClient | undefined;
     loading: boolean;

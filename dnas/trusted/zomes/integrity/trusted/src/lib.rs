@@ -4,7 +4,7 @@ use hdi::prelude::*;
 
 pub mod prelude {
     pub use crate::gpg_key_dist::*;
-    pub use crate::EntryTypes;
+    pub use crate::{EntryTypes, UnitEntryTypes};
 }
 
 #[derive(Serialize, Deserialize)]

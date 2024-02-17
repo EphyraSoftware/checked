@@ -45,4 +45,6 @@ export interface DistributeGpgKeyRequest {
 export interface GpgKeyDist { 
   public_key: string;
   fingerprint: string;
+  user_id: string;
+  email?: string;
 }
