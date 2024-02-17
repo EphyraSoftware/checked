@@ -1,6 +1,6 @@
-use hdi::prelude::{hash_type::AnyLinkable, *};
 use crate::LinkTypes;
-use chrono::{Utc, DateTime};
+use chrono::{DateTime, Utc};
+use hdi::prelude::{hash_type::AnyLinkable, *};
 
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
@@ -25,7 +25,9 @@ pub fn validate_update_gpg_key_dist(
     _original_action: EntryCreationAction,
     _original_gpg_key: GpgKeyDist,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Gpg key distributions cannot be updated")))
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Gpg key distributions cannot be updated",
+    )))
 }
 
 pub fn validate_delete_gpg_key_dist(
@@ -33,22 +35,22 @@ pub fn validate_delete_gpg_key_dist(
     _original_action: EntryCreationAction,
     _original_gpg_key: GpgKeyDist,
 ) -> ExternResult<ValidateCallbackResult> {
-    Ok(ValidateCallbackResult::Invalid(String::from("Gpg key distributions cannot be deleted")))
+    Ok(ValidateCallbackResult::Invalid(String::from(
+        "Gpg key distributions cannot be deleted",
+    )))
 }
 
 pub fn validate_create_gpg_key_dist_link(
-    base_address: HoloHash<AnyLinkable>,
     target_address: HoloHash<AnyLinkable>,
     link_type: LinkTypes,
 ) -> ExternResult<ValidateCallbackResult> {
     let entry_hash = match target_address.clone().try_into() {
         Ok(entry_hash) => entry_hash,
-        Err(e) => {
-            return Ok(
-                ValidateCallbackResult::Invalid(
-                    format!("The target address for {:?} must be an entry hash", link_type),
-                ),
-            );
+        Err(_) => {
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The target address for {:?} must be an entry hash",
+                link_type
+            )));
         }
     };
     let entry = must_get_entry(entry_hash)?;
@@ -56,27 +58,22 @@ pub fn validate_create_gpg_key_dist_link(
         Some(app_entry) => {
             let _: crate::gpg_key_dist::GpgKeyDist = match app_entry.clone().into_sb().try_into() {
                 Ok(gpg_key) => gpg_key,
-                Err(e) => {
-                    return Ok(
-                        ValidateCallbackResult::Invalid(
-                            format!("The target for {:?} must be a {}", link_type, std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()),
-                        ),
-                    );
+                Err(_) => {
+                    return Ok(ValidateCallbackResult::Invalid(format!(
+                        "The target for {:?} must be a {}",
+                        link_type,
+                        std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
+                    )));
                 }
-            
             };
         }
         None => {
-            return Ok(
-                ValidateCallbackResult::Invalid(
-                    format!("The target for {:?} must be an app entry", link_type),
-                ),
-            );
-        
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The target for {:?} must be an app entry",
+                link_type
+            )));
         }
     }
 
-    Ok(
-        ValidateCallbackResult::Valid,
-    )
+    Ok(ValidateCallbackResult::Valid)
 }

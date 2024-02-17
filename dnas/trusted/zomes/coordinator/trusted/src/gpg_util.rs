@@ -1,15 +1,15 @@
+use chrono::{DateTime, Utc};
 use hdk::prelude::*;
-use std::{
-    collections::BTreeMap,
-    io::{Read, Seek},
-};
-use chrono::{Utc, DateTime};
 use pgp::types::KeyTrait;
 use pgp::{
     armor::{BlockType, Dearmor},
     from_bytes_many, PublicOrSecret, SignedPublicKey,
 };
 use std::io::Cursor;
+use std::{
+    collections::BTreeMap,
+    io::{Read, Seek},
+};
 
 pub fn try_extract_public_key(input: String) -> ExternResult<SignedPublicKey> {
     let c = Cursor::new(input.as_bytes());
@@ -81,16 +81,16 @@ impl PublicKeySummary {
                     fingerprint: hex::encode(fingerprint).to_uppercase(),
                     name,
                     email,
-                    expires_at: public_key.expires_at()
+                    expires_at: public_key.expires_at(),
                 })
             }
         }
     }
 }
 
-fn parse<R: Read + Seek>(
-    mut input: R,
-) -> std::io::Result<(Option<BlockType>, BTreeMap<String, String>, Vec<u8>)> {
+type PubicKeyParsed = (Option<BlockType>, BTreeMap<String, String>, Vec<u8>);
+
+fn parse<R: Read + Seek>(mut input: R) -> std::io::Result<PubicKeyParsed> {
     let mut dearmor = Dearmor::new(input.by_ref());
 
     let mut bytes = Vec::new();

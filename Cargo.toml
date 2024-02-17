@@ -9,9 +9,10 @@ members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "=0.4.0-beta-dev.24"
-hdk = "=0.3.0-beta-dev.28"
+hdi = "=0.4.0-beta-dev.27"
+hdk = "=0.3.0-beta-dev.31"
 serde = "1.0"
+chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
 
 [workspace.dependencies.trusted]
 path = "dnas/trusted/zomes/coordinator/trusted"

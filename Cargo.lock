@@ -1122,9 +1122,9 @@ checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
 name = "hdi"
-version = "0.4.0-beta-dev.24"
+version = "0.4.0-beta-dev.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53fc6d331f2ce186a8a0d6c8caa24901e63941a405d88b3bcc215687a9d66d82"
+checksum = "1be1f7448dc9cc06cf40e2db402ef9657d02e9a0181bda2bde4f99e10fee8d22"
 dependencies = [
  "hdk_derive",
  "holo_hash",
@@ -1139,9 +1139,9 @@ dependencies = [
 
 [[package]]
 name = "hdk"
-version = "0.3.0-beta-dev.28"
+version = "0.3.0-beta-dev.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d5acd0dfccb74572ed37f1ef3a3802fd960bd5e6973244b1b0cfa0fb3863a24"
+checksum = "38e7e134a93bcb30e7c772ca0abfba3400bda8107e8678f3a3eb3b68bfc3158e"
 dependencies = [
  "getrandom",
  "hdi",
@@ -1220,7 +1220,7 @@ dependencies = [
  "derive_more",
  "holochain_serialized_bytes",
  "holochain_util",
- "holochain_wasmer_common 0.0.92",
+ "holochain_wasmer_common",
  "kitsune_p2p_dht_arc",
  "serde",
  "serde_bytes",
@@ -1309,20 +1309,6 @@ dependencies = [
 
 [[package]]
 name = "holochain_wasmer_common"
-version = "0.0.91"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91334617b53995b436796417abf4cfca516c33404842e60025c26321329c8734"
-dependencies = [
- "holochain_serialized_bytes",
- "serde",
- "serde_bytes",
- "test-fuzz",
- "thiserror",
- "wasmer",
-]
-
-[[package]]
-name = "holochain_wasmer_common"
 version = "0.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72007fd2a72d77e76ffa494e5847bf6e893e25e73fe1d1de902e1b8d5033a64e"
@@ -1337,12 +1323,12 @@ dependencies = [
 
 [[package]]
 name = "holochain_wasmer_guest"
-version = "0.0.91"
+version = "0.0.92"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30a4e3dcf97f42847f0ea8a4ed33d6ccf718764ed00f5a73390e9b4e5319b719"
+checksum = "8c429e84a19ee446f47541a6fed10e1a4376a8a8ba6d3dbff7d07e4a7bb4c85f"
 dependencies = [
  "holochain_serialized_bytes",
- "holochain_wasmer_common 0.0.91",
+ "holochain_wasmer_common",
  "parking_lot",
  "paste",
  "serde",
@@ -1360,7 +1346,7 @@ dependencies = [
  "holochain_nonce",
  "holochain_secure_primitive",
  "holochain_serialized_bytes",
- "holochain_wasmer_common 0.0.92",
+ "holochain_wasmer_common",
  "kitsune_p2p_bin_data",
  "kitsune_p2p_block",
  "kitsune_p2p_timestamp",

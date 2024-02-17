@@ -16,14 +16,13 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
 
     let has_key = get_my_keys(())?
         .iter()
-        .find(|record| match record.entry.as_option() {
+        .any(|record| match record.entry.as_option() {
             Some(Entry::App(app_entry)) => {
                 let gpg_key_dist: GpgKeyDist = app_entry.clone().into_sb().try_into().unwrap();
                 gpg_key_dist.fingerprint == summary.fingerprint
             }
             _ => false,
-        })
-        .is_some();
+        });
 
     if has_key {
         return Err(wasm_error!(WasmErrorInner::Guest(
@@ -43,7 +42,10 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
         WasmErrorInner::Guest(String::from("Could not find the newly created GpgKey"))
     ))?;
 
-    let entry_hash = record.action().entry_hash().ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?;
+    let entry_hash = record
+        .action()
+        .entry_hash()
+        .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?;
 
     create_link(
         make_base_hash(summary.name)?,
@@ -90,15 +92,36 @@ pub struct SearchKeysRequest {
 
 #[hdk_extern]
 pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
-    let mut links = get_links(GetLinksInputBuilder::try_new(make_base_hash(request.query.clone())?, LinkTypes::UserIdToGpgKeyDist)?.build())?;
-    let email_links = get_links(GetLinksInputBuilder::try_new(make_base_hash(request.query.clone())?, LinkTypes::EmailToGpgKeyDist)?.build())?;
-    let fingerprint_links = get_links(GetLinksInputBuilder::try_new(make_base_hash(request.query)?, LinkTypes::FingerprintToGpgKeyDist)?.build())?;
+    let mut links = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(request.query.clone())?,
+            LinkTypes::UserIdToGpgKeyDist,
+        )?
+        .build(),
+    )?;
+    let email_links = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(request.query.clone())?,
+            LinkTypes::EmailToGpgKeyDist,
+        )?
+        .build(),
+    )?;
+    let fingerprint_links = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(request.query)?,
+            LinkTypes::FingerprintToGpgKeyDist,
+        )?
+        .build(),
+    )?;
 
     links.extend(email_links);
     links.extend(fingerprint_links);
 
     let mut out = Vec::with_capacity(links.len());
-    for target in links.into_iter().flat_map(|l| AnyDhtHash::try_from(l.target).ok()) {
+    for target in links
+        .into_iter()
+        .flat_map(|l| AnyDhtHash::try_from(l.target).ok())
+    {
         match get(target, GetOptions::default())? {
             Some(r) => {
                 out.push(r);
