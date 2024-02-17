@@ -14,6 +14,22 @@ pub fn distribute_gpg_key(gpg_key: DistributeGpgKeyRequest) -> ExternResult<Reco
 
     let summary = PublicKeySummary::try_from_public_key(&public_key)?;
 
+    let has_key = get_my_keys(())?.iter().find(|record| {
+        match record.entry.as_option() {
+            Some(Entry::App(app_entry)) => {
+                let gpg_key_dist: GpgKeyDist = app_entry.clone().into_sb().try_into().unwrap();
+                gpg_key_dist.fingerprint == summary.fingerprint
+            }
+            _ => false,
+        }
+    }).is_some();
+
+    if has_key {
+        return Err(wasm_error!(WasmErrorInner::Guest(
+            "You have already distributed this key".to_string()
+        )));
+    }
+
     let gpg_key_hash = create_entry(&EntryTypes::GpgKeyDist(GpgKeyDist {
         public_key: gpg_key.public_key,
         fingerprint: summary.fingerprint,
