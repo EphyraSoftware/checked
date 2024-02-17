@@ -1,10 +1,14 @@
-mod gpg_key_dist;
+pub(crate) mod gpg_key_dist;
+
+use std::collections::linked_list;
 
 use hdi::prelude::*;
+use prelude::validate_create_gpg_key_dist_link;
 
 pub mod prelude {
     pub use crate::gpg_key_dist::*;
     pub use crate::{EntryTypes, UnitEntryTypes};
+    pub use crate::LinkTypes;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -13,6 +17,13 @@ pub mod prelude {
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
     GpgKeyDist(gpg_key_dist::GpgKeyDist),
+}
+
+#[hdk_link_types]
+pub enum LinkTypes {
+    UserIdToGpgKeyDist,
+    EmailToGpgKeyDist,
+    FingerprintToGpgKeyDist,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -55,7 +66,7 @@ pub fn validate_agent_joining(
 // You can read more about validation here: https://docs.rs/hdi/latest/hdi/index.html#data-validation
 #[hdk_extern]
 pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
-    match op.flattened::<EntryTypes, ()>()? {
+    match op.flattened::<EntryTypes, LinkTypes>()? {
         FlatOp::StoreEntry(store_entry) => {
             match store_entry {
                 OpEntry::CreateEntry { app_entry, action } => {
@@ -133,11 +144,11 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             tag,
             action,
         } => {
-            Ok(
-                ValidateCallbackResult::Invalid(
-                    String::from("There are no link types in this integrity zome"),
-                ),
-            )
+            match link_type {
+                LinkTypes::FingerprintToGpgKeyDist | LinkTypes::UserIdToGpgKeyDist | LinkTypes::EmailToGpgKeyDist => {
+                    validate_create_gpg_key_dist_link(base_address, target_address, link_type)
+                }
+            }
         }
         FlatOp::RegisterDeleteLink {
             link_type,
@@ -299,11 +310,11 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     link_type,
                     action,
                 } => {
-                    Ok(
-                        ValidateCallbackResult::Invalid(
-                            "There are no link types in this integrity zome".to_string(),
-                        ),
-                    )
+                    match link_type {
+                        LinkTypes::FingerprintToGpgKeyDist | LinkTypes::UserIdToGpgKeyDist | LinkTypes::EmailToGpgKeyDist => {
+                            validate_create_gpg_key_dist_link(base_address, target_address, link_type)
+                        }
+                    }
                 }
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterDeleteLink`

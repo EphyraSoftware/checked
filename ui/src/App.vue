@@ -8,6 +8,8 @@
         <CreateGpgKey @gpg-key-dist-created="() => {}"></CreateGpgKey>
 
         <MyKeys></MyKeys>
+
+        <SearchKeys></SearchKeys>
       </div>
     </div>
   </div>
@@ -19,11 +21,13 @@ import '@material/mwc-circular-progress';
 import '@material/mwc-button';
 import CreateGpgKey from './trusted/trusted/CreateGpgKey.vue';
 import MyKeys from './trusted/trusted/MyKeys.vue';
+import SearchKeys from './trusted/trusted/SearchKeys.vue';
 
 export default defineComponent({
   components: {
     CreateGpgKey,
-    MyKeys
+    MyKeys,
+    SearchKeys
 },
   data(): {
     client: AppAgentClient | undefined;

@@ -48,3 +48,7 @@ export interface GpgKeyDist {
   user_id: string;
   email?: string;
 }
+
+export interface SearchKeysRequest {
+  query: string;
+}
