@@ -62,10 +62,12 @@ test('Search for a key', async () => {
       fn_name: "search_keys",
       payload: {
         // Assume Alice has told Bob the fingerprint
-        query: "A000A1C5F4A9CC4669B59EFE7984D3461767A2A8"
+        query: "0B1D4843CA2F198CAC2F5C6A449D7AE5D2532CEF"
       },
     });
     assert.equal(1, keys.length);
-    assert.deepEqual(sampleGpgKey().trim(), (decode((keys[0].entry as any).Present.entry) as any).public_key);
+    const decoded = (decode((keys[0].entry as any).Present.entry) as any);
+    assert.equal("Alice", decoded.name);
+    assert.equal(sampleGpgKey().trim(), decoded.public_key);
   });
 });
