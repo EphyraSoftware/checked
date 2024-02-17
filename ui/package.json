@@ -5,7 +5,7 @@
     "start": "vite --port $UI_PORT --clearScreen false",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "package": "npm run build && cd dist && bestzip ../dist.zip *"
+    "package": "NODE_ENV=production npm run build && cd dist && bestzip ../dist.zip *"
   },
   "dependencies": {
     "@holochain/client": "^0.17.0-dev.3",
@@ -27,8 +27,13 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
+    "autoprefixer": "^10.4.17",
     "bestzip": "^2.2.0",
+    "daisyui": "^4.7.2",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
     "typescript": "^4.9.3",
+    "cssnano": "^6.0.3",
     "vite": "^4.0.4",
     "vite-plugin-checker": "^0.5.1",
     "vue-tsc": "^1.0.24"

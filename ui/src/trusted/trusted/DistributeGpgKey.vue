@@ -2,9 +2,9 @@
   <mwc-snackbar ref="create-error"></mwc-snackbar>
 
   <div style="display: flex; flex-direction: column">
-    <h3>Distribute GPG public key</h3>
+    <span class="text-xl">Distribute GPG public key</span>
 
-    <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField" />
+    <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField" class="file-input file-input-bordered file-input-primary" />
 
     <template v-if="fingerprint">
       <p>Selected key has fingerprint: <span style="font-style: italic;">{{ fingerprint }}</span></p>
