@@ -1,140 +1,149 @@
-<template>
-  <mwc-snackbar ref="create-error"></mwc-snackbar>
-
-  <div style="display: flex; flex-direction: column">
-    <span class="text-xl">Distribute GPG public key</span>
-
-    <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField" class="file-input file-input-bordered file-input-primary" />
-
-    <template v-if="fingerprint">
-      <p>Selected key has fingerprint: <span style="font-style: italic;">{{ fingerprint }}</span></p>
-      <p>Selected key expires on: <span style="font-style: italic;">{{ expirationDate }}</span></p>
-    </template>
-
-    <mwc-button raised :label="creating ? 'Creating...' : 'Distribute Gpg Key'" :disabled="!isGpgKeyValid || creating" @click="distributeGpgKey"></mwc-button>
-    <mwc-button raised label="Cancel" :disabled="!fingerprint" @click="resetForm"></mwc-button>
-  </div>
-</template>
-<script lang="ts">
-import { defineComponent, inject, ComputedRef } from 'vue';
+<script setup lang="ts">
+import { inject, ComputedRef, ref, computed } from 'vue';
 import { AppAgentClient, Record } from '@holochain/client';
-import { DistributeGpgKeyRequest } from './types';
-import '@material/mwc-button';
-import '@material/mwc-icon-button';
-import '@material/mwc-snackbar';
-import { Snackbar } from '@material/mwc-snackbar';
-import '@material/mwc-textarea';
+import { DistributeGpgKeyRequest, GpgKeyDist } from './types';
 import { readKey } from 'openpgp'
 import { useMyKeysStore } from '../../store/my-keys-store';
+import { useNotificationsStore } from '../../store/notifications-store';
+import KeyList from '../../component/KeyList.vue';
 
-export default defineComponent({
-  data(): {
-    fingerprint: string;
-    expirationDate: Date | null;
-    selectedKey: string;
-    creating: boolean;
-    myKeysStore: any;
-  } {
-    return {
-      fingerprint: '',
-      expirationDate: null,
-      selectedKey: '',
-      creating: false,
-      myKeysStore: useMyKeysStore(),
-    }
-  },
-  computed: {
-    isGpgKeyValid() {
-      return true && this.fingerprint !== '';
-    },
-  },
-  mounted() {
-  },
-  methods: {
-    async onPublicKeySelect(event: Event) {
-      if (!event.target) return;
+const emit = defineEmits<{
+  (e: 'gpg-key-dist-created', hash: Uint8Array): void;
+}>();
 
-      const files = (event.target as HTMLInputElement).files
+const selected = ref<Partial<GpgKeyDist>>({});
+const creating = ref(false);
+const inputField = ref<HTMLElement | null>(null);
 
-      if (!files || files.length === 0) return;
+const client = inject('client') as ComputedRef<AppAgentClient>;
 
-      const file = files[0];
+const notifications = useNotificationsStore();
+const myKeysStore = useMyKeysStore();
 
-      const reader = new FileReader();
-      reader.readAsText(file);
-
-      reader.onload = (evt) => {
-        const armoredKey = evt.target?.result;
-
-        if (!armoredKey) return;
-
-        this.selectedKey = armoredKey as string;
-
-        readKey({ armoredKey: this.selectedKey }).then(async (key) => {
-          this.fingerprint = key.getFingerprint();
-
-          const expirationDate = await key.getExpirationTime();
-          if (typeof expirationDate == 'object') {
-            this.expirationDate = expirationDate;
-          }
-        }).catch((e) => {
-          const errorSnackbar = this.$refs['create-error'] as Snackbar;
-          errorSnackbar.labelText = `${e}`;
-          errorSnackbar.show();
-        });
-      }
-
-      reader.onerror = (evt) => {
-        const errorSnackbar = this.$refs['create-error'] as Snackbar;
-        errorSnackbar.labelText = `Error reading the key file: ${evt}`;
-        errorSnackbar.show();
-      }
-    },
-    async distributeGpgKey() {
-      this.creating = true;
-
-      try {
-        const distributeGpgKeyRequest: DistributeGpgKeyRequest = {
-          public_key: this.selectedKey,
-        };
-
-        const record: Record = await this.client.callZome({
-          cap_secret: null,
-          role_name: 'trusted',
-          zome_name: 'trusted',
-          fn_name: 'distribute_gpg_key',
-          payload: distributeGpgKeyRequest,
-        });
-        this.$emit('gpg-key-dist-created', record.signed_action.hashed.hash);
-
-        this.myKeysStore.insertRecord(record);
-
-        this.resetForm();
-      } catch (e: any) {
-        const errorSnackbar = this.$refs['create-error'] as Snackbar;
-        errorSnackbar.labelText = `Error creating the gpg key: ${e}`;
-        errorSnackbar.show();
-      } finally {
-        this.creating = false;
-      }
-    },
-    async resetForm() {
-      this.fingerprint = '';
-      this.expirationDate = null;
-      this.selectedKey = '';
-
-      const inputField = this.$refs['inputField'] as HTMLInputElement | null;
-      if (inputField) {
-        inputField.value = '';
-      }
-    }
-  },
-  emits: ['gpg-key-dist-created'],
-  setup() {
-    const client = (inject('client') as ComputedRef<AppAgentClient>).value;
-    return {
-      client,
-    };
-  },
+const isGpgKeyValid = computed(() => {
+  return true && selected.value.fingerprint;
 })
+
+const onPublicKeySelect = async (event: Event) => {
+  if (!event.target) return;
+
+  const files = (event.target as HTMLInputElement).files
+
+  if (!files || files.length === 0) return;
+
+  const file = files[0];
+
+  const reader = new FileReader();
+  reader.readAsText(file);
+
+  reader.onload = (evt) => {
+    const armoredKey = evt.target?.result;
+
+    if (!armoredKey) return;
+
+    selected.value.public_key = armoredKey as string;
+
+    readKey({ armoredKey: selected.value.public_key }).then(async (key) => {
+      selected.value.fingerprint = key.getFingerprint();
+
+      if (key.users) {
+        const user = key.users[0];
+
+        if (user.userID) {
+          const userId = user.userID;
+
+          if (userId.userID) {
+            selected.value.name = userId.name;
+          }
+          if (userId.email) {
+            selected.value.email = userId.email;
+          }
+        }
+      }
+
+      const expirationDate = await key.getExpirationTime();
+      if (typeof expirationDate == 'object') {
+        selected.value.expires_at = expirationDate as Date;
+      }
+    }).catch((e) => {
+      notifications.pushNotification({
+        message: `${e}`,
+        type: 'error',
+      })
+    });
+  }
+
+  reader.onerror = (evt) => {
+    notifications.pushNotification({
+      message: `Error reading the key file: ${evt}`,
+      type: 'error',
+    })
+  }
+}
+
+const resetForm = async () => {
+  selected.value.fingerprint = '';
+  selected.value.expires_at = undefined;
+  selected.value.public_key = '';
+
+  if (inputField.value) {
+    (inputField.value as HTMLInputElement).value = '';
+  }
+}
+
+const distributeGpgKey = async () => {
+  if (!client.value || !selected.value.public_key) return;
+
+  creating.value = true;
+
+  try {
+    const distributeGpgKeyRequest: DistributeGpgKeyRequest = {
+      public_key: selected.value.public_key,
+    };
+
+    const record: Record = await client.value.callZome({
+      cap_secret: null,
+      role_name: 'trusted',
+      zome_name: 'trusted',
+      fn_name: 'distribute_gpg_key',
+      payload: distributeGpgKeyRequest,
+    });
+    emit('gpg-key-dist-created', record.signed_action.hashed.hash);
+
+    myKeysStore.insertRecord(record);
+
+    resetForm();
+  } catch (e: any) {
+    notifications.pushNotification({
+      message: `Error creating the gpg key: ${e}`,
+      type: 'error',
+    })
+  } finally {
+    creating.value = false;
+  }
+}
 </script>
+
+<template>
+  <p class="text-lg">Distribute GPG public key</p>
+
+  <div class="flex justify-center my-3">
+    <input type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="inputField"
+      class="file-input file-input-bordered file-input-primary" />
+  </div>
+
+  <div v-if="selected.fingerprint" class="mt-5">
+    <p>Selected key</p>
+    <KeyList :keys="[selected]" :readonly="true"></KeyList>
+  </div>
+
+  <div class="flex justify-center my-3">
+    <div class="join">
+      <button class="btn btn-primary join-item" :disabled="!isGpgKeyValid || creating" @click="distributeGpgKey">
+        <span v-if="creating" class="loading loading-spinner"></span>
+        <span v-else>{{ creating ? 'Creating...' : 'Distribute Gpg Key' }}</span>
+      </button>
+      <button class="btn btn-secondary join-item" :disabled="!selected.fingerprint" @click="resetForm">Cancel</button>
+    </div>
+  </div>
+</template>

@@ -2738,6 +2738,7 @@ checksum = "683ba5022fe6dbd7133cad150478ccf51bdb6d861515181e5fc6b4323d4fa424"
 name = "trusted"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "hdk",
  "hex",
  "pgp",
@@ -2750,6 +2751,7 @@ dependencies = [
 name = "trusted_integrity"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "hdi",
  "serde",
 ]

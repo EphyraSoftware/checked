@@ -34,8 +34,9 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
     let gpg_key_dist_hash = create_entry(&EntryTypes::GpgKeyDist(GpgKeyDist {
         public_key: request.public_key,
         fingerprint: summary.fingerprint.clone(),
-        user_id: summary.user_id.clone(),
+        name: summary.name.clone(),
         email: summary.email.clone(),
+        expires_at: summary.expires_at,
     }))?;
 
     let record = get(gpg_key_dist_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
@@ -45,7 +46,7 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
     let entry_hash = record.action().entry_hash().ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?;
 
     create_link(
-        make_base_hash(summary.user_id)?,
+        make_base_hash(summary.name)?,
         entry_hash.clone(),
         LinkTypes::UserIdToGpgKeyDist,
         (),

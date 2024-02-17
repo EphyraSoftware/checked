@@ -22,7 +22,7 @@ watch(themeToggle, (newVal) => {
 
 <div class="form-control">
   <label class="label cursor-pointer">
-    <span class="label-text">Theme</span> 
+    <span class="label-text">Dark mode</span> 
     <input type="checkbox" class="toggle" v-model="themeToggle" />
   </label>
 </div>

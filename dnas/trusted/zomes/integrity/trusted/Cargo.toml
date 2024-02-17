@@ -11,3 +11,5 @@ name = "trusted_integrity"
 hdi = { workspace = true }
 
 serde = { workspace = true }
+
+chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }

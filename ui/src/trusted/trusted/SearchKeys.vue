@@ -5,6 +5,7 @@ import { GpgKeyDist, SearchKeysRequest } from './types';
 import { decode } from '@msgpack/msgpack';
 import { useNotificationsStore } from '../../store/notifications-store';
 import { useMyKeysStore } from '../../store/my-keys-store';
+import KeyList from '../../component/KeyList.vue';
 
 const searchQuery = ref('');
 const searching = ref(false)
@@ -70,30 +71,6 @@ const isMine = (keyDist: GpgKeyDist) => {
 
     <div class="mt-5">
         <p>Search results</p>
-
-        <table class="table">
-            <!-- head -->
-            <thead>
-                <tr>
-                    <th>User ID</th>
-                    <th>Email</th>
-                    <th>Fingerprint</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="r in results" v-bind:key="r.fingerprint">
-                    <td>{{ r.user_id }}</td>
-                    <td>{{ r.email ?? '-' }}</td>
-                    <td>{{ r.fingerprint }}</td>
-                    <td>
-                        <p v-if="isMine(r)" class="font-bold text-primary">Mine</p>
-                        <div v-else>
-                            <button class="btn btn-primary" @click="() => { }">Add</button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <KeyList :keys="results"></KeyList>
     </div>
 </template>

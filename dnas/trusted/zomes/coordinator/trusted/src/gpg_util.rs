@@ -3,7 +3,7 @@ use std::{
     collections::BTreeMap,
     io::{Read, Seek},
 };
-
+use chrono::{Utc, DateTime};
 use pgp::types::KeyTrait;
 use pgp::{
     armor::{BlockType, Dearmor},
@@ -46,8 +46,9 @@ pub fn try_extract_public_key(input: String) -> ExternResult<SignedPublicKey> {
 
 pub struct PublicKeySummary {
     pub fingerprint: String,
-    pub user_id: String,
+    pub name: String,
     pub email: Option<String>,
+    pub expires_at: Option<DateTime<Utc>>,
 }
 
 impl PublicKeySummary {
@@ -66,11 +67,11 @@ impl PublicKeySummary {
                     wasm_error!(WasmErrorInner::Guest("Invalid user id format".to_string()))
                 })?;
 
-                let user_id = match captures.get(1) {
-                    Some(user_id) => user_id.as_str().to_string(),
+                let name = match captures.get(1) {
+                    Some(name) => name.as_str().to_string(),
                     None => {
                         return Err(wasm_error!(WasmErrorInner::Guest(
-                            "Missing user id".to_string()
+                            "Missing user name".to_string()
                         )));
                     }
                 };
@@ -78,8 +79,9 @@ impl PublicKeySummary {
 
                 Ok(PublicKeySummary {
                     fingerprint: hex::encode(fingerprint).to_uppercase(),
-                    user_id,
+                    name,
                     email,
+                    expires_at: public_key.expires_at()
                 })
             }
         }
@@ -162,7 +164,7 @@ oo0Dy+qQjDoTAPwMQD9dqZJX0eDz2j9JhyOiVI7ezjRTTef0+r4Ox152Bg==
             "597799F72FAA6022A05349A1F88BCA9B1E839678",
             summary.fingerprint
         );
-        assert_eq!("tester2", summary.user_id);
+        assert_eq!("tester2", summary.name);
         assert_eq!(Some("tester2@mailhappy.com".to_string()), summary.email);
     }
 
@@ -176,7 +178,7 @@ oo0Dy+qQjDoTAPwMQD9dqZJX0eDz2j9JhyOiVI7ezjRTTef0+r4Ox152Bg==
             "F8475C23DC627004CC0B1DC17A7AAEA2BF065CCA",
             summary.fingerprint
         );
-        assert_eq!("tester", summary.user_id);
+        assert_eq!("tester", summary.name);
         assert_eq!(None, summary.email);
     }
 }

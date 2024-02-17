@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { defineComponent, computed, inject, ComputedRef, ref, watch, provide, onMounted } from 'vue';
+import { ref, provide, onMounted } from 'vue';
 import { AppAgentClient, AppAgentWebsocket } from '@holochain/client';
-import '@material/mwc-circular-progress';
-import '@material/mwc-button';
 import DistributeGpgKey from './trusted/trusted/DistributeGpgKey.vue';
 import MyKeys from './trusted/trusted/MyKeys.vue';
 import SearchKeys from './trusted/trusted/SearchKeys.vue';
@@ -73,17 +71,30 @@ onMounted(async () => {
       </div>
 
       <div v-if="showScreen === 'home'">
-        <MyKeys></MyKeys>
-        <DistributeGpgKey @gpg-key-dist-created="() => { }"></DistributeGpgKey>
+        <div class="container mx-auto mt-5">
+          <MyKeys></MyKeys>
+          <div class="mt-5">
+            <DistributeGpgKey @gpg-key-dist-created="() => { }"></DistributeGpgKey>
+          </div>
+        </div>
       </div>
       <div v-else-if="showScreen === 'settings'">
-        <div class="container mx-auto w-1/2">
+        <div class="container mx-auto w-1/2 mt-5">
           <Settings></Settings>
         </div>
       </div>
       <div v-else-if="showScreen === 'search'">
-        <div class="container mx-auto">
+        <div class="container mx-auto mt-5">
           <SearchKeys></SearchKeys>
+        </div>
+      </div>
+      <div v-else-if="showScreen === 'about'">
+        <div class="container mx-auto mt-5">
+          <p>You can learn more about protecting your E-mails with GPG from the <a href="https://emailselfdefense.fsf.org/en/" target="_blank" class="link">Free Software Foundation</a>.</p>
+          <p>This hApp is a distributed solution for section #5. Rather than needing to send your public keys to a centralized server, you can distribute them using Holochain.</p>
+
+          <br />
+          <p>You can get the <a href="https://github.com/ThetaSinner/hWOT" target="_blank" class="link">source code</a> for this app to verify its behavior.</p>
         </div>
       </div>
 

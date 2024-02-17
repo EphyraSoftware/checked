@@ -1,13 +1,15 @@
 use hdi::prelude::{hash_type::AnyLinkable, *};
 use crate::LinkTypes;
+use chrono::{Utc, DateTime};
 
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 pub struct GpgKeyDist {
     pub public_key: String,
     pub fingerprint: String,
-    pub user_id: String,
+    pub name: String,
     pub email: Option<String>,
+    pub expires_at: Option<DateTime<Utc>>,
 }
 
 pub fn validate_create_gpg_key_dist(

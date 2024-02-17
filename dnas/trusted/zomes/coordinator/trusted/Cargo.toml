@@ -17,3 +17,4 @@ trusted_integrity = { workspace = true }
 pgp = "0.10.2"
 hex = "0.4.3"
 regex = "1.10.3"
+chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
