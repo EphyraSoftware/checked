@@ -22,6 +22,7 @@
     "@msgpack/msgpack": "^2.7.2",
     "@vaadin/date-time-picker": "^23.2.8",
     "openpgp": "^5.11.0",
+    "pinia": "^2.1.7",
     "vue": "^3.2.25"
   },
   "devDependencies": {

@@ -24,6 +24,7 @@ import '@material/mwc-snackbar';
 import { Snackbar } from '@material/mwc-snackbar';
 import '@material/mwc-textarea';
 import { readKey } from 'openpgp'
+import { useMyKeysStore } from '../../store/my-keys-store';
 
 export default defineComponent({
   data(): {
@@ -31,12 +32,14 @@ export default defineComponent({
     expirationDate: Date | null;
     selectedKey: string;
     creating: boolean;
+    myKeysStore: any;
   } {
     return {
       fingerprint: '',
       expirationDate: null,
       selectedKey: '',
       creating: false,
+      myKeysStore: useMyKeysStore(),
     }
   },
   computed: {
@@ -103,6 +106,8 @@ export default defineComponent({
         });
         this.$emit('gpg-key-dist-created', record.signed_action.hashed.hash);
 
+        this.myKeysStore.insertRecord(record);
+
         this.fingerprint = '';
         this.expirationDate = null;
         this.selectedKey = '';
@@ -113,7 +118,7 @@ export default defineComponent({
         }
       } catch (e: any) {
         const errorSnackbar = this.$refs['create-error'] as Snackbar;
-        errorSnackbar.labelText = `Error creating the gpg key: ${e.data}`;
+        errorSnackbar.labelText = `Error creating the gpg key: ${e}`;
         errorSnackbar.show();
       } finally {
         this.creating = false;
