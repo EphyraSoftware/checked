@@ -56,24 +56,20 @@ pub fn validate_create_gpg_key_dist_link(
     let entry = must_get_entry(entry_hash)?;
     match entry.as_app_entry() {
         Some(app_entry) => {
-            let _: crate::gpg_key_dist::GpgKeyDist = match app_entry.clone().into_sb().try_into() {
-                Ok(gpg_key) => gpg_key,
-                Err(_) => {
-                    return Ok(ValidateCallbackResult::Invalid(format!(
-                        "The target for {:?} must be a {}",
-                        link_type,
-                        std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
-                    )));
-                }
-            };
+            match <SerializedBytes as TryInto<crate::gpg_key_dist::GpgKeyDist>>::try_into(
+                app_entry.clone().into_sb(),
+            ) {
+                Ok(_) => Ok(ValidateCallbackResult::Valid),
+                Err(_) => Ok(ValidateCallbackResult::Invalid(format!(
+                    "The target for {:?} must be a {}",
+                    link_type,
+                    std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
+                ))),
+            }
         }
-        None => {
-            return Ok(ValidateCallbackResult::Invalid(format!(
-                "The target for {:?} must be an app entry",
-                link_type
-            )));
-        }
+        None => Ok(ValidateCallbackResult::Invalid(format!(
+            "The target for {:?} must be an app entry",
+            link_type
+        ))),
     }
-
-    Ok(ValidateCallbackResult::Valid)
 }

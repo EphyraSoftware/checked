@@ -38,8 +38,8 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
         expires_at: summary.expires_at,
     }))?;
 
-    let record = get(gpg_key_dist_hash.clone(), GetOptions::default())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from("Could not find the newly created GpgKey"))
+    let record = get(gpg_key_dist_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest(String::from("Could not find the newly created GpgKeyDist"))
     ))?;
 
     let entry_hash = record
@@ -62,8 +62,6 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
             (),
         )?;
     }
-
-    tracing::info!("Fingerprint: {}", summary.fingerprint);
 
     create_link(
         make_base_hash(summary.fingerprint)?,
@@ -118,8 +116,6 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
 
     links.extend(email_links);
     links.extend(fingerprint_links.clone());
-
-    tracing::info!("Found {} links and {} by fingerprint", links.len(), fingerprint_links.len());
 
     let mut out = Vec::with_capacity(links.len());
     for target in links

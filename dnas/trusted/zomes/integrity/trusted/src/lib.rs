@@ -1,10 +1,11 @@
 pub(crate) mod gpg_key_dist;
+pub(crate) mod key_collection;
 
 use hdi::prelude::*;
-use prelude::validate_create_gpg_key_dist_link;
 
 pub mod prelude {
     pub use crate::gpg_key_dist::*;
+    pub use crate::key_collection::*;
     pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
 }
@@ -15,6 +16,8 @@ pub mod prelude {
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
     GpgKeyDist(gpg_key_dist::GpgKeyDist),
+    #[entry_type(visibility = "private")]
+    KeyCollection(key_collection::KeyCollection),
 }
 
 #[hdk_link_types]
@@ -22,6 +25,7 @@ pub enum LinkTypes {
     UserIdToGpgKeyDist,
     EmailToGpgKeyDist,
     FingerprintToGpgKeyDist,
+    KeyCollection,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -69,6 +73,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Create(action),
                     gpg_key,
                 ),
+                EntryTypes::KeyCollection(key_collection) => {
+                    key_collection::validate_create_key_collection(EntryCreationAction::Create(action), key_collection)
+                }
             },
             OpEntry::UpdateEntry {
                 app_entry, action, ..
@@ -77,6 +84,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Update(action),
                     gpg_key,
                 ),
+                _ => {
+                    Ok(ValidateCallbackResult::Invalid("todo: update entry".to_string()))
+                }
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -95,6 +105,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         original_gpg_key,
                     )
                 }
+                _ => Ok(ValidateCallbackResult::Invalid("todo: register update".to_string())),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -107,19 +118,25 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 EntryTypes::GpgKeyDist(gpg_key) => {
                     gpg_key_dist::validate_delete_gpg_key_dist(action, original_action, gpg_key)
                 }
+                _ => Ok(ValidateCallbackResult::Invalid("todo: register delete".to_string())),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
         FlatOp::RegisterCreateLink {
-            link_type,
+            base_address,
             target_address,
+            link_type,
+            action,
             ..
         } => match link_type {
             LinkTypes::FingerprintToGpgKeyDist
             | LinkTypes::UserIdToGpgKeyDist
             | LinkTypes::EmailToGpgKeyDist => {
-                validate_create_gpg_key_dist_link(target_address, link_type)
+                gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
             }
+            LinkTypes::KeyCollection => {
+                key_collection::validate_key_collection_link(action, base_address, target_address, link_type)
+            },
         },
         FlatOp::RegisterDeleteLink { .. } => Ok(ValidateCallbackResult::Invalid(String::from(
             "There are no link types in this integrity zome",
@@ -134,6 +151,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         EntryCreationAction::Create(action),
                         gpg_key,
                     ),
+                    _ => Ok(ValidateCallbackResult::Invalid("todo: store record".to_string())),
                 },
                 // Complementary validation to the `RegisterUpdate` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `StoreEntry` and in `RegisterUpdate`
@@ -189,6 +207,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 Ok(result)
                             }
                         }
+                        _ => Ok(ValidateCallbackResult::Invalid("todo".to_string())),
                     }
                 }
                 // Complementary validation to the `RegisterDelete` Op, in which the record itself is validated
@@ -255,20 +274,26 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 original_gpg_key,
                             )
                         }
+                        _ => Ok(ValidateCallbackResult::Invalid("todo".to_string())),
                     }
                 }
                 // Complementary validation to the `RegisterCreateLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterCreateLink`
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `RegisterCreateLink` validation failed
                 OpRecord::CreateLink {
+                    base_address,
                     target_address,
                     link_type,
+                    action,
                     ..
                 } => match link_type {
                     LinkTypes::FingerprintToGpgKeyDist
                     | LinkTypes::UserIdToGpgKeyDist
                     | LinkTypes::EmailToGpgKeyDist => {
-                        validate_create_gpg_key_dist_link(target_address, link_type)
+                        gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
+                    }
+                    LinkTypes::KeyCollection => {
+                        key_collection::validate_key_collection_link(action, base_address, target_address, link_type)
                     }
                 },
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated

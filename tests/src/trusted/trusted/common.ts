@@ -28,3 +28,11 @@ export async function distributeGpgKey(cell: CallableCell, gpgKey: string): Prom
       },
     });
 }
+
+export async function createKeyCollection(cell: CallableCell, name: string): Promise<Record> {
+    return cell.callZome({
+      zome_name: "trusted",
+      fn_name: "create_key_collection",
+      payload: { name },
+    });
+}
