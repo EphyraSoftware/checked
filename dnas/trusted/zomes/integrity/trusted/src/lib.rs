@@ -74,7 +74,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     gpg_key,
                 ),
                 EntryTypes::KeyCollection(key_collection) => {
-                    key_collection::validate_create_key_collection(EntryCreationAction::Create(action), key_collection)
+                    key_collection::validate_create_key_collection(
+                        EntryCreationAction::Create(action),
+                        key_collection,
+                    )
                 }
             },
             OpEntry::UpdateEntry {
@@ -84,9 +87,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     EntryCreationAction::Update(action),
                     gpg_key,
                 ),
-                _ => {
-                    Ok(ValidateCallbackResult::Invalid("todo: update entry".to_string()))
-                }
+                _ => Ok(ValidateCallbackResult::Invalid(
+                    "todo: update entry".to_string(),
+                )),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -105,7 +108,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         original_gpg_key,
                     )
                 }
-                _ => Ok(ValidateCallbackResult::Invalid("todo: register update".to_string())),
+                _ => Ok(ValidateCallbackResult::Invalid(
+                    "todo: register update".to_string(),
+                )),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -118,7 +123,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 EntryTypes::GpgKeyDist(gpg_key) => {
                     gpg_key_dist::validate_delete_gpg_key_dist(action, original_action, gpg_key)
                 }
-                _ => Ok(ValidateCallbackResult::Invalid("todo: register delete".to_string())),
+                _ => Ok(ValidateCallbackResult::Invalid(
+                    "todo: register delete".to_string(),
+                )),
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
@@ -134,9 +141,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             | LinkTypes::EmailToGpgKeyDist => {
                 gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
             }
-            LinkTypes::KeyCollection => {
-                key_collection::validate_key_collection_link(action, base_address, target_address, link_type)
-            },
+            LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
+                action,
+                base_address,
+                target_address,
+                link_type,
+            ),
         },
         FlatOp::RegisterDeleteLink { .. } => Ok(ValidateCallbackResult::Invalid(String::from(
             "There are no link types in this integrity zome",
@@ -151,7 +161,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         EntryCreationAction::Create(action),
                         gpg_key,
                     ),
-                    _ => Ok(ValidateCallbackResult::Invalid("todo: store record".to_string())),
+                    _ => Ok(ValidateCallbackResult::Invalid(
+                        "todo: store record".to_string(),
+                    )),
                 },
                 // Complementary validation to the `RegisterUpdate` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `StoreEntry` and in `RegisterUpdate`
@@ -292,9 +304,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     | LinkTypes::EmailToGpgKeyDist => {
                         gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
                     }
-                    LinkTypes::KeyCollection => {
-                        key_collection::validate_key_collection_link(action, base_address, target_address, link_type)
-                    }
+                    LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
+                        action,
+                        base_address,
+                        target_address,
+                        link_type,
+                    ),
                 },
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterDeleteLink`

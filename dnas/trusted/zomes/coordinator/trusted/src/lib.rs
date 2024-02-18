@@ -1,6 +1,6 @@
 mod gpg_key_dist;
-mod key_collection;
 mod gpg_util;
+mod key_collection;
 
 use hdk::prelude::*;
 use trusted_integrity::*;

@@ -95,7 +95,9 @@ pub fn validate_key_collection_link(
     let entry = must_get_entry(entry_hash)?;
     match entry.as_app_entry() {
         Some(app_entry) => {
-            match <SerializedBytes as TryInto<crate::key_collection::KeyCollection>>::try_into(app_entry.clone().into_sb()) {
+            match <SerializedBytes as TryInto<crate::key_collection::KeyCollection>>::try_into(
+                app_entry.clone().into_sb(),
+            ) {
                 Ok(_) => Ok(ValidateCallbackResult::Valid),
                 Err(_) => Ok(ValidateCallbackResult::Invalid(format!(
                     "The target for {:?} must be a {}",
