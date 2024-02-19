@@ -55,5 +55,4 @@ export interface SearchKeysRequest {
 
 export interface KeyCollection {
   name: string;
-  keys: object[];
 }

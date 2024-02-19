@@ -1,5 +1,5 @@
 import { AppAgentClient } from "@holochain/client";
-import { StoreKeyCollection } from "./store/key-collections-store";
+import { KeyCollectionWithKeys } from "./store/key-collections-store";
 import { GpgKeyDist } from "./trusted/trusted/types";
 
 export const registerSignalHandler = (
@@ -12,7 +12,7 @@ export const registerSignalHandler = (
       pushGpgKeyDist: (key: GpgKeyDist) => void;
     };
     keyCollectionsStore: {
-      pushKeyCollection: (collection: StoreKeyCollection) => void;
+      pushKeyCollection: (collection: KeyCollectionWithKeys) => void;
     };
   }>,
 ) => {
@@ -40,6 +40,7 @@ export const registerSignalHandler = (
           }
 
           delete app_entry.type;
+          app_entry["keys"] = [];
           keyCollectionsStore.pushKeyCollection(app_entry);
         }
       }

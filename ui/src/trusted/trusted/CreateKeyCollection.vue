@@ -3,6 +3,10 @@ import { AppAgentClient } from "@holochain/client";
 import { ComputedRef, inject, ref } from "vue";
 import { useNotificationsStore } from "../../store/notifications-store";
 
+const emit = defineEmits<{
+  (e: "created", name: string): void;
+}>();
+
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
 const notifications = useNotificationsStore();
@@ -25,6 +29,7 @@ const createKeyCollection = async () => {
         name: keyCollectionName.value,
       },
     });
+    emit("created", keyCollectionName.value);
 
     keyCollectionName.value = "";
   } catch (e: any) {
@@ -40,9 +45,6 @@ const createKeyCollection = async () => {
 </script>
 
 <template>
-  <div>
-    <h1>Create Key Collection</h1>
-  </div>
   <form @submit="(e) => e.preventDefault()">
     <div class="join flex w-full">
       <input

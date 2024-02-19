@@ -1,3 +1,4 @@
+use crate::gpg_key_dist::make_base_hash;
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
@@ -70,8 +71,123 @@ fn check_key_collection_create(key_collection: &KeyCollection) -> ExternResult<(
     Ok(())
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct KeyCollectionWithKeys {
+    pub name: String,
+    pub gpg_keys: Vec<GpgKeyDist>,
+}
+
 #[hdk_extern]
-pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<Record>> {
+pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>> {
+    let mut key_collections = Vec::new();
+    for (entry_hash, record) in get_key_collections()? {
+        let mut key_collection = KeyCollectionWithKeys {
+            // TODO If it worked, walidation would ensure these are all KeyCollections, so this could not fail
+            name: record
+                .entry()
+                .as_option()
+                .and_then(|e| e.as_app_entry())
+                .and_then(|e| {
+                    let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
+                    Some(key_collection.name)
+                })
+                .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+                    "Could not convert entry to KeyCollection"
+                ))))?,
+            gpg_keys: Vec::new(),
+        };
+
+        let linked_keys = get_links(
+            GetLinksInputBuilder::try_new(entry_hash, LinkTypes::KeyCollectionToGpgKeyDist)?
+                .build(),
+        )?;
+
+        for link in linked_keys {
+            let gpg_key_dist: Option<GpgKeyDist> = get(
+                <AnyLinkableHash as TryInto<AnyDhtHash>>::try_into(link.target).map_err(|_| {
+                    wasm_error!(WasmErrorInner::Guest(String::from("Not a DHT hash")))
+                })?,
+                GetOptions::content(),
+            )?
+            .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+                "Could not find the GpgKeyDist"
+            ))))?
+            .entry()
+            .as_option()
+            .and_then(|e| e.as_app_entry())
+            .and_then(|e| e.clone().into_sb().try_into().ok());
+
+            if let Some(gpg_key_dist) = gpg_key_dist {
+                key_collection.gpg_keys.push(gpg_key_dist);
+            }
+        }
+
+        key_collections.push(key_collection);
+    }
+
+    Ok(key_collections)
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct LinkGpgKeyToKeyCollectionRequest {
+    pub gpg_key_fingerprint: String,
+    pub key_collection_name: String,
+}
+
+// TODO prevent duplicate links? Could also be done in the UI fairly easily
+#[hdk_extern]
+pub fn link_gpg_key_to_key_collection(
+    request: LinkGpgKeyToKeyCollectionRequest,
+) -> ExternResult<ActionHash> {
+    let fingerprint_links = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(request.gpg_key_fingerprint)?,
+            LinkTypes::FingerprintToGpgKeyDist,
+        )?
+        .build(),
+    )?;
+
+    if fingerprint_links.is_empty() {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "No GPG key found with the given fingerprint"
+        ))));
+    }
+
+    if fingerprint_links.len() > 1 {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Multiple GPG keys found with the given fingerprint"
+        ))));
+    }
+
+    // Target is the entry hash of the GpgKeyDist
+    let fingerprint_link = fingerprint_links[0].clone();
+
+    let my_key_collections = get_key_collections()?;
+
+    let matched_collection = my_key_collections.into_iter().find(|(_, r)| {
+        r.entry
+            .as_option()
+            .and_then(|e| e.as_app_entry())
+            .and_then(|e| {
+                let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
+                Some(key_collection.name == request.key_collection_name)
+            })
+            .unwrap_or(false)
+    });
+
+    let key_collection = matched_collection.ok_or(wasm_error!(WasmErrorInner::Guest(
+        String::from("No key collection found with the given name")
+    )))?;
+
+    create_link(
+        key_collection.0,
+        fingerprint_link.target,
+        LinkTypes::KeyCollectionToGpgKeyDist,
+        (),
+    )
+}
+
+fn get_key_collections() -> ExternResult<Vec<(EntryHash, Record)>> {
     let my_agent_info = agent_info()?;
     let key_collection_links = get_links(
         GetLinksInputBuilder::try_new(my_agent_info.agent_latest_pubkey, LinkTypes::KeyCollection)?
@@ -85,12 +201,13 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<Record>> {
                 "Could not convert link target to EntryHash"
             )))
         })?;
-        let record = get(entry_hash, GetOptions::content())?.ok_or(wasm_error!(
+        let record = get(entry_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
             WasmErrorInner::Guest(String::from("Could not find the KeyCollection"))
         ))?;
-        // No need to type check these records, validation ensures they are all KeyCollections
-        records.push(record);
+
+        records.push((entry_hash, record));
     }
 
     Ok(records)
 }
+

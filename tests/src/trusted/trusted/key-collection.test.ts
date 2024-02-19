@@ -55,7 +55,7 @@ test('Get my key collections', async () => {
             assert.ok(record);
         }
 
-        const key_collections: Record[] = await alice.cells[0].callZome({
+        const key_collections: object[] = await alice.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "get_my_key_collections",
             payload: null,

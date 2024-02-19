@@ -5,10 +5,12 @@ import { GpgKeyDist, SearchKeysRequest } from "./types";
 import { decode } from "@msgpack/msgpack";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
+import AddKeyToCollection from "./AddKeyToCollection.vue";
 
 const searchQuery = ref("");
 const searching = ref(false);
 const results = ref<GpgKeyDist[]>([]);
+const selectedKeyForAdd = ref<GpgKeyDist | null>(null);
 
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
@@ -47,38 +49,47 @@ const searchKeys = async () => {
     }, 500);
   }
 };
+
+const onAddKey = (key: GpgKeyDist) => {
+  selectedKeyForAdd.value = key;
+};
 </script>
 
 <template>
-  <p>Search for keys by user id, email or fingerprint.</p>
-  <p class="text-sm italic">
-    An exact match is required for all fields and the fingerprint should be in
-    upper-case hex.
-  </p>
+  <template v-if="!selectedKeyForAdd">
+    <p>Search for keys by user id, email or fingerprint.</p>
+    <p class="text-sm italic">
+      An exact match is required for all fields and the fingerprint should be in
+      upper-case hex.
+    </p>
 
-  <form @submit="(e) => e.preventDefault()">
-    <div class="join flex w-full">
-      <input
-        type="text"
-        class="input input-bordered join-item grow"
-        placeholder="Search"
-        name="search-for-keys"
-        id="search-for-keys"
-        v-model="searchQuery"
-      />
-      <button
-        class="btn btn-primary join-item min-w-24"
-        @click="searchKeys"
-        :disabled="!searchQuery"
-      >
-        <span v-if="searching" class="loading loading-spinner"></span>
-        <span v-else>Search</span>
-      </button>
+    <form @submit="(e) => e.preventDefault()">
+      <div class="join flex w-full">
+        <input type="text" class="input input-bordered join-item grow" placeholder="Search" name="search-for-keys"
+          id="search-for-keys" v-model="searchQuery" />
+        <button class="btn btn-primary join-item min-w-24" @click="searchKeys" :disabled="!searchQuery">
+          <span v-if="searching" class="loading loading-spinner"></span>
+          <span v-else>Search</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="mt-5">
+      <p>Search results</p>
+      <KeyList :keys="results" :readonly="false" @add-key="onAddKey"></KeyList>
     </div>
-  </form>
-
-  <div class="mt-5">
-    <p>Search results</p>
-    <KeyList :keys="results"></KeyList>
-  </div>
+  </template>
+  <template v-else>
+    <div class="flex">
+      <div class="grow">
+        <p class="text-lg">Add key to a collection?</p>
+        <p>You should only add keys you trust!</p>
+      </div>
+      <div>
+        <button class="btn btn-accent" @click="selectedKeyForAdd = null">Cancel</button>
+      </div>
+    </div>
+    
+    <AddKeyToCollection :selected-key="selectedKeyForAdd"></AddKeyToCollection>
+  </template>
 </template>

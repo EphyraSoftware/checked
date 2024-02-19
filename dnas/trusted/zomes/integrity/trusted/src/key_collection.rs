@@ -1,5 +1,6 @@
 use hdi::prelude::*;
 
+use crate::prelude::GpgKeyDist;
 use crate::LinkTypes;
 use crate::UnitEntryTypes;
 
@@ -118,4 +119,42 @@ pub fn validate_key_collection_link(
     // would translate into a bound on the number of links we have to store. As it is we will just keep accepting links regardless of their value...
 
     Ok(ValidateCallbackResult::Valid)
+}
+
+pub fn validate_key_collection_to_gpg_key_dist_link(
+    target_address: AnyLinkableHash,
+    link_type: LinkTypes,
+) -> ExternResult<ValidateCallbackResult> {
+    // Base address should be an entry hash for a key collection, as above, can't validate those properly
+
+    let gpg_key_dist_hash: EntryHash = match target_address.clone().try_into() {
+        Ok(entry_hash) => entry_hash,
+        Err(_) => {
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The target address for {:?} must be an entry hash",
+                link_type
+            )));
+        }
+    };
+
+    let maybe_gpg_key_dist_entry = must_get_entry(gpg_key_dist_hash)?;
+
+    match maybe_gpg_key_dist_entry.as_app_entry() {
+        Some(app_entry) => {
+            match <SerializedBytes as TryInto<crate::gpg_key_dist::GpgKeyDist>>::try_into(
+                app_entry.clone().into_sb(),
+            ) {
+                Ok(_) => Ok(ValidateCallbackResult::Valid),
+                Err(_) => Ok(ValidateCallbackResult::Invalid(format!(
+                    "The target for {:?} must be a {}",
+                    link_type,
+                    std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
+                ))),
+            }
+        }
+        None => Ok(ValidateCallbackResult::Invalid(format!(
+            "The target for {:?} must be an app entry",
+            link_type
+        ))),
+    }
 }

@@ -135,7 +135,7 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
     Ok(out)
 }
 
-fn make_base_hash(input: String) -> ExternResult<EntryHash> {
+pub fn make_base_hash(input: String) -> ExternResult<EntryHash> {
     hash_entry(Entry::App(
         AppEntryBytes::try_from(SerializedBytes::from(UnsafeBytes::from(
             input.as_bytes().to_vec(),

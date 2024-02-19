@@ -132,7 +132,8 @@ const distributeGpgKey = async () => {
 
   <div v-if="selected.fingerprint" class="mt-5">
     <p>Selected key</p>
-    <KeyList :keys="[selected]" :readonly="true"></KeyList>
+    <!-- We know it's a partial, assume the KeyList component can handle that -->
+    <KeyList :keys="[selected as GpgKeyDist]" :readonly="true"></KeyList>
   </div>
 
   <div class="flex justify-center my-3">

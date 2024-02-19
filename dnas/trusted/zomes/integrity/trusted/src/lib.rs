@@ -26,6 +26,7 @@ pub enum LinkTypes {
     EmailToGpgKeyDist,
     FingerprintToGpgKeyDist,
     KeyCollection,
+    KeyCollectionToGpgKeyDist,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -144,6 +145,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
                 action,
                 base_address,
+                target_address,
+                link_type,
+            ),
+            LinkTypes::KeyCollectionToGpgKeyDist => key_collection::validate_key_collection_to_gpg_key_dist_link(
                 target_address,
                 link_type,
             ),
@@ -307,6 +312,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
                         action,
                         base_address,
+                        target_address,
+                        link_type,
+                    ),
+                    LinkTypes::KeyCollectionToGpgKeyDist => key_collection::validate_key_collection_to_gpg_key_dist_link(
                         target_address,
                         link_type,
                     ),
