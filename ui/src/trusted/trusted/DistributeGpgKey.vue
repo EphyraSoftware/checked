@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import { inject, ComputedRef, ref, computed } from "vue";
-import { AppAgentClient, Record } from "@holochain/client";
+import { AppAgentClient } from "@holochain/client";
 import { DistributeGpgKeyRequest, GpgKeyDist } from "./types";
 import { readKey } from "openpgp";
-import { useMyKeysStore } from "../../store/my-keys-store";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
-
-const emit = defineEmits<{
-  (e: "gpg-key-dist-created", hash: Uint8Array): void;
-}>();
 
 const selected = ref<Partial<GpgKeyDist>>({});
 const creating = ref(false);
@@ -18,7 +13,6 @@ const inputField = ref<HTMLElement | null>(null);
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
 const notifications = useNotificationsStore();
-const myKeysStore = useMyKeysStore();
 
 const isGpgKeyValid = computed(() => {
   return true && selected.value.fingerprint;
@@ -103,16 +97,13 @@ const distributeGpgKey = async () => {
       public_key: selected.value.public_key,
     };
 
-    const record: Record = await client.value.callZome({
+    await client.value.callZome({
       cap_secret: null,
       role_name: "trusted",
       zome_name: "trusted",
       fn_name: "distribute_gpg_key",
       payload: distributeGpgKeyRequest,
     });
-    emit("gpg-key-dist-created", record.signed_action.hashed.hash);
-
-    myKeysStore.insertRecord(record);
 
     resetForm();
   } catch (e: any) {
@@ -127,7 +118,7 @@ const distributeGpgKey = async () => {
 </script>
 
 <template>
-  <p class="text-lg">Distribute GPG public key</p>
+  <p class="text-lg">Distribute your GPG public key</p>
 
   <div class="flex justify-center my-3">
     <input

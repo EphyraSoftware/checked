@@ -113,9 +113,7 @@ onMounted(async () => {
         <div class="container mx-auto mt-5">
           <MyKeys></MyKeys>
           <div class="mt-5">
-            <DistributeGpgKey
-              @gpg-key-dist-created="() => {}"
-            ></DistributeGpgKey>
+            <DistributeGpgKey></DistributeGpgKey>
           </div>
           <KeyCollections></KeyCollections>
           <CreateKeyCollection></CreateKeyCollection>

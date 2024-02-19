@@ -21,8 +21,6 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
 
   const client = inject("client") as ComputedRef<AppAgentClient>;
   const loadKeyCollections = async (client: AppAgentClient) => {
-    console.log("loading key collections");
-
     const r: Record[] = await client.callZome({
       role_name: "trusted",
       zome_name: "trusted",
