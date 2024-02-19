@@ -2,6 +2,7 @@
 import { useMyKeysStore } from "../store/my-keys-store";
 import { formatDistanceToNow } from "date-fns";
 import { GpgKeyDist } from "../trusted/trusted/types";
+import { ref } from "vue";
 
 defineProps<{
   keys: GpgKeyDist[];
@@ -14,14 +15,24 @@ const emit = defineEmits<{
 
 const myKeysStore = useMyKeysStore();
 
+const copied = ref(false);
+
 const isMine = (keyDist: GpgKeyDist) => {
   return myKeysStore.myKeys.some((r) => r.fingerprint === keyDist.fingerprint);
+};
+
+const copyFingerprint = (keyDist: GpgKeyDist) => {
+  navigator.clipboard.writeText(keyDist.fingerprint);
+  copied.value = true;
+
+  setTimeout(() => {
+    copied.value = false;
+  }, 1200);
 };
 </script>
 
 <template>
   <table class="table">
-    <!-- head -->
     <thead>
       <tr>
         <th>Name</th>
@@ -36,7 +47,14 @@ const isMine = (keyDist: GpgKeyDist) => {
         <td>{{ k.name }}</td>
         <td>{{ k.email ?? "-" }}</td>
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
-        <td>{{ k.fingerprint }}</td>
+
+        <td class="cursor-pointer" @click="copyFingerprint(k)">
+          <span class="mr-2">{{ k.fingerprint }}</span>
+          <span :class="{ 'text-success': copied, 'p-2': true }">
+            <font-awesome-icon v-if="!copied" icon="fa-regular fa-clipboard" size="lg" />
+            <font-awesome-icon v-else icon="fa-regular fa-check-circle" size="lg" />
+          </span>
+        </td>
         <td v-if="!readonly">
           <p v-if="isMine(k)" class="font-bold text-primary">Mine</p>
           <div v-else>
