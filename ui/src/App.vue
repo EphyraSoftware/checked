@@ -43,7 +43,6 @@ onMounted(async () => {
 //     (client.value as AppAgentWebsocket).appWebsocket.client.close();
 //   }
 // };
-
 </script>
 
 <template>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { AppAgentClient } from '@holochain/client';
-import { ComputedRef, inject, ref } from 'vue';
-import { useNotificationsStore } from '../../store/notifications-store';
+import { AppAgentClient } from "@holochain/client";
+import { ComputedRef, inject, ref } from "vue";
+import { useNotificationsStore } from "../../store/notifications-store";
 
-const client = inject('client') as ComputedRef<AppAgentClient>;
+const client = inject("client") as ComputedRef<AppAgentClient>;
 
 const notifications = useNotificationsStore();
 
-const keyCollectionName = ref('');
+const keyCollectionName = ref("");
 const creating = ref(false);
 
 const createKeyCollection = async () => {
@@ -18,15 +18,15 @@ const createKeyCollection = async () => {
   try {
     client.value.callZome({
       cap_secret: null,
-      role_name: 'trusted',
-      zome_name: 'trusted',
-      fn_name: 'create_key_collection',
+      role_name: "trusted",
+      zome_name: "trusted",
+      fn_name: "create_key_collection",
       payload: {
         name: keyCollectionName.value,
-      }
+      },
     });
 
-    keyCollectionName.value = '';
+    keyCollectionName.value = "";
   } catch (e: any) {
     notifications.pushNotification({
       message: `Error creating key collection - ${e}`,
@@ -36,15 +36,14 @@ const createKeyCollection = async () => {
   } finally {
     creating.value = false;
   }
-}
-
+};
 </script>
 
 <template>
   <div>
     <h1>Create Key Collection</h1>
   </div>
-  <form @submit="e => e.preventDefault()">
+  <form @submit="(e) => e.preventDefault()">
     <div class="join flex w-full">
       <input
         type="text"

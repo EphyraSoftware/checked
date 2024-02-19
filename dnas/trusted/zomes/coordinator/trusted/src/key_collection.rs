@@ -21,7 +21,7 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
             .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?
             .clone(),
     )?;
-        let my_agent_info = agent_info()?;
+    let my_agent_info = agent_info()?;
     create_link(
         my_agent_info.agent_latest_pubkey,
         entry_hash,
