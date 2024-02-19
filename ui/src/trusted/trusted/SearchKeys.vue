@@ -106,6 +106,9 @@ const onKeyAddded = () => {
       </div>
     </div>
 
-    <AddKeyToCollection :selected-key="selectedKeyForAdd" @added="onKeyAddded"></AddKeyToCollection>
+    <AddKeyToCollection
+      :selected-key="selectedKeyForAdd"
+      @added="onKeyAddded"
+    ></AddKeyToCollection>
   </template>
 </template>

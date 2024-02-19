@@ -29,7 +29,7 @@ export const registerSignalHandler = (
           app_entry["gpg_keys"] = [];
           keyCollectionsStore.pushKeyCollection(app_entry);
         } else {
-            console.warn("Unknown signal type", signal);
+          console.warn("Unknown signal type", signal);
         }
       }
     }

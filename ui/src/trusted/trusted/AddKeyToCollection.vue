@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'added'): void;
+  (e: "added"): void;
 }>();
 
 const client = inject("client") as ComputedRef<AppAgentClient>;

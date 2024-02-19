@@ -7,7 +7,6 @@ import SearchKeys from "./trusted/trusted/SearchKeys.vue";
 import NotifyContainer from "./component/NotifyContainer.vue";
 import { useThemeStore } from "./store/theme-store";
 import SettingsEditor from "./component/SettingsEditor.vue";
-import CreateKeyCollection from "./trusted/trusted/CreateKeyCollection.vue";
 import KeyCollections from "./trusted/trusted/KeyCollections.vue";
 
 const themeStore = useThemeStore();
