@@ -21,13 +21,19 @@ export const registerSignalHandler = (
     if (signal.zome_name === "trusted") {
       if ((signal.payload as any).type === "EntryCreated") {
         const app_entry = (signal.payload as any).app_entry;
-        if (app_entry.type === "GpgKeyDist" && myKeysStore) {
-          delete app_entry.type;
-          myKeysStore.pushGpgKeyDist(app_entry);
-        } else if (app_entry.type === "KeyCollection" && keyCollectionsStore) {
-          delete app_entry.type;
-          app_entry["gpg_keys"] = [];
-          keyCollectionsStore.pushKeyCollection(app_entry);
+        if (app_entry.type === "GpgKeyDist") {
+          if (myKeysStore) {
+            const content = JSON.parse(JSON.stringify(app_entry));
+            delete content.type;
+            myKeysStore.pushGpgKeyDist(content);
+          }
+        } else if (app_entry.type === "KeyCollection") {
+          if (keyCollectionsStore) {
+            const content = JSON.parse(JSON.stringify(app_entry));
+            delete content.type;
+            content["gpg_keys"] = [];
+            keyCollectionsStore.pushKeyCollection(content);
+          }
         } else {
           console.warn("Unknown signal type", signal);
         }
