@@ -148,10 +148,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 target_address,
                 link_type,
             ),
-            LinkTypes::KeyCollectionToGpgKeyDist => key_collection::validate_key_collection_to_gpg_key_dist_link(
-                target_address,
-                link_type,
-            ),
+            LinkTypes::KeyCollectionToGpgKeyDist => {
+                key_collection::validate_key_collection_to_gpg_key_dist_link(
+                    target_address,
+                    link_type,
+                )
+            }
         },
         FlatOp::RegisterDeleteLink { .. } => Ok(ValidateCallbackResult::Invalid(String::from(
             "There are no link types in this integrity zome",
@@ -315,10 +317,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         target_address,
                         link_type,
                     ),
-                    LinkTypes::KeyCollectionToGpgKeyDist => key_collection::validate_key_collection_to_gpg_key_dist_link(
-                        target_address,
-                        link_type,
-                    ),
+                    LinkTypes::KeyCollectionToGpgKeyDist => {
+                        key_collection::validate_key_collection_to_gpg_key_dist_link(
+                            target_address,
+                            link_type,
+                        )
+                    }
                 },
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterDeleteLink`

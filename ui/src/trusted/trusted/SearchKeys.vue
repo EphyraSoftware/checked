@@ -65,9 +65,19 @@ const onAddKey = (key: GpgKeyDist) => {
 
     <form @submit="(e) => e.preventDefault()">
       <div class="join flex w-full">
-        <input type="text" class="input input-bordered join-item grow" placeholder="Search" name="search-for-keys"
-          id="search-for-keys" v-model="searchQuery" />
-        <button class="btn btn-primary join-item min-w-24" @click="searchKeys" :disabled="!searchQuery">
+        <input
+          type="text"
+          class="input input-bordered join-item grow"
+          placeholder="Search"
+          name="search-for-keys"
+          id="search-for-keys"
+          v-model="searchQuery"
+        />
+        <button
+          class="btn btn-primary join-item min-w-24"
+          @click="searchKeys"
+          :disabled="!searchQuery"
+        >
           <span v-if="searching" class="loading loading-spinner"></span>
           <span v-else>Search</span>
         </button>
@@ -86,10 +96,12 @@ const onAddKey = (key: GpgKeyDist) => {
         <p>You should only add keys you trust!</p>
       </div>
       <div>
-        <button class="btn btn-accent" @click="selectedKeyForAdd = null">Cancel</button>
+        <button class="btn btn-accent" @click="selectedKeyForAdd = null">
+          Cancel
+        </button>
       </div>
     </div>
-    
+
     <AddKeyToCollection :selected-key="selectedKeyForAdd"></AddKeyToCollection>
   </template>
 </template>

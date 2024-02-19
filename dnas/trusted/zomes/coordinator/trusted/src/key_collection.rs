@@ -210,4 +210,3 @@ fn get_key_collections() -> ExternResult<Vec<(EntryHash, Record)>> {
 
     Ok(records)
 }
-

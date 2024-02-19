@@ -9,7 +9,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'add-key', key: GpgKeyDist): void;
+  (e: "add-key", key: GpgKeyDist): void;
 }>();
 
 const myKeysStore = useMyKeysStore();
@@ -40,7 +40,9 @@ const isMine = (keyDist: GpgKeyDist) => {
         <td v-if="!readonly">
           <p v-if="isMine(k)" class="font-bold text-primary">Mine</p>
           <div v-else>
-            <button class="btn btn-primary" @click="() => emit('add-key', k)">Add</button>
+            <button class="btn btn-primary" @click="() => emit('add-key', k)">
+              Add
+            </button>
           </div>
         </td>
       </tr>

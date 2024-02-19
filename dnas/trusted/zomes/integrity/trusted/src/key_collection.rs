@@ -1,6 +1,5 @@
 use hdi::prelude::*;
 
-use crate::prelude::GpgKeyDist;
 use crate::LinkTypes;
 use crate::UnitEntryTypes;
 
