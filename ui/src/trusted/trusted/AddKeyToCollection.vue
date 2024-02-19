@@ -11,6 +11,10 @@ const props = defineProps<{
   selectedKey: GpgKeyDist;
 }>();
 
+const emit = defineEmits<{
+  (e: 'added'): void;
+}>();
+
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
 const keyCollectionsStore = useKeyCollectionsStore();
@@ -75,6 +79,8 @@ const addKeyToCollection = () => {
       selectedCollection.value,
       props.selectedKey,
     );
+
+    emit("added");
 
     notificationsStore.pushNotification({
       message: `Key added to collection '${selectedCollection.value}'`,

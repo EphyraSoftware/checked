@@ -53,6 +53,10 @@ const searchKeys = async () => {
 const onAddKey = (key: GpgKeyDist) => {
   selectedKeyForAdd.value = key;
 };
+
+const onKeyAddded = () => {
+  selectedKeyForAdd.value = null;
+};
 </script>
 
 <template>
@@ -102,6 +106,6 @@ const onAddKey = (key: GpgKeyDist) => {
       </div>
     </div>
 
-    <AddKeyToCollection :selected-key="selectedKeyForAdd"></AddKeyToCollection>
+    <AddKeyToCollection :selected-key="selectedKeyForAdd" @added="onKeyAddded"></AddKeyToCollection>
   </template>
 </template>

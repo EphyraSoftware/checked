@@ -11,12 +11,10 @@ export const useThemeStore = defineStore("theme", () => {
 
   const stored = localStorage.getItem("theme");
   if (stored) {
-    console.log("recover from stored", stored);
     theme.value = stored as Theme;
   }
 
   const setTheme = (newTheme: Theme) => {
-    console.log("do set theme", newTheme);
     theme.value = newTheme;
     localStorage.setItem("theme", newTheme);
   };

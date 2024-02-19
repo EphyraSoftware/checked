@@ -116,7 +116,6 @@ onMounted(async () => {
             <DistributeGpgKey></DistributeGpgKey>
           </div>
           <KeyCollections></KeyCollections>
-          <CreateKeyCollection></CreateKeyCollection>
         </div>
       </div>
       <div v-else-if="showScreen === 'settings'">

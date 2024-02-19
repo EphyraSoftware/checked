@@ -7,9 +7,7 @@ const themeStore = useThemeStore();
 const themeToggle = ref(!themeStore.isDefault);
 
 watch(themeToggle, (newVal) => {
-  console.log("set theme", newVal);
   if (newVal) {
-    console.log("call set theme");
     themeStore.setTheme(Theme.Luxury);
   } else {
     themeStore.setTheme(Theme.Bumblebee);

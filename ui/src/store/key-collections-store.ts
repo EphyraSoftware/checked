@@ -35,8 +35,6 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
       cap_secret: null,
     });
 
-    console.log("loaded key collections", collections);
-
     keyCollections.value = [...collections, ...keyCollections.value];
   };
 
