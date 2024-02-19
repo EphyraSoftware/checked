@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const myKeysStore = useMyKeysStore();
 
-const copied = ref(false);
+const copied = ref<string | null>(null);
 
 const isMine = (keyDist: GpgKeyDist) => {
   return myKeysStore.myKeys.some((r) => r.fingerprint === keyDist.fingerprint);
@@ -23,10 +23,10 @@ const isMine = (keyDist: GpgKeyDist) => {
 
 const copyFingerprint = (keyDist: GpgKeyDist) => {
   navigator.clipboard.writeText(keyDist.fingerprint);
-  copied.value = true;
+  copied.value = keyDist.fingerprint;
 
   setTimeout(() => {
-    copied.value = false;
+    copied.value = null;
   }, 1200);
 };
 </script>
@@ -48,11 +48,11 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
         <td>{{ k.email ?? "-" }}</td>
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
 
-        <td class="cursor-pointer" @click="copyFingerprint(k)">
+        <td class="cursor-pointer font-mono" @click="copyFingerprint(k)">
           <span class="mr-2">{{ k.fingerprint }}</span>
-          <span :class="{ 'text-success': copied, 'p-2': true }">
-            <font-awesome-icon v-if="!copied" icon="fa-regular fa-clipboard" size="lg" />
-            <font-awesome-icon v-else icon="fa-regular fa-check-circle" size="lg" />
+          <span :class="{ 'text-success': copied === k.fingerprint }">
+            <font-awesome-icon v-if="copied === k.fingerprint" icon="fa-regular fa-check-circle" size="lg" fixed-width />
+            <font-awesome-icon v-else icon="fa-regular fa-clipboard" size="lg" fixed-width />
           </span>
         </td>
         <td v-if="!readonly">
