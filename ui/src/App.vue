@@ -7,6 +7,8 @@ import SearchKeys from "./trusted/trusted/SearchKeys.vue";
 import NotifyContainer from "./component/NotifyContainer.vue";
 import { useThemeStore } from "./store/theme-store";
 import SettingsEditor from "./component/SettingsEditor.vue";
+import CreateKeyCollection from "./trusted/trusted/CreateKeyCollection.vue";
+import KeyCollections from "./trusted/trusted/KeyCollections.vue";
 
 const themeStore = useThemeStore();
 
@@ -34,6 +36,14 @@ onMounted(async () => {
   );
   loading.value = false;
 });
+
+// TODO Would be nice if this worked, but really Holochain needs to detect dropped connections and stop trying to broadcast on them
+// window.onbeforeunload = () => {
+//   if (client.value) {
+//     (client.value as AppAgentWebsocket).appWebsocket.client.close();
+//   }
+// };
+
 </script>
 
 <template>
@@ -108,6 +118,8 @@ onMounted(async () => {
               @gpg-key-dist-created="() => {}"
             ></DistributeGpgKey>
           </div>
+          <KeyCollections></KeyCollections>
+          <CreateKeyCollection></CreateKeyCollection>
         </div>
       </div>
       <div v-else-if="showScreen === 'settings'">

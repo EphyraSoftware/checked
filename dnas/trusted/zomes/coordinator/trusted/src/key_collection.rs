@@ -21,7 +21,7 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
             .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?
             .clone(),
     )?;
-    let my_agent_info = agent_info()?;
+        let my_agent_info = agent_info()?;
     create_link(
         my_agent_info.agent_latest_pubkey,
         entry_hash,
@@ -71,7 +71,7 @@ fn check_key_collection_create(key_collection: &KeyCollection) -> ExternResult<(
 }
 
 #[hdk_extern]
-pub fn my_key_collections(_: ()) -> ExternResult<Vec<Record>> {
+pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<Record>> {
     let my_agent_info = agent_info()?;
     let key_collection_links = get_links(
         GetLinksInputBuilder::try_new(my_agent_info.agent_latest_pubkey, LinkTypes::KeyCollection)?

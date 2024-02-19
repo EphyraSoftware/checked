@@ -83,7 +83,7 @@ pub fn validate_key_collection_link(
         ));
     }
 
-    let entry_hash = match target_address.clone().try_into() {
+    let _: EntryHash = match target_address.clone().try_into() {
         Ok(entry_hash) => entry_hash,
         Err(_) => {
             return Ok(ValidateCallbackResult::Invalid(format!(
@@ -92,23 +92,30 @@ pub fn validate_key_collection_link(
             )));
         }
     };
-    let entry = must_get_entry(entry_hash)?;
-    match entry.as_app_entry() {
-        Some(app_entry) => {
-            match <SerializedBytes as TryInto<crate::key_collection::KeyCollection>>::try_into(
-                app_entry.clone().into_sb(),
-            ) {
-                Ok(_) => Ok(ValidateCallbackResult::Valid),
-                Err(_) => Ok(ValidateCallbackResult::Invalid(format!(
-                    "The target for {:?} must be a {}",
-                    link_type,
-                    std::any::type_name::<crate::key_collection::KeyCollection>()
-                ))),
-            }
-        }
-        None => Ok(ValidateCallbackResult::Invalid(format!(
-            "The target for {:?} must be an app entry",
-            link_type
-        ))),
-    }
+
+    // let entry = must_get_entry(entry_hash)?;
+    // match entry.as_app_entry() {
+    //     Some(app_entry) => {
+    //         match <SerializedBytes as TryInto<crate::key_collection::KeyCollection>>::try_into(
+    //             app_entry.clone().into_sb(),
+    //         ) {
+    //             Ok(_) => Ok(ValidateCallbackResult::Valid),
+    //             Err(_) => Ok(ValidateCallbackResult::Invalid(format!(
+    //                 "The target for {:?} must be a {}",
+    //                 link_type,
+    //                 std::any::type_name::<crate::key_collection::KeyCollection>()
+    //             ))),
+    //         }
+    //     }
+    //     None => Ok(ValidateCallbackResult::Invalid(format!(
+    //         "The target for {:?} must be an app entry",
+    //         link_type
+    //     ))),
+    // }
+
+    // TODO want to validate the entry type here but keep pointing to an EntryHash not an ActionHash. I don't think this is currently possible.
+    // Doing so would allow us to check we aren't storing pointless links to other entry types. Since the intended target is required to be a limited size collection that
+    // would translate into a bound on the number of links we have to store. As it is we will just keep accepting links regardless of their value...
+
+    Ok(ValidateCallbackResult::Valid)
 }

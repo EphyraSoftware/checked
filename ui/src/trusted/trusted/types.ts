@@ -52,3 +52,8 @@ export interface GpgKeyDist {
 export interface SearchKeysRequest {
   query: string;
 }
+
+export interface KeyCollection {
+  name: string;
+  keys: object[];
+}

@@ -57,7 +57,7 @@ test('Get my key collections', async () => {
 
         const key_collections: Record[] = await alice.cells[0].callZome({
             zome_name: "trusted",
-            fn_name: "my_key_collections",
+            fn_name: "get_my_key_collections",
             payload: null,
         });
 
@@ -65,7 +65,7 @@ test('Get my key collections', async () => {
     });
 });
 
-test.skip('Remote validation', async () => {
+test('Remote validation', async () => {
     await runScenario(async scenario => {
         const testAppPath = process.cwd() + '/../workdir/hWOT.happ';
         const appSource = { appBundleSource: { path: testAppPath } };
@@ -75,7 +75,7 @@ test.skip('Remote validation', async () => {
         await scenario.shareAllAgents();
 
         // Alice creates the allowed number of key collections
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 3; i++) {
             const record: Record = await createKeyCollection(alice.cells[0], `a test ${i}`);
             assert.ok(record);
         }
