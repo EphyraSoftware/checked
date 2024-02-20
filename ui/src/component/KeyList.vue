@@ -3,6 +3,7 @@ import { useMyKeysStore } from "../store/my-keys-store";
 import { formatDistanceToNow } from "date-fns";
 import { GpgKeyDist } from "../trusted/trusted/types";
 import { ref } from "vue";
+import GpgFingerprint from "./GpgFingerprint.vue";
 
 defineProps<{
   keys: GpgKeyDist[];
@@ -49,8 +50,8 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
 
         <td class="cursor-pointer font-mono" @click="copyFingerprint(k)">
-          <span class="mr-2">{{ k.fingerprint }}</span>
-          <span :class="{ 'text-success': copied === k.fingerprint }">
+          <GpgFingerprint :fingerprint="k.fingerprint" v-memo="[k.fingerprint]" />
+          <span :class="{ 'ms-2': true, 'text-success': copied === k.fingerprint }">
             <font-awesome-icon v-if="copied === k.fingerprint" icon="fa-regular fa-check-circle" size="lg" fixed-width />
             <font-awesome-icon v-else icon="fa-regular fa-clipboard" size="lg" fixed-width />
           </span>
