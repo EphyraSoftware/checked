@@ -44,16 +44,28 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="k in keys" v-bind:key="k.fingerprint">
+      <tr v-for="k in keys" v-bind:key="k.fingerprint" v-memo="[k.fingerprint]">
         <td>{{ k.name }}</td>
         <td>{{ k.email ?? "-" }}</td>
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
 
         <td class="cursor-pointer font-mono" @click="copyFingerprint(k)">
-          <GpgFingerprint :fingerprint="k.fingerprint" v-memo="[k.fingerprint]" />
-          <span :class="{ 'ms-2': true, 'text-success': copied === k.fingerprint }">
-            <font-awesome-icon v-if="copied === k.fingerprint" icon="fa-regular fa-check-circle" size="lg" fixed-width />
-            <font-awesome-icon v-else icon="fa-regular fa-clipboard" size="lg" fixed-width />
+          <GpgFingerprint :fingerprint="k.fingerprint" />
+          <span
+            :class="{ 'ms-2': true, 'text-success': copied === k.fingerprint }"
+          >
+            <font-awesome-icon
+              v-if="copied === k.fingerprint"
+              icon="fa-regular fa-check-circle"
+              size="lg"
+              fixed-width
+            />
+            <font-awesome-icon
+              v-else
+              icon="fa-regular fa-clipboard"
+              size="lg"
+              fixed-width
+            />
           </span>
         </td>
         <td v-if="!readonly">

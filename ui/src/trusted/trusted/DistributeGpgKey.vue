@@ -12,7 +12,7 @@ const notifications = useNotificationsStore();
 
 const selected = ref<Partial<GpgKeyDist>>({});
 const creating = ref(false);
-const inputType = ref<'file' | 'paste'>('file');
+const inputType = ref<"file" | "paste">("file");
 const fileInputField = ref<HTMLElement | null>(null);
 const textAreaInputField = ref<HTMLElement | null>(null);
 
@@ -83,10 +83,12 @@ const onPublicKeySelect = async (event: Event) => {
 };
 
 const onPublicKeyPaste = async (event: Event) => {
-  if (event.type === 'paste') {
-    const value = (event as ClipboardEvent).clipboardData?.getData('text/plain');
+  if (event.type === "paste") {
+    const value = (event as ClipboardEvent).clipboardData?.getData(
+      "text/plain",
+    );
     if (!value) return;
-    
+
     handleNewKeyProvided(value);
   } else {
     if (!event.target) return;
@@ -148,16 +150,38 @@ const distributeGpgKey = async () => {
 
   <div class="flex justify-center">
     <div role="tablist" class="tabs tabs-boxed w-1/2">
-      <a role="tab" :class="{ tab: true, 'tab-active': inputType === 'file' }" @click="inputType = 'file'">Select file</a>
-      <a role="tab" :class="{ tab: true, 'tab-active': inputType === 'paste' }" @click="inputType = 'paste'">Paste</a>
+      <a
+        role="tab"
+        :class="{ tab: true, 'tab-active': inputType === 'file' }"
+        @click="inputType = 'file'"
+        >Select file</a
+      >
+      <a
+        role="tab"
+        :class="{ tab: true, 'tab-active': inputType === 'paste' }"
+        @click="inputType = 'paste'"
+        >Paste</a
+      >
     </div>
   </div>
 
   <div class="flex justify-center my-3">
-    <input v-if="inputType === 'file'" type="file" accept="text/*,.asc" @change="onPublicKeySelect" ref="fileInputField"
-      class="file-input file-input-bordered file-input-primary" />
-    <textarea v-else class="textarea textarea-ghost w-1/2" placeholder="Paste your GPG public key here"
-      @change="onPublicKeyPaste" @paste="onPublicKeyPaste" ref="textAreaInputField"></textarea>
+    <input
+      v-if="inputType === 'file'"
+      type="file"
+      accept="text/*,.asc"
+      @change="onPublicKeySelect"
+      ref="fileInputField"
+      class="file-input file-input-bordered file-input-primary"
+    />
+    <textarea
+      v-else
+      class="textarea textarea-ghost w-1/2"
+      placeholder="Paste your GPG public key here"
+      @change="onPublicKeyPaste"
+      @paste="onPublicKeyPaste"
+      ref="textAreaInputField"
+    ></textarea>
   </div>
 
   <div v-if="selected.fingerprint" class="mt-5">
@@ -168,13 +192,21 @@ const distributeGpgKey = async () => {
 
   <div class="flex justify-end my-3">
     <div class="join">
-      <button class="btn btn-primary join-item" :disabled="!isGpgKeyValid || creating" @click="distributeGpgKey">
+      <button
+        class="btn btn-primary join-item"
+        :disabled="!isGpgKeyValid || creating"
+        @click="distributeGpgKey"
+      >
         <span v-if="creating" class="loading loading-spinner"></span>
         <span v-else>{{
           creating ? "Creating..." : "Distribute Gpg Key"
         }}</span>
       </button>
-      <button class="btn btn-secondary join-item" :disabled="!selected.fingerprint" @click="resetForm">
+      <button
+        class="btn btn-secondary join-item"
+        :disabled="!selected.fingerprint"
+        @click="resetForm"
+      >
         Cancel
       </button>
     </div>

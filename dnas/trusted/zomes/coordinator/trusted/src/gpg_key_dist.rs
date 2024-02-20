@@ -33,7 +33,13 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
     // Just a point in time check, somebody could distribute this key using other code or we might just not have seen it yet.
     // While this isn't an integrity guarantee, it might help out a somebody who is trying to distribute a key and hasn't realised they're using a different agent key than
     // they originally distributed the key with.
-    let other_has_key = get_links(GetLinksInputBuilder::try_new(make_base_hash(summary.fingerprint.clone())?, LinkTypes::FingerprintToGpgKeyDist)?.build())?;
+    let other_has_key = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(summary.fingerprint.clone())?,
+            LinkTypes::FingerprintToGpgKeyDist,
+        )?
+        .build(),
+    )?;
     if !other_has_key.is_empty() {
         return Err(wasm_error!(WasmErrorInner::Guest(
             "This key has already been distributed by somebody else".to_string()

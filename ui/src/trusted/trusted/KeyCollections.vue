@@ -7,8 +7,11 @@ const keyCollectionsStore = useKeyCollectionsStore();
 
 <template>
   <p class="text-lg">My Key Collections</p>
-  
-  <div v-if="keyCollectionsStore.keyCollections.length === 0" class="ms-5 italic">
+
+  <div
+    v-if="keyCollectionsStore.keyCollections.length === 0"
+    class="ms-5 italic"
+  >
     <p>You don't have any key collections yet.</p>
     <!-- TODO I want to link to the search screen here but I need the router for that -->
     <p>When you add a key you will be able to create a collection for it!</p>
