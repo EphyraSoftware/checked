@@ -44,7 +44,7 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="k in keys" v-bind:key="k.fingerprint" v-memo="[k.fingerprint]">
+      <tr v-for="k in keys" v-bind:key="k.fingerprint">
         <td>{{ k.name }}</td>
         <td>{{ k.email ?? "-" }}</td>
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
