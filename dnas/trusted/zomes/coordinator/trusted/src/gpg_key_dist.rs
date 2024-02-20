@@ -14,6 +14,7 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
 
     let summary = PublicKeySummary::try_from_public_key(&public_key)?;
 
+    // Check that we haven't already distributed this key, that would never be valid and will be checked by our peers.
     let has_key = get_my_keys(())?
         .iter()
         .any(|record| match record.entry.as_option() {
@@ -23,10 +24,19 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
             }
             _ => false,
         });
-
     if has_key {
         return Err(wasm_error!(WasmErrorInner::Guest(
             "You have already distributed this key".to_string()
+        )));
+    }
+
+    // Just a point in time check, somebody could distribute this key using other code or we might just not have seen it yet.
+    // While this isn't an integrity guarantee, it might help out a somebody who is trying to distribute a key and hasn't realised they're using a different agent key than
+    // they originally distributed the key with.
+    let other_has_key = get_links(GetLinksInputBuilder::try_new(make_base_hash(summary.fingerprint.clone())?, LinkTypes::FingerprintToGpgKeyDist)?.build())?;
+    if !other_has_key.is_empty() {
+        return Err(wasm_error!(WasmErrorInner::Guest(
+            "This key has already been distributed by somebody else".to_string()
         )));
     }
 
