@@ -1,4 +1,4 @@
-use crate::LinkTypes;
+use crate::{LinkTypes, gpg_util::{try_extract_public_key, PublicKeySummary}};
 use chrono::{DateTime, Utc};
 use hdi::prelude::{hash_type::AnyLinkable, *};
 
@@ -14,8 +14,17 @@ pub struct GpgKeyDist {
 
 pub fn validate_create_gpg_key_dist(
     _action: EntryCreationAction,
-    _gpg_key: GpgKeyDist,
+    gpg_key: GpgKeyDist,
 ) -> ExternResult<ValidateCallbackResult> {
+    let public_key = try_extract_public_key(gpg_key.public_key.clone())?;
+    let summary = PublicKeySummary::try_from_public_key(&public_key)?;
+
+    if summary.name != gpg_key.name || summary.email != gpg_key.email || summary.expires_at != gpg_key.expires_at || summary.fingerprint != gpg_key.fingerprint {
+        return Ok(ValidateCallbackResult::Invalid(String::from(
+            "Public key extracted fields do not match the GPG key distribution fields",
+        )));
+    }
+
     Ok(ValidateCallbackResult::Valid)
 }
 
