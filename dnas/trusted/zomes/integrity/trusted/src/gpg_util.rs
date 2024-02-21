@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use hdk::prelude::*;
+use hdi::prelude::*;
 use pgp::types::KeyTrait;
 use pgp::{
     armor::{BlockType, Dearmor},

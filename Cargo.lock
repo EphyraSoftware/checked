@@ -2726,9 +2726,6 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "hdk",
- "hex",
- "pgp",
- "regex",
  "serde",
  "trusted_integrity",
 ]
@@ -2739,6 +2736,9 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "hdi",
+ "hex",
+ "pgp",
+ "regex",
  "serde",
 ]
 

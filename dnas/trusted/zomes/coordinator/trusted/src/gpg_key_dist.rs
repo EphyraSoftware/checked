@@ -1,8 +1,6 @@
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
-use crate::gpg_util::{try_extract_public_key, PublicKeySummary};
-
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct DistributeGpgKeyRequest {
     pub public_key: String,

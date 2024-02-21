@@ -12,4 +12,7 @@ hdi = { workspace = true }
 
 serde = { workspace = true }
 
+pgp = { workspace = true }
+hex = { workspace = true }
+regex = { workspace = true }
 chrono = { workspace = true }

@@ -1,5 +1,4 @@
 mod gpg_key_dist;
-mod gpg_util;
 mod key_collection;
 
 use hdk::prelude::*;
