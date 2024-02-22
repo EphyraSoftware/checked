@@ -16,6 +16,7 @@ chrono = { version = "0.4.34", default-features = false, features = ["clock", "s
 pgp = "0.10.2"
 hex = "0.4.3"
 regex = "1.10.3"
+nanoid = "0.4.0"
 
 [workspace.dependencies.trusted]
 path = "dnas/trusted/zomes/coordinator/trusted"

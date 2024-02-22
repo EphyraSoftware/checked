@@ -27,8 +27,8 @@ pub enum LinkTypes {
     UserIdToGpgKeyDist,
     EmailToGpgKeyDist,
     FingerprintToGpgKeyDist,
-    KeyCollection,
     KeyCollectionToGpgKeyDist,
+    GpgKeyDistToKeyCollection,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -137,6 +137,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             target_address,
             link_type,
             action,
+            tag,
             ..
         } => match link_type {
             LinkTypes::FingerprintToGpgKeyDist
@@ -144,16 +145,19 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             | LinkTypes::EmailToGpgKeyDist => {
                 gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
             }
-            LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
-                action,
-                base_address,
-                target_address,
-                link_type,
-            ),
             LinkTypes::KeyCollectionToGpgKeyDist => {
                 key_collection::validate_key_collection_to_gpg_key_dist_link(
                     target_address,
                     link_type,
+                )
+            }
+            LinkTypes::GpgKeyDistToKeyCollection => {
+                key_collection::validate_gpg_key_dist_to_key_collection_link(
+                    action,
+                    base_address,
+                    target_address,
+                    link_type,
+                    tag,
                 )
             }
         },
@@ -306,6 +310,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     target_address,
                     link_type,
                     action,
+                    tag,
                     ..
                 } => match link_type {
                     LinkTypes::FingerprintToGpgKeyDist
@@ -313,16 +318,19 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     | LinkTypes::EmailToGpgKeyDist => {
                         gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
                     }
-                    LinkTypes::KeyCollection => key_collection::validate_key_collection_link(
-                        action,
-                        base_address,
-                        target_address,
-                        link_type,
-                    ),
                     LinkTypes::KeyCollectionToGpgKeyDist => {
                         key_collection::validate_key_collection_to_gpg_key_dist_link(
                             target_address,
                             link_type,
+                        )
+                    }
+                    LinkTypes::GpgKeyDistToKeyCollection => {
+                        key_collection::validate_gpg_key_dist_to_key_collection_link(
+                            action,
+                            base_address,
+                            target_address,
+                            link_type,
+                            tag,
                         )
                     }
                 },

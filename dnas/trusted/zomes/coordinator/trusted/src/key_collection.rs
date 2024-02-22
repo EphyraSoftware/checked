@@ -1,10 +1,11 @@
 use crate::gpg_key_dist::make_base_hash;
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
+use nanoid::nanoid;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {
-    check_key_collection_create(&key_collection)?;
+    verify_key_collection_create(&key_collection)?;
 
     let entry = EntryTypes::KeyCollection(key_collection);
     let action_hash = create_entry(entry)?;
@@ -15,60 +16,7 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
         ))
     ))?;
 
-    let entry_hash = hash_entry(
-        record
-            .entry()
-            .as_option()
-            .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?
-            .clone(),
-    )?;
-    let my_agent_info = agent_info()?;
-    create_link(
-        my_agent_info.agent_latest_pubkey,
-        entry_hash,
-        LinkTypes::KeyCollection,
-        (),
-    )?;
-
     Ok(record)
-}
-
-fn check_key_collection_create(key_collection: &KeyCollection) -> ExternResult<()> {
-    let existing_key_collections = query(
-        ChainQueryFilter::default()
-            .entry_type(EntryType::App(UnitEntryTypes::KeyCollection.try_into()?)),
-    )?;
-
-    // This is enforced by validation, but checked here for faster feedback
-    if existing_key_collections.len() >= KEY_COLLECTION_LIMIT {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Exceeded the maximum number of key collections",
-        ))));
-    }
-
-    let names: HashSet<_> = existing_key_collections
-        .into_iter()
-        .filter_map(
-            |kc| match kc.entry().as_option().and_then(|e| e.as_app_entry()) {
-                Some(entry_bytes) => {
-                    let key_collection: KeyCollection =
-                        entry_bytes.clone().into_sb().try_into().ok()?;
-                    Some(key_collection.name)
-                }
-                None => None,
-            },
-        )
-        .collect();
-
-    // Not checked by validation, other users do not care about your key collection names being unique. The entries are private
-    // so they can't actually see them!
-    if names.contains(&key_collection.name) {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Key collection with the same name already exists",
-        ))));
-    }
-
-    Ok(())
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
@@ -80,7 +28,7 @@ pub struct KeyCollectionWithKeys {
 #[hdk_extern]
 pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>> {
     let mut key_collections = Vec::new();
-    for (entry_hash, record) in get_key_collections()? {
+    for record in inner_get_my_key_collections()? {
         let mut key_collection = KeyCollectionWithKeys {
             // TODO If it worked, walidation would ensure these are all KeyCollections, so this could not fail
             name: record
@@ -88,6 +36,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 .as_option()
                 .and_then(|e| e.as_app_entry())
                 .and_then(|e| {
+                    tracing::info!("entry: {:?}", e);
                     let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
                     Some(key_collection.name)
                 })
@@ -98,7 +47,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
         };
 
         let linked_keys = get_links(
-            GetLinksInputBuilder::try_new(entry_hash, LinkTypes::KeyCollectionToGpgKeyDist)?
+            GetLinksInputBuilder::try_new(record.action_hashed().as_hash().clone(), LinkTypes::KeyCollectionToGpgKeyDist)?
                 .build(),
         )?;
 
@@ -141,7 +90,7 @@ pub fn link_gpg_key_to_key_collection(
 ) -> ExternResult<ActionHash> {
     let fingerprint_links = get_links(
         GetLinksInputBuilder::try_new(
-            make_base_hash(request.gpg_key_fingerprint)?,
+            make_base_hash(&request.gpg_key_fingerprint)?,
             LinkTypes::FingerprintToGpgKeyDist,
         )?
         .build(),
@@ -162,9 +111,9 @@ pub fn link_gpg_key_to_key_collection(
     // Target is the entry hash of the GpgKeyDist
     let fingerprint_link = fingerprint_links[0].clone();
 
-    let my_key_collections = get_key_collections()?;
+    let my_key_collections = inner_get_my_key_collections()?;
 
-    let matched_collection = my_key_collections.into_iter().find(|(_, r)| {
+    let matched_collection = my_key_collections.into_iter().find(|r| {
         r.entry
             .as_option()
             .and_then(|e| e.as_app_entry())
@@ -179,34 +128,77 @@ pub fn link_gpg_key_to_key_collection(
         String::from("No key collection found with the given name")
     )))?;
 
+    let tag_id = nanoid!();
+
+    // Link from the key collection to the GpgKeyDist so that we can find them from the key collection later
     create_link(
-        key_collection.0,
-        fingerprint_link.target,
+        key_collection.action_hashed().as_hash().clone(),
+        fingerprint_link.target.clone(), // entry address
         LinkTypes::KeyCollectionToGpgKeyDist,
-        (),
+        tag_id.as_bytes().to_vec(),
+    )?;
+
+    // Link from the key fingerprint to the key collection so that we can report how many key collections a key is in
+    create_link(
+        fingerprint_link.target, // entry address
+        key_collection.action_hashed().as_hash().clone(),
+        LinkTypes::GpgKeyDistToKeyCollection,
+        tag_id.as_bytes().to_vec(),
     )
 }
 
-fn get_key_collections() -> ExternResult<Vec<(EntryHash, Record)>> {
-    let my_agent_info = agent_info()?;
-    let key_collection_links = get_links(
-        GetLinksInputBuilder::try_new(my_agent_info.agent_latest_pubkey, LinkTypes::KeyCollection)?
-            .build(),
-    )?;
+/// Checks if the key collection can be created.
+/// 
+/// - Ensures the name is at least [KEY_COLLECTION_NAME_MIN_LENGTH] characters long. Also checked by validation.
+/// - Limits the number of key collections a user can have to [KEY_COLLECTION_LIMIT]. Also checked by validation.
+/// - Ensures the name is unique among the user's key collections. Not checked by validation.
+fn verify_key_collection_create(key_collection: &KeyCollection) -> ExternResult<()> {
+    // This is enforced by validation, but checked here for faster feedback
+    if key_collection.name.len() < KEY_COLLECTION_NAME_MIN_LENGTH {
+        return Err(wasm_error!(WasmErrorInner::Guest(format!(
+            "Key collection name must be at least {} characters long",
+            KEY_COLLECTION_NAME_MIN_LENGTH
+        ))));
+    }
+    
+    let existing_key_collections = inner_get_my_key_collections()?;
 
-    let mut records = Vec::with_capacity(key_collection_links.len());
-    for link in key_collection_links {
-        let entry_hash: EntryHash = link.target.clone().try_into().map_err(|_| {
-            wasm_error!(WasmErrorInner::Guest(String::from(
-                "Could not convert link target to EntryHash"
-            )))
-        })?;
-        let record = get(entry_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
-            WasmErrorInner::Guest(String::from("Could not find the KeyCollection"))
-        ))?;
-
-        records.push((entry_hash, record));
+    // This is enforced by validation, but checked here for faster feedback
+    if existing_key_collections.len() >= KEY_COLLECTION_LIMIT {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Exceeded the maximum number of key collections",
+        ))));
     }
 
-    Ok(records)
+    let names: HashSet<_> = existing_key_collections
+        .into_iter()
+        .filter_map(
+            |kc| match kc.entry().as_option().and_then(|e| e.as_app_entry()) {
+                Some(entry_bytes) => {
+                    let key_collection: KeyCollection =
+                        entry_bytes.clone().into_sb().try_into().ok()?;
+                    Some(key_collection.name)
+                }
+                None => None,
+            },
+        )
+        .collect();
+
+    // Not checked by validation, other users do not care about your key collection names being unique. The entries are private
+    // so they can't actually see them!
+    if names.contains(&key_collection.name) {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Key collection with the same name already exists",
+        ))));
+    }
+
+    Ok(())
+}
+
+fn inner_get_my_key_collections() -> ExternResult<Vec<Record>> {
+    query(
+        ChainQueryFilter::default()
+            .include_entries(true)
+            .entry_type(EntryType::App(UnitEntryTypes::KeyCollection.try_into()?)),
+    )
 }

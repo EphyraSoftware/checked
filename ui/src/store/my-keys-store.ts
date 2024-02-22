@@ -17,7 +17,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
     const r: Record[] = await client.callZome({
       role_name: "trusted",
       zome_name: "trusted",
-      fn_name: "get_my_keys",
+      fn_name: "get_my_gpg_key_dists",
       payload: null,
       cap_secret: null,
     });
