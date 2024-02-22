@@ -23,9 +23,10 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
         expires_at: summary.expires_at,
     }))?;
 
-    let record = get(gpg_key_dist_action_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
-        WasmErrorInner::Guest(String::from("Could not find the newly created GpgKeyDist"))
-    ))?;
+    let record =
+        get(gpg_key_dist_action_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
+            WasmErrorInner::Guest(String::from("Could not find the newly created GpgKeyDist"))
+        ))?;
 
     let entry_hash = record
         .action()
@@ -33,7 +34,7 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
         .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?;
 
     create_gpg_key_dist_discovery_links(&summary, entry_hash)?;
-    
+
     Ok(record)
 }
 
@@ -99,7 +100,7 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
     Ok(out)
 }
 
-/// Builds a dummy hash from a string input. 
+/// Builds a dummy hash from a string input.
 ///
 /// This is useful for working with baseless links, is there something in the HDK I'm missing that can do this?
 pub fn make_base_hash(input: &str) -> ExternResult<EntryHash> {
@@ -116,7 +117,7 @@ pub fn make_base_hash(input: &str) -> ExternResult<EntryHash> {
     ))
 }
 
-/// Check our own source chain to see if we already have this key. 
+/// Check our own source chain to see if we already have this key.
 /// If we do, we can't distribute it again so return an error.
 fn verify_key_not_distributed_by_me(summary: &PublicKeySummary) -> ExternResult<()> {
     // Check that we haven't already distributed this key, that would never be valid and will be checked by our peers.
@@ -138,10 +139,10 @@ fn verify_key_not_distributed_by_me(summary: &PublicKeySummary) -> ExternResult<
     Ok(())
 }
 
-/// A point in time check that we don't know of somebody else having distributed this key. Somebody could distribute this 
+/// A point in time check that we don't know of somebody else having distributed this key. Somebody could distribute this
 /// key using other code or we might just not have seen it yet.
 ///
-/// While this isn't an integrity guarantee, it might help out a somebody who is trying to distribute a key and hasn't realised 
+/// While this isn't an integrity guarantee, it might help out a somebody who is trying to distribute a key and hasn't realised
 /// they're using a different agent key than they originally distributed the key with.
 fn try_verify_key_not_distributed_by_somebody_else(summary: &PublicKeySummary) -> ExternResult<()> {
     let other_has_key = get_links(
@@ -161,7 +162,10 @@ fn try_verify_key_not_distributed_by_somebody_else(summary: &PublicKeySummary) -
 }
 
 /// Create links from the name, email (if present) and fingerprint to the GpgKeyDist entry.
-fn create_gpg_key_dist_discovery_links(summary: &PublicKeySummary, entry_hash: &EntryHash) -> ExternResult<()> {
+fn create_gpg_key_dist_discovery_links(
+    summary: &PublicKeySummary,
+    entry_hash: &EntryHash,
+) -> ExternResult<()> {
     create_link(
         make_base_hash(&summary.name)?,
         entry_hash.clone(),

@@ -1,7 +1,7 @@
 use crate::gpg_key_dist::make_base_hash;
 use hdk::prelude::*;
-use trusted_integrity::prelude::*;
 use nanoid::nanoid;
+use trusted_integrity::prelude::*;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {
@@ -47,8 +47,11 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
         };
 
         let linked_keys = get_links(
-            GetLinksInputBuilder::try_new(record.action_hashed().as_hash().clone(), LinkTypes::KeyCollectionToGpgKeyDist)?
-                .build(),
+            GetLinksInputBuilder::try_new(
+                record.action_hashed().as_hash().clone(),
+                LinkTypes::KeyCollectionToGpgKeyDist,
+            )?
+            .build(),
         )?;
 
         for link in linked_keys {
@@ -148,7 +151,7 @@ pub fn link_gpg_key_to_key_collection(
 }
 
 /// Checks if the key collection can be created.
-/// 
+///
 /// - Ensures the name is at least [KEY_COLLECTION_NAME_MIN_LENGTH] characters long. Also checked by validation.
 /// - Limits the number of key collections a user can have to [KEY_COLLECTION_LIMIT]. Also checked by validation.
 /// - Ensures the name is unique among the user's key collections. Not checked by validation.
@@ -160,7 +163,7 @@ fn verify_key_collection_create(key_collection: &KeyCollection) -> ExternResult<
             KEY_COLLECTION_NAME_MIN_LENGTH
         ))));
     }
-    
+
     let existing_key_collections = inner_get_my_key_collections()?;
 
     // This is enforced by validation, but checked here for faster feedback

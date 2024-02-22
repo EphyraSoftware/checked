@@ -1,13 +1,13 @@
 pub(crate) mod gpg_key_dist;
-pub(crate) mod key_collection;
 pub(crate) mod gpg_util;
+pub(crate) mod key_collection;
 
 use hdi::prelude::*;
 
 pub mod prelude {
     pub use crate::gpg_key_dist::*;
-    pub use crate::key_collection::*;
     pub use crate::gpg_util::*;
+    pub use crate::key_collection::*;
     pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
 }

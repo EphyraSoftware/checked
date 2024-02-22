@@ -101,7 +101,7 @@ fn parse<R: Read + Seek>(mut input: R) -> std::io::Result<PubicKeyParsed> {
 
 #[cfg(test)]
 mod tests {
-    use pgp::{types::KeyTrait};
+    use pgp::types::KeyTrait;
 
     use super::*;
 

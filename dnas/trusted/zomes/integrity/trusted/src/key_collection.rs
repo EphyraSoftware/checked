@@ -128,18 +128,22 @@ pub fn validate_gpg_key_dist_to_key_collection_link(
             ) {
                 Ok(_) => {
                     // Valid
-                },
-                Err(_) => return Ok(ValidateCallbackResult::Invalid(format!(
-                    "The base for {:?} must be a {}",
-                    link_type,
-                    std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
-                ))),
+                }
+                Err(_) => {
+                    return Ok(ValidateCallbackResult::Invalid(format!(
+                        "The base for {:?} must be a {}",
+                        link_type,
+                        std::any::type_name::<crate::gpg_key_dist::GpgKeyDist>()
+                    )))
+                }
             }
         }
-        None => return Ok(ValidateCallbackResult::Invalid(format!(
-            "The base for {:?} must be an app entry",
-            link_type
-        ))),
+        None => {
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The base for {:?} must be an app entry",
+                link_type
+            )))
+        }
     }
 
     // Check that the target is a KeyCollection typed action hash
@@ -153,14 +157,19 @@ pub fn validate_gpg_key_dist_to_key_collection_link(
 
     let entry_def: AppEntryDef = UnitEntryTypes::KeyCollection.try_into()?;
     match key_collection_action.action() {
-        Action::Create(Create { entry_type: EntryType::App(def), .. }) if def == &entry_def => {
+        Action::Create(Create {
+            entry_type: EntryType::App(def),
+            ..
+        }) if def == &entry_def => {
             // Valid
         }
-        _ => return Ok(ValidateCallbackResult::Invalid(format!(
-            "The target for {:?} must be a {}",
-            link_type,
-            std::any::type_name::<crate::key_collection::KeyCollection>()
-        ))),
+        _ => {
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The target for {:?} must be a {}",
+                link_type,
+                std::any::type_name::<crate::key_collection::KeyCollection>()
+            )))
+        }
     }
 
     // Check that the link in the opposite direction to this one exists
@@ -168,12 +177,7 @@ pub fn validate_gpg_key_dist_to_key_collection_link(
     let action_hash = hash_action(Action::CreateLink(action.clone()))?;
     let activity = must_get_agent_activity(action.author.clone(), ChainFilter::new(action_hash))?;
     let found_reverse_link = activity.into_iter().any(|a| {
-        match a.action.action() {
-            Action::CreateLink(CreateLink { link_type, tag: t, .. }) if link_type == &scoped_link_type.zome_type && t == &tag => {
-                true
-            },
-            _ => false,
-        }
+        matches!(a.action.action(), Action::CreateLink(CreateLink { link_type, tag: t, .. }) if link_type == &scoped_link_type.zome_type && t == &tag)
     });
 
     if !found_reverse_link {
