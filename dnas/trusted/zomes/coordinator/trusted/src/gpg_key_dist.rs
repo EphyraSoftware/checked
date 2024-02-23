@@ -1,3 +1,4 @@
+use crate::convert_to_app_entry_type;
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
@@ -57,8 +58,8 @@ pub struct SearchKeysRequest {
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct SearchKeysResponse {
-    pub key: Record,
-    pub key_collection_count: usize,
+    pub gpg_key_dist: GpgKeyDist,
+    pub reference_count: usize,
 }
 
 #[hdk_extern]
@@ -95,13 +96,15 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<SearchKeysRes
     {
         match get(target.clone(), GetOptions::default())? {
             Some(r) => {
+                // TODO permissible to have a key in multiple collections so this count needs to be a
+                // get + filter to unique agents
                 let link_count = count_links(LinkQuery::new(
                     target,
                     LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
                 ))?;
                 out.push(SearchKeysResponse {
-                    key: r,
-                    key_collection_count: link_count,
+                    gpg_key_dist: convert_to_app_entry_type(r)?,
+                    reference_count: link_count,
                 });
             }
             _ => {

@@ -101,3 +101,18 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
 
     EntryTypes::deserialize_from_type(*zome_index, *entry_index, entry)
 }
+
+pub fn convert_to_app_entry_type<T>(record: Record) -> ExternResult<T>
+where
+    T: TryFrom<SerializedBytes>,
+{
+    record
+        .entry()
+        .as_option()
+        .and_then(|e| e.as_app_entry())
+        .and_then(|e| -> Option<T> { e.clone().into_sb().try_into().ok() })
+        .ok_or(wasm_error!(WasmErrorInner::Guest(format!(
+            "Could not convert record to: {:?}",
+            std::any::type_name::<T>()
+        ))))
+}

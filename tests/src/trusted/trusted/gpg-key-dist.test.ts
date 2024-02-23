@@ -66,9 +66,8 @@ test('Search for a key', async () => {
       },
     });
     assert.equal(1, responses.length);
-    const decoded = (decode((responses[0].key.entry as any).Present.entry) as any);
-    assert.equal("Alice", decoded.name);
-    assert.equal(sampleGpgKey().trim(), decoded.public_key);
+    assert.equal("Alice", responses[0].gpg_key_dist.name);
+    assert.equal(sampleGpgKey().trim(), responses[0].gpg_key_dist.public_key);
   });
 });
 
@@ -109,8 +108,7 @@ test('Search for a key which is in another agent collection', async () => {
       },
     });
     assert.equal(1, responses.length);
-    const decoded = (decode((responses[0].key.entry as any).Present.entry) as any);
-    assert.equal("Alice", decoded.name);
-    assert.equal(1, responses[0].key_collection_count);
+    assert.equal("Alice", responses[0].gpg_key_dist.name);
+    assert.equal(1, responses[0].reference_count);
   });
 });

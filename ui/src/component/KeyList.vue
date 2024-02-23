@@ -39,6 +39,9 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
         <th>Name</th>
         <th>Email</th>
         <th>Expiry</th>
+        <th v-if="keys.some((k) => k.reference_count !== undefined)">
+          References
+        </th>
         <th>Fingerprint</th>
         <th v-if="!readonly">Action</th>
       </tr>
@@ -48,6 +51,9 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
         <td>{{ k.name }}</td>
         <td>{{ k.email ?? "-" }}</td>
         <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
+        <td v-if="keys.some((k) => k.reference_count !== undefined)">
+          {{ k.reference_count ?? "unknown" }}
+        </td>
 
         <td class="cursor-pointer font-mono" @click="copyFingerprint(k)">
           <GpgFingerprint :fingerprint="k.fingerprint" />

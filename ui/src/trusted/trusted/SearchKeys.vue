@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { AppAgentClient, Record } from "@holochain/client";
+import { AppAgentClient } from "@holochain/client";
 import { ComputedRef, inject, ref } from "vue";
-import { GpgKeyDist, SearchKeysRequest } from "./types";
-import { decode } from "@msgpack/msgpack";
+import { GpgKeyDist, SearchKeysRequest, SearchKeysResponse } from "./types";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
 import AddKeyToCollection from "./AddKeyToCollection.vue";
@@ -26,7 +25,7 @@ const searchKeys = async () => {
       query: searchQuery.value,
     };
 
-    const r: Record[] = await client.value.callZome({
+    const r: SearchKeysResponse[] = await client.value.callZome({
       role_name: "trusted",
       zome_name: "trusted",
       fn_name: "search_keys",
@@ -34,9 +33,13 @@ const searchKeys = async () => {
       cap_secret: null,
     });
 
-    results.value = r.map(
-      (record) => decode((record.entry as any).Present.entry) as GpgKeyDist,
-    );
+    results.value = r.map((r) => {
+      console.log("ref count is", r.reference_count);
+      return {
+        ...r.gpg_key_dist,
+        reference_count: r.reference_count,
+      };
+    });
   } catch (e) {
     notifications.pushNotification({
       message: `Error searching for keys - ${e}`,
