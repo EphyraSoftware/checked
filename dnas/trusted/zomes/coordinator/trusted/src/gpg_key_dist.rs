@@ -55,8 +55,14 @@ pub struct SearchKeysRequest {
     pub query: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct SearchKeysResponse {
+    pub key: Record,
+    pub key_collection_count: usize,
+}
+
 #[hdk_extern]
-pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
+pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<SearchKeysResponse>> {
     let mut links = get_links(
         GetLinksInputBuilder::try_new(
             make_base_hash(&request.query)?,
@@ -87,9 +93,16 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<Record>> {
         .into_iter()
         .flat_map(|l| AnyDhtHash::try_from(l.target).ok())
     {
-        match get(target, GetOptions::default())? {
+        match get(target.clone(), GetOptions::default())? {
             Some(r) => {
-                out.push(r);
+                let link_count = count_links(LinkQuery::new(
+                    target,
+                    LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
+                ))?;
+                out.push(SearchKeysResponse {
+                    key: r,
+                    key_collection_count: link_count,
+                });
             }
             _ => {
                 // Link target not found
