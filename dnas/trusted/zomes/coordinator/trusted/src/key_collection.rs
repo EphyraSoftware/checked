@@ -1,4 +1,4 @@
-use crate::gpg_key_dist::make_base_hash;
+use crate::{convert_to_app_entry_type, gpg_key_dist::{make_base_hash, GpgKeyResponse}};
 use hdk::prelude::*;
 use nanoid::nanoid;
 use trusted_integrity::prelude::*;
@@ -22,33 +22,23 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct KeyCollectionWithKeys {
     pub name: String,
-    pub gpg_keys: Vec<GpgKeyDist>,
+    pub gpg_keys: Vec<GpgKeyResponse>,
 }
 
 #[hdk_extern]
 pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>> {
     let mut key_collections = Vec::new();
     for record in inner_get_my_key_collections()? {
+        let collection_action_hash = record.action_hashed().as_hash().clone();
+        let key_collection: KeyCollection = convert_to_app_entry_type(record)?;
         let mut key_collection = KeyCollectionWithKeys {
-            // TODO If it worked, walidation would ensure these are all KeyCollections, so this could not fail
-            name: record
-                .entry()
-                .as_option()
-                .and_then(|e| e.as_app_entry())
-                .and_then(|e| {
-                    tracing::info!("entry: {:?}", e);
-                    let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
-                    Some(key_collection.name)
-                })
-                .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-                    "Could not convert entry to KeyCollection"
-                ))))?,
+            name: key_collection.name,
             gpg_keys: Vec::new(),
         };
 
         let linked_keys = get_links(
             GetLinksInputBuilder::try_new(
-                record.action_hashed().as_hash().clone(),
+                collection_action_hash,
                 LinkTypes::KeyCollectionToGpgKeyDist,
             )?
             .build(),
@@ -56,21 +46,20 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
 
         for link in linked_keys {
             let gpg_key_dist: Option<GpgKeyDist> = get(
-                <AnyLinkableHash as TryInto<AnyDhtHash>>::try_into(link.target).map_err(|_| {
+                <AnyLinkableHash as TryInto<AnyDhtHash>>::try_into(link.target.clone()).map_err(|_| {
                     wasm_error!(WasmErrorInner::Guest(String::from("Not a DHT hash")))
                 })?,
                 GetOptions::content(),
-            )?
-            .ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-                "Could not find the GpgKeyDist"
-            ))))?
-            .entry()
-            .as_option()
-            .and_then(|e| e.as_app_entry())
-            .and_then(|e| e.clone().into_sb().try_into().ok());
+            )?.and_then(|r| convert_to_app_entry_type::<GpgKeyDist>(r).ok());
 
             if let Some(gpg_key_dist) = gpg_key_dist {
-                key_collection.gpg_keys.push(gpg_key_dist);
+                let reference_count = get_reference_count_from_gpg_key_dist_entry_hash(link.target.try_into().map_err(|_| {
+                    wasm_error!(WasmErrorInner::Guest(String::from("Not an entry hash hash")))
+                })?)?;
+                key_collection.gpg_keys.push(GpgKeyResponse {
+                    gpg_key_dist,
+                    reference_count,
+                });
             }
         }
 
@@ -204,4 +193,29 @@ fn inner_get_my_key_collections() -> ExternResult<Vec<Record>> {
             .include_entries(true)
             .entry_type(EntryType::App(UnitEntryTypes::KeyCollection.try_into()?)),
     )
+}
+
+/// Counts the number of references from a GpgKeyDist to a KeyCollection.
+///
+/// Each author may put the same key in multiple collections, but that is only counted once.
+/// That means this is the number of unique agents who are referencing this key.
+pub fn get_reference_count(gpg_key_dist: &GpgKeyDist) -> ExternResult<usize> {
+    let to_gpg_key_dist_links = get_links(GetLinksInputBuilder::try_new(
+        make_base_hash(&gpg_key_dist.fingerprint)?,
+        LinkTypes::FingerprintToGpgKeyDist,
+    )?.build())?;
+
+    let mut count = 0;
+    for link in to_gpg_key_dist_links {
+        count += get_reference_count_from_gpg_key_dist_entry_hash(link.target.try_into().map_err(|_| {
+            wasm_error!(WasmErrorInner::Guest(String::from("Not an entry hash hash")))
+        })?)?;
+    }
+
+    Ok(count)
+}
+
+pub fn get_reference_count_from_gpg_key_dist_entry_hash(entry_hash: EntryHash) -> ExternResult<usize> {
+    let links = get_links(GetLinksInputBuilder::try_new(entry_hash, LinkTypes::GpgKeyDistToKeyCollection)?.build())?;
+    Ok(links.into_iter().map(|l| l.author).collect::<HashSet<_>>().len())
 }

@@ -1,4 +1,4 @@
-use crate::convert_to_app_entry_type;
+use crate::{convert_to_app_entry_type, key_collection::{get_reference_count, get_reference_count_from_gpg_key_dist_entry_hash}};
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
@@ -39,8 +39,14 @@ pub fn distribute_gpg_key(request: DistributeGpgKeyRequest) -> ExternResult<Reco
     Ok(record)
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct GpgKeyResponse {
+    pub gpg_key_dist: GpgKeyDist,
+    pub reference_count: usize,
+}
+
 #[hdk_extern]
-pub fn get_my_gpg_key_dists(_: ()) -> ExternResult<Vec<Record>> {
+pub fn get_my_gpg_key_dists(_: ()) -> ExternResult<Vec<GpgKeyResponse>> {
     let q = ChainQueryFilter::default()
         .action_type(ActionType::Create)
         .entry_type(EntryType::App(UnitEntryTypes::GpgKeyDist.try_into()?))
@@ -48,7 +54,17 @@ pub fn get_my_gpg_key_dists(_: ()) -> ExternResult<Vec<Record>> {
         .ascending();
 
     let gpg_key_dist_entries = query(q)?;
-    Ok(gpg_key_dist_entries)
+
+    let mut out = Vec::with_capacity(gpg_key_dist_entries.len());
+    for r in gpg_key_dist_entries.into_iter() {
+        let gpg_key_dist: GpgKeyDist = convert_to_app_entry_type(r)?;
+        out.push(GpgKeyResponse {
+            reference_count: get_reference_count(&gpg_key_dist)?,
+            gpg_key_dist: gpg_key_dist,
+        });
+    }
+
+    Ok(out)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
@@ -56,14 +72,8 @@ pub struct SearchKeysRequest {
     pub query: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct SearchKeysResponse {
-    pub gpg_key_dist: GpgKeyDist,
-    pub reference_count: usize,
-}
-
 #[hdk_extern]
-pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<SearchKeysResponse>> {
+pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<GpgKeyResponse>> {
     let mut links = get_links(
         GetLinksInputBuilder::try_new(
             make_base_hash(&request.query)?,
@@ -96,15 +106,12 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<SearchKeysRes
     {
         match get(target.clone(), GetOptions::default())? {
             Some(r) => {
-                // TODO permissible to have a key in multiple collections so this count needs to be a
-                // get + filter to unique agents
-                let link_count = count_links(LinkQuery::new(
-                    target,
-                    LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
-                ))?;
-                out.push(SearchKeysResponse {
-                    gpg_key_dist: convert_to_app_entry_type(r)?,
-                    reference_count: link_count,
+                let gpg_key_dist: GpgKeyDist = convert_to_app_entry_type(r)?;
+                out.push(GpgKeyResponse {
+                    reference_count: get_reference_count_from_gpg_key_dist_entry_hash(target.try_into().map_err(|_| {
+                        wasm_error!(WasmErrorInner::Guest(String::from("Not an entry hash hash")))
+                    })?)?,
+                    gpg_key_dist: gpg_key_dist,
                 });
             }
             _ => {
@@ -139,13 +146,7 @@ fn verify_key_not_distributed_by_me(summary: &PublicKeySummary) -> ExternResult<
     // Check that we haven't already distributed this key, that would never be valid and will be checked by our peers.
     let has_key = get_my_gpg_key_dists(())?
         .iter()
-        .any(|record| match record.entry.as_option() {
-            Some(Entry::App(app_entry)) => {
-                let gpg_key_dist: GpgKeyDist = app_entry.clone().into_sb().try_into().unwrap();
-                gpg_key_dist.fingerprint == summary.fingerprint
-            }
-            _ => false,
-        });
+        .any(|response| response.gpg_key_dist.fingerprint == summary.fingerprint);
     if has_key {
         return Err(wasm_error!(WasmErrorInner::Guest(
             "You have already distributed this key".to_string()

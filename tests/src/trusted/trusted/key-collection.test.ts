@@ -61,7 +61,7 @@ test('Get my key collections', async () => {
             payload: null,
         });
 
-        assert.equal(2, key_collections.length);
+        assert.equal(key_collections.length, 2);
     });
 });
 
@@ -96,8 +96,8 @@ test('Link GPG key to collection', async () => {
             payload: null,
         });
 
-        assert.equal(1, key_collections.length);
-        assert.equal(1, (key_collections[0] as any).gpg_keys.length);
+        assert.equal(key_collections.length, 1);
+        assert.equal((key_collections[0] as any).gpg_keys.length, 1);
     });
 });
 
