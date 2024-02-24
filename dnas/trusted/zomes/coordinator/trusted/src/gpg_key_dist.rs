@@ -1,4 +1,7 @@
-use crate::{convert_to_app_entry_type, key_collection::{get_reference_count, get_reference_count_from_gpg_key_dist_entry_hash}};
+use crate::{
+    convert_to_app_entry_type,
+    key_collection::{get_reference_count, get_reference_count_from_gpg_key_dist_entry_hash},
+};
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
@@ -60,7 +63,7 @@ pub fn get_my_gpg_key_dists(_: ()) -> ExternResult<Vec<GpgKeyResponse>> {
         let gpg_key_dist: GpgKeyDist = convert_to_app_entry_type(r)?;
         out.push(GpgKeyResponse {
             reference_count: get_reference_count(&gpg_key_dist)?,
-            gpg_key_dist: gpg_key_dist,
+            gpg_key_dist,
         });
     }
 
@@ -108,10 +111,14 @@ pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<GpgKeyRespons
             Some(r) => {
                 let gpg_key_dist: GpgKeyDist = convert_to_app_entry_type(r)?;
                 out.push(GpgKeyResponse {
-                    reference_count: get_reference_count_from_gpg_key_dist_entry_hash(target.try_into().map_err(|_| {
-                        wasm_error!(WasmErrorInner::Guest(String::from("Not an entry hash hash")))
-                    })?)?,
-                    gpg_key_dist: gpg_key_dist,
+                    reference_count: get_reference_count_from_gpg_key_dist_entry_hash(
+                        target.try_into().map_err(|_| {
+                            wasm_error!(WasmErrorInner::Guest(String::from(
+                                "Not an entry hash hash"
+                            )))
+                        })?,
+                    )?,
+                    gpg_key_dist,
                 });
             }
             _ => {

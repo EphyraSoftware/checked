@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { AppAgentClient } from "@holochain/client";
 import { ComputedRef, inject, ref } from "vue";
-import { GpgKeyDist, SearchKeysRequest, SearchKeysResponse } from "./types";
+import { GpgKeyWithMeta, SearchKeysRequest } from "./types";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
 import AddKeyToCollection from "./AddKeyToCollection.vue";
 
 const searchQuery = ref("");
 const searching = ref(false);
-const results = ref<GpgKeyDist[]>([]);
-const selectedKeyForAdd = ref<GpgKeyDist | null>(null);
+const results = ref<GpgKeyWithMeta[]>([]);
+const selectedKeyForAdd = ref<GpgKeyWithMeta | null>(null);
 
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
@@ -25,20 +25,12 @@ const searchKeys = async () => {
       query: searchQuery.value,
     };
 
-    const r: SearchKeysResponse[] = await client.value.callZome({
+    results.value = await client.value.callZome({
       role_name: "trusted",
       zome_name: "trusted",
       fn_name: "search_keys",
       payload: request,
       cap_secret: null,
-    });
-
-    results.value = r.map((r) => {
-      console.log("ref count is", r.reference_count);
-      return {
-        ...r.gpg_key_dist,
-        reference_count: r.reference_count,
-      };
     });
   } catch (e) {
     notifications.pushNotification({
@@ -53,7 +45,7 @@ const searchKeys = async () => {
   }
 };
 
-const onAddKey = (key: GpgKeyDist) => {
+const onAddKey = (key: GpgKeyWithMeta) => {
   selectedKeyForAdd.value = key;
 };
 
@@ -93,7 +85,11 @@ const onKeyAddded = () => {
 
     <div class="mt-5">
       <p>Search results</p>
-      <KeyList :keys="results" :readonly="false" @add-key="onAddKey"></KeyList>
+      <KeyList
+        :keys-with-meta="results"
+        :readonly="false"
+        @add-key="onAddKey"
+      ></KeyList>
     </div>
   </template>
   <template v-else>

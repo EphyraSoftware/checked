@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useMyKeysStore } from "../store/my-keys-store";
 import { formatDistanceToNow } from "date-fns";
-import { GpgKeyDist } from "../trusted/trusted/types";
+import { GpgKeyDist, GpgKeyWithMeta } from "../trusted/trusted/types";
 import { ref } from "vue";
 import GpgFingerprint from "./GpgFingerprint.vue";
 
 defineProps<{
-  keys: GpgKeyDist[];
+  keysWithMeta: GpgKeyWithMeta[];
   readonly: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "add-key", key: GpgKeyDist): void;
+  (e: "add-key", key: GpgKeyWithMeta): void;
 }>();
 
 const myKeysStore = useMyKeysStore();
@@ -19,7 +19,9 @@ const myKeysStore = useMyKeysStore();
 const copied = ref<string | null>(null);
 
 const isMine = (keyDist: GpgKeyDist) => {
-  return myKeysStore.myKeys.some((r) => r.fingerprint === keyDist.fingerprint);
+  return myKeysStore.myKeys.some(
+    (r) => r.gpg_key_dist.fingerprint === keyDist.fingerprint,
+  );
 };
 
 const copyFingerprint = (keyDist: GpgKeyDist) => {
@@ -39,7 +41,7 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
         <th>Name</th>
         <th>Email</th>
         <th>Expiry</th>
-        <th v-if="keys.some((k) => k.reference_count !== undefined)">
+        <th v-if="keysWithMeta.some((k) => k.reference_count !== undefined)">
           References
         </th>
         <th>Fingerprint</th>
@@ -47,21 +49,33 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="k in keys" v-bind:key="k.fingerprint">
-        <td>{{ k.name }}</td>
-        <td>{{ k.email ?? "-" }}</td>
-        <td>{{ k.expires_at ? formatDistanceToNow(k.expires_at) : "-" }}</td>
-        <td v-if="keys.some((k) => k.reference_count !== undefined)">
+      <tr v-for="k in keysWithMeta" v-bind:key="k.gpg_key_dist.fingerprint">
+        <td>{{ k.gpg_key_dist.name }}</td>
+        <td>{{ k.gpg_key_dist.email ?? "-" }}</td>
+        <td>
+          {{
+            k.gpg_key_dist.expires_at
+              ? formatDistanceToNow(k.gpg_key_dist.expires_at)
+              : "-"
+          }}
+        </td>
+        <td v-if="keysWithMeta.some((k) => k.reference_count !== undefined)">
           {{ k.reference_count ?? "unknown" }}
         </td>
 
-        <td class="cursor-pointer font-mono" @click="copyFingerprint(k)">
-          <GpgFingerprint :fingerprint="k.fingerprint" />
+        <td
+          class="cursor-pointer font-mono"
+          @click="copyFingerprint(k.gpg_key_dist)"
+        >
+          <GpgFingerprint :fingerprint="k.gpg_key_dist.fingerprint" />
           <span
-            :class="{ 'ms-2': true, 'text-success': copied === k.fingerprint }"
+            :class="{
+              'ms-2': true,
+              'text-success': copied === k.gpg_key_dist.fingerprint,
+            }"
           >
             <font-awesome-icon
-              v-if="copied === k.fingerprint"
+              v-if="copied === k.gpg_key_dist.fingerprint"
               icon="fa-regular fa-check-circle"
               size="lg"
               fixed-width
@@ -75,7 +89,9 @@ const copyFingerprint = (keyDist: GpgKeyDist) => {
           </span>
         </td>
         <td v-if="!readonly">
-          <p v-if="isMine(k)" class="font-bold text-primary">Mine</p>
+          <p v-if="isMine(k.gpg_key_dist)" class="font-bold text-primary">
+            Mine
+          </p>
           <div v-else>
             <button class="btn btn-primary" @click="() => emit('add-key', k)">
               Add

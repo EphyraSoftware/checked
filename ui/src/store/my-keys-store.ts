@@ -1,20 +1,23 @@
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { GpgKeyDist } from "../trusted/trusted/types";
-import { AppAgentClient, Record } from "@holochain/client";
-import { decode } from "@msgpack/msgpack";
+import { GpgKeyDist, GpgKeyWithMeta } from "../trusted/trusted/types";
+import { AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 
 export const useMyKeysStore = defineStore("my-keys", () => {
-  const myKeys = ref<GpgKeyDist[]>([]);
+  const myKeys = ref<GpgKeyWithMeta[]>([]);
 
   const pushGpgKeyDist = (key: GpgKeyDist) => {
-    myKeys.value.push(key);
+    myKeys.value.push({
+      gpg_key_dist: key,
+      // Assume newly created keys have a 0 reference count
+      reference_count: 0,
+    });
   };
 
   const client = inject("client") as ComputedRef<AppAgentClient>;
   const loadKeys = async (client: AppAgentClient) => {
-    const r: Record[] = await client.callZome({
+    const r: GpgKeyWithMeta[] = await client.callZome({
       role_name: "trusted",
       zome_name: "trusted",
       fn_name: "get_my_gpg_key_dists",
@@ -22,12 +25,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
       cap_secret: null,
     });
 
-    myKeys.value = [
-      ...r.map((record) => {
-        return decode((record.entry as any).Present.entry) as GpgKeyDist;
-      }),
-      ...myKeys.value,
-    ];
+    myKeys.value = [...r, ...myKeys.value];
   };
 
   watch(

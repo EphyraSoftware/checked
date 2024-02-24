@@ -47,16 +47,15 @@ export interface GpgKeyDist {
   name: string;
   email?: string;
   expires_at?: Date;
-  reference_count?: number;
+}
+
+export interface GpgKeyWithMeta {
+  gpg_key_dist: GpgKeyDist;
+  reference_count: number;
 }
 
 export interface SearchKeysRequest {
   query: string;
-}
-
-export interface SearchKeysResponse {
-  gpg_key_dist: GpgKeyDist;
-  reference_count: number;
 }
 
 export interface KeyCollection {

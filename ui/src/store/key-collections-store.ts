@@ -1,12 +1,12 @@
 import { AppAgentClient } from "@holochain/client";
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { GpgKeyDist } from "../trusted/trusted/types";
+import { GpgKeyWithMeta } from "../trusted/trusted/types";
 import { registerSignalHandler } from "../signals";
 
 export interface KeyCollectionWithKeys {
   name: string;
-  gpg_keys: GpgKeyDist[];
+  gpg_keys: GpgKeyWithMeta[];
 }
 
 export const useKeyCollectionsStore = defineStore("key-collections", () => {
@@ -16,7 +16,7 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
     keyCollections.value.push(collection);
   };
 
-  const addKeyToCollection = (name: string, key: GpgKeyDist) => {
+  const addKeyToCollection = (name: string, key: GpgKeyWithMeta) => {
     const existingCollection = keyCollections.value.find(
       (c) => c.name === name,
     );

@@ -23,7 +23,7 @@ const keyCollectionsStore = useKeyCollectionsStore();
       class="mt-3"
     >
       <p class="font-bold">{{ c.name }}</p>
-      <KeyList :keys="c.gpg_keys" :readonly="true"></KeyList>
+      <KeyList :keys-with-meta="c.gpg_keys" :readonly="true"></KeyList>
     </div>
   </template>
 </template>
