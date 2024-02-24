@@ -1,5 +1,29 @@
 import { CallableCell } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeActionHash, fakeAgentPubKey, fakeEntryHash, fakeDnaHash } from '@holochain/client';
+import { Record } from '@holochain/client';
+import { decode } from '@msgpack/msgpack';
+
+export interface GpgKeyDist {
+  public_key: string;
+  fingerprint: string;
+  name: string;
+  email?: string;
+  expires_at: number;
+}
+
+export interface GpgKeyResponse {
+  gpg_key_dist: GpgKeyDist;
+  reference_count: number;
+}
+
+export interface KeyCollectionWithKeys {
+  name: string;
+  gpg_keys: GpgKeyResponse[];
+}
+
+export const decodeRecord = <T> (record: Record): T => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return decode((record.entry as any).Present.entry) as T
+}
 
 export function sampleGpgKey() {
     return `

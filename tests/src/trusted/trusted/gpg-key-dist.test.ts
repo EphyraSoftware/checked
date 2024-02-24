@@ -1,10 +1,9 @@
 import { assert, test } from "vitest";
 
-import { runScenario, dhtSync, CallableCell } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeDnaHash, fakeActionHash, fakeAgentPubKey, fakeEntryHash } from '@holochain/client';
-import { decode } from '@msgpack/msgpack';
+import { runScenario, dhtSync } from '@holochain/tryorama';
+import { Record } from '@holochain/client';
 
-import { createKeyCollection, distributeGpgKey, sampleGpgKey } from './common.js';
+import { GpgKeyResponse, distributeGpgKey, sampleGpgKey } from './common.js';
 
 test('Distribute GPG Key', async () => {
   await runScenario(async scenario => {
@@ -31,7 +30,7 @@ test('Get my keys', async () => {
     assert.ok(record);
 
     // Bob gets the created GpgKey
-    const keys: any[] = await alice.cells[0].callZome({
+    const keys: GpgKeyResponse[] = await alice.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "get_my_gpg_key_dists",
       payload: null,
@@ -58,7 +57,7 @@ test('Search for a key', async () => {
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob searches for Alice's GPG key
-    const responses: any[] = await bob.cells[0].callZome({
+    const responses: GpgKeyResponse[] = await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "search_keys",
       payload: {

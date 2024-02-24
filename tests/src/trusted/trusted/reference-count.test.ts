@@ -1,10 +1,9 @@
 import { assert, test } from "vitest";
 
-import { runScenario, dhtSync, CallableCell } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeDnaHash, fakeActionHash, fakeAgentPubKey, fakeEntryHash } from '@holochain/client';
-import { decode } from '@msgpack/msgpack';
+import { runScenario, dhtSync } from '@holochain/tryorama';
+import { Record } from '@holochain/client';
 
-import { createKeyCollection, distributeGpgKey, sampleGpgKey } from './common.js';
+import { GpgKeyDist, GpgKeyResponse, KeyCollectionWithKeys, createKeyCollection, decodeRecord, distributeGpgKey, sampleGpgKey } from './common.js';
 
 test('Get my keys for a key which is in another agent\'s collection', async () => {
     await runScenario(async scenario => {
@@ -29,7 +28,7 @@ test('Get my keys for a key which is in another agent\'s collection', async () =
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
                 key_collection_name: "a test",
             },
         });
@@ -37,7 +36,7 @@ test('Get my keys for a key which is in another agent\'s collection', async () =
         await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
         // Alice searches for their own key
-        const responses: any[] = await alice.cells[0].callZome({
+        const responses: GpgKeyResponse[] = await alice.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "get_my_gpg_key_dists",
             payload: null,
@@ -71,7 +70,7 @@ test('Search for a key which is in another agent\'s collection', async () => {
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
                 key_collection_name: "a test",
             },
         });
@@ -79,7 +78,7 @@ test('Search for a key which is in another agent\'s collection', async () => {
         await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
         // Alice searches for their own key
-        const responses: any[] = await alice.cells[0].callZome({
+        const responses: GpgKeyResponse[] = await alice.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "search_keys",
             payload: {
@@ -116,7 +115,7 @@ test('Get my key collections for a key which is in another agent\'s collection',
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
                 key_collection_name: "bob test",
             },
         });
@@ -129,7 +128,7 @@ test('Get my key collections for a key which is in another agent\'s collection',
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
                 key_collection_name: "carol test",
             },
         });
@@ -137,7 +136,7 @@ test('Get my key collections for a key which is in another agent\'s collection',
         await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);
 
         // Bob checks their key collections
-        const responses: any[] = await bob.cells[0].callZome({
+        const responses: KeyCollectionWithKeys[] = await bob.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "get_my_key_collections",
             payload: null,

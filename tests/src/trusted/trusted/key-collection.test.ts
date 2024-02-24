@@ -1,10 +1,9 @@
 import { assert, test } from "vitest";
 
-import { runScenario, dhtSync, CallableCell } from '@holochain/tryorama';
-import { NewEntryAction, ActionHash, Record, AppBundleSource, fakeDnaHash, fakeActionHash, fakeAgentPubKey, fakeEntryHash } from '@holochain/client';
-import { decode } from '@msgpack/msgpack';
+import { runScenario, dhtSync } from '@holochain/tryorama';
+import { Record } from '@holochain/client';
 
-import { createKeyCollection, distributeGpgKey, sampleGpgKey } from './common.js';
+import { GpgKeyDist, KeyCollectionWithKeys, createKeyCollection, decodeRecord, distributeGpgKey, sampleGpgKey } from './common.js';
 
 test('Create key collection', async () => {
     await runScenario(async scenario => {
@@ -55,7 +54,7 @@ test('Get my key collections', async () => {
             assert.ok(record);
         }
 
-        const key_collections: object[] = await alice.cells[0].callZome({
+        const key_collections: KeyCollectionWithKeys[] = await alice.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "get_my_key_collections",
             payload: null,
@@ -85,19 +84,19 @@ test('Link GPG key to collection', async () => {
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((gpg_key_record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
                 key_collection_name: "a test",
             },
         });
 
-        const key_collections: object[] = await alice.cells[0].callZome({
+        const key_collections: KeyCollectionWithKeys[] = await alice.cells[0].callZome({
             zome_name: "trusted",
             fn_name: "get_my_key_collections",
             payload: null,
         });
 
         assert.equal(key_collections.length, 1);
-        assert.equal((key_collections[0] as any).gpg_keys.length, 1);
+        assert.equal(key_collections[0].gpg_keys.length, 1);
     });
 });
 
@@ -128,7 +127,7 @@ test('Remote validation', async () => {
             zome_name: "trusted",
             fn_name: "link_gpg_key_to_key_collection",
             payload: {
-                gpg_key_fingerprint: (decode((gpg_key_record.entry as any).Present.entry) as any).fingerprint,
+                gpg_key_fingerprint: decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
                 key_collection_name: "a test 1",
             },
         });
