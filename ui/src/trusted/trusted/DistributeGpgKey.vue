@@ -8,6 +8,10 @@ import KeyList from "../../component/KeyList.vue";
 
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
+const emit = defineEmits<{
+  (e: 'distributed'): void;
+}>();
+
 const notifications = useNotificationsStore();
 
 const selected = ref<Partial<GpgKeyDist>>({});
@@ -134,6 +138,7 @@ const distributeGpgKey = async () => {
     });
 
     resetForm();
+    emit("distributed");
   } catch (e: any) {
     notifications.pushNotification({
       message: `Error creating the gpg key: ${e}`,
@@ -146,8 +151,6 @@ const distributeGpgKey = async () => {
 </script>
 
 <template>
-  <p class="text-lg">Distribute your GPG public key</p>
-
   <div class="flex justify-center">
     <div role="tablist" class="tabs tabs-boxed w-1/2">
       <a
@@ -185,7 +188,7 @@ const distributeGpgKey = async () => {
   </div>
 
   <div v-if="selected.fingerprint" class="mt-5">
-    <p>Selected key</p>
+    <p class="font-bold text-md">Selected key</p>
     <!-- We know it's a partial, assume the KeyList component can handle that -->
     <KeyList
       :keys-with-meta="[

@@ -112,9 +112,8 @@ onMounted(async () => {
         <div class="container mx-auto mt-5">
           <MyKeys></MyKeys>
           <div class="mt-5">
-            <DistributeGpgKey></DistributeGpgKey>
+            <KeyCollections></KeyCollections>
           </div>
-          <KeyCollections></KeyCollections>
         </div>
       </div>
       <div v-else-if="showScreen === 'settings'">

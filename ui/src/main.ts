@@ -8,8 +8,10 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import {
   faClipboard,
   faCheckCircle,
+  faShareFromSquare,
 } from "@fortawesome/free-regular-svg-icons";
-library.add(faClipboard, faCheckCircle);
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+library.add(faClipboard, faCheckCircle, faShareFromSquare, faXmark);
 
 const pinia = createPinia();
 const app = createApp(App);
