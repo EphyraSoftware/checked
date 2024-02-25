@@ -32,9 +32,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
       // TODO Don't have the notifications store here, can I use it?
       console.error("Error loading keys", e);
     } finally {
-      setTimeout(() => {
-        loading.value = false;
-      }, 250)
+      loading.value = false;
     }
   };
 

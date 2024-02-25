@@ -10,6 +10,7 @@ export interface KeyCollectionWithKeys {
 }
 
 export const useKeyCollectionsStore = defineStore("key-collections", () => {
+  const loading = ref(true);
   const keyCollections = ref<KeyCollectionWithKeys[]>([]);
 
   const pushKeyCollection = (collection: KeyCollectionWithKeys) => {
@@ -27,15 +28,22 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
 
   const client = inject("client") as ComputedRef<AppAgentClient>;
   const loadKeyCollections = async (client: AppAgentClient) => {
-    const collections: KeyCollectionWithKeys[] = await client.callZome({
-      role_name: "trusted",
-      zome_name: "trusted",
-      fn_name: "get_my_key_collections",
-      payload: null,
-      cap_secret: null,
-    });
-
-    keyCollections.value = [...collections, ...keyCollections.value];
+    try {
+      const collections: KeyCollectionWithKeys[] = await client.callZome({
+        role_name: "trusted",
+        zome_name: "trusted",
+        fn_name: "get_my_key_collections",
+        payload: null,
+        cap_secret: null,
+      });
+  
+      keyCollections.value = [...collections, ...keyCollections.value];
+    } catch (e) {
+      // TODO Don't have the notifications store here, can I use it?
+      console.error("Error loading key collections", e);
+    } finally {
+      loading.value = false;
+    }
   };
 
   watch(
@@ -51,6 +59,7 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
   );
 
   return {
+    loading,
     keyCollections,
     pushKeyCollection,
     addKeyToCollection,
