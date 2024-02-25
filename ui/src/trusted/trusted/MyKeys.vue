@@ -16,7 +16,7 @@ watch(loading, (loading) => {
   if (!loading && myKeys.value.length === 0) {
     showDistribute.value = true;
   }
-});
+}, { immediate: true });
 
 </script>
 
