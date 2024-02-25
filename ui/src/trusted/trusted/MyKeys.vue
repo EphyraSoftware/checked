@@ -29,8 +29,8 @@ watch(
 
       <div class="flex flex-grow justify-end">
         <button
-          class="btn btn-circle btn-primary"
-          title="Distribute a GPG key"
+          class="btn btn-circle btn-sm btn-primary"
+          :title="showDistribute ? 'Cancel' : 'Distribute your GPG public key'"
           @click="showDistribute = !showDistribute"
         >
           <font-awesome-icon
