@@ -12,7 +12,6 @@ const showDistribute = ref(false);
 
 // Encourage the user to distribute a key if they don't have any yet
 watch(loading, (loading) => {
-  console.log(`loading: ${loading}, length ${myKeys.value.length}`)
   if (!loading && myKeys.value.length === 0) {
     showDistribute.value = true;
   }
