@@ -5,6 +5,7 @@ import { AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 
 export const useMyKeysStore = defineStore("my-keys", () => {
+  const loading = ref(true);
   const myKeys = ref<GpgKeyWithMeta[]>([]);
 
   const pushGpgKeyDist = (key: GpgKeyDist) => {
@@ -17,15 +18,24 @@ export const useMyKeysStore = defineStore("my-keys", () => {
 
   const client = inject("client") as ComputedRef<AppAgentClient>;
   const loadKeys = async (client: AppAgentClient) => {
-    const r: GpgKeyWithMeta[] = await client.callZome({
-      role_name: "trusted",
-      zome_name: "trusted",
-      fn_name: "get_my_gpg_key_dists",
-      payload: null,
-      cap_secret: null,
-    });
-
-    myKeys.value = [...r, ...myKeys.value];
+    try {
+      const r: GpgKeyWithMeta[] = await client.callZome({
+        role_name: "trusted",
+        zome_name: "trusted",
+        fn_name: "get_my_gpg_key_dists",
+        payload: null,
+        cap_secret: null,
+      });
+  
+      myKeys.value = [...r, ...myKeys.value];
+    } catch (e) {
+      // TODO Don't have the notifications store here, can I use it?
+      console.error("Error loading keys", e);
+    } finally {
+      setTimeout(() => {
+        loading.value = false;
+      }, 250)
+    }
   };
 
   watch(
@@ -41,6 +51,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   );
 
   return {
+    loading,
     myKeys,
     pushGpgKeyDist,
   };
