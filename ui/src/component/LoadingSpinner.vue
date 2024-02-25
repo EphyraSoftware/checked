@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { defineProps } from "vue";
 
 defineProps<{
-    loading: boolean
-}>()
-
+  loading: boolean;
+}>();
 </script>
 
 <template>
-    <Transition name="fade" mode="out-in">
-        <div class="flex flex-col items-center" v-if="loading">
-            <slot name="loading"></slot>
-            <span class="loading loading-infinity loading-lg"></span>
-        </div>
-        <template v-else>
-            <slot name="content"></slot>
-        </template>
-    </Transition>
+  <Transition name="fade" mode="out-in">
+    <div class="flex flex-col items-center" v-if="loading">
+      <slot name="loading"></slot>
+      <span class="loading loading-infinity loading-lg"></span>
+    </div>
+    <template v-else>
+      <slot name="content"></slot>
+    </template>
+  </Transition>
 </template>
 
 <style>

@@ -26,7 +26,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
         payload: null,
         cap_secret: null,
       });
-  
+
       myKeys.value = [...r, ...myKeys.value];
     } catch (e) {
       // TODO Don't have the notifications store here, can I use it?

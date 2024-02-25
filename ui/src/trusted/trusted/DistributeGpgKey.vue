@@ -9,7 +9,7 @@ import KeyList from "../../component/KeyList.vue";
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
 const emit = defineEmits<{
-  (e: 'distributed'): void;
+  (e: "distributed"): void;
 }>();
 
 const notifications = useNotificationsStore();

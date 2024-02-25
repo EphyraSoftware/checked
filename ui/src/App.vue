@@ -1,22 +1,14 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from "vue";
 import { AppAgentClient, AppAgentWebsocket } from "@holochain/client";
-import DistributeGpgKey from "./trusted/trusted/DistributeGpgKey.vue";
-import MyKeys from "./trusted/trusted/MyKeys.vue";
-import SearchKeys from "./trusted/trusted/SearchKeys.vue";
 import NotifyContainer from "./component/NotifyContainer.vue";
 import { useThemeStore } from "./store/theme-store";
-import SettingsEditor from "./component/SettingsEditor.vue";
-import KeyCollections from "./trusted/trusted/KeyCollections.vue";
-import { useRouter } from "vue-router";
 
 const themeStore = useThemeStore();
-const router = useRouter();
 
 const client = ref<AppAgentClient | null>(null);
 provide("client", client);
 const loading = ref(true);
-const showScreen = ref<"home" | "search" | "settings" | "about">("home");
 
 const applyTheme = (theme: string) => {
   document.documentElement.setAttribute("data-theme", theme);
