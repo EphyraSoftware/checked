@@ -66,3 +66,13 @@ Create a GPG key for testing
 gpg --quick-generate-key tester
 gpg --export --armor tester > tester_key.asc
 ```
+
+### Setup issues
+
+#### Running Tauri on WSL (Ubuntu 22)
+
+You will get GDK errors about cursors, resolve with `sudo apt install -y adwaita-icon-theme`
+
+#### hc-spin on WSL (Ubuntu 22)
+
+`sudo apt install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgtk-3-dev libasound2`
