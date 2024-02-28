@@ -122,6 +122,62 @@ test("Link GPG key to collection", async () => {
   });
 });
 
+test("Unlink GPG key from collection", async () => {
+  await runScenario(async (scenario) => {
+    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
+    const appSource = { appBundleSource: { path: testAppPath } };
+
+    const [alice] = await scenario.addPlayersWithApps([appSource]);
+
+    // Alice distributes a GPG key
+    const gpg_key_record: Record = await distributeGpgKey(
+      alice.cells[0],
+      sampleGpgKey(),
+    );
+    assert.ok(gpg_key_record);
+
+    // Alice creates a key collection
+    const key_collection_record: Record = await createKeyCollection(
+      alice.cells[0],
+      "a test",
+    );
+    assert.ok(key_collection_record);
+
+    // Alice links the GPG key to the key collection
+    await alice.cells[0].callZome({
+      zome_name: "trusted",
+      fn_name: "link_gpg_key_to_key_collection",
+      payload: {
+        gpg_key_fingerprint:
+          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        key_collection_name: "a test",
+      },
+    });
+
+    // Alice unlinks the GPG key from the key collection
+    await alice.cells[0].callZome({
+      zome_name: "trusted",
+      fn_name: "unlink_gpg_key_from_key_collection",
+      payload: {
+        gpg_key_fingerprint:
+          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        key_collection_name: "a test",
+      },
+    });
+
+    // Now getting key collections should return a single, empty key collection
+    const key_collections: KeyCollectionWithKeys[] =
+      await alice.cells[0].callZome({
+        zome_name: "trusted",
+        fn_name: "get_my_key_collections",
+        payload: null,
+      });
+
+    assert.equal(key_collections.length, 1);
+    assert.equal(key_collections[0].gpg_keys.length, 0);
+  });
+});
+
 test("Remote validation", async () => {
   await runScenario(async (scenario) => {
     const testAppPath = process.cwd() + "/../workdir/hWOT.happ";

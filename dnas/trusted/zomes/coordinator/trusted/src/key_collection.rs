@@ -83,7 +83,6 @@ pub struct LinkGpgKeyToKeyCollectionRequest {
     pub key_collection_name: String,
 }
 
-// TODO prevent duplicate links? Could also be done in the UI fairly easily
 #[hdk_extern]
 pub fn link_gpg_key_to_key_collection(
     request: LinkGpgKeyToKeyCollectionRequest,
@@ -145,6 +144,107 @@ pub fn link_gpg_key_to_key_collection(
         LinkTypes::GpgKeyDistToKeyCollection,
         tag_id.as_bytes().to_vec(),
     )
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct UnlinkGpgKeyFromKeyCollectionRequest {
+    pub gpg_key_fingerprint: String,
+    pub key_collection_name: String,
+}
+
+#[hdk_extern]
+pub fn unlink_gpg_key_from_key_collection(
+    request: UnlinkGpgKeyFromKeyCollectionRequest,
+) -> ExternResult<()> {
+    let fingerprint_links = get_links(
+        GetLinksInputBuilder::try_new(
+            make_base_hash(&request.gpg_key_fingerprint)?,
+            LinkTypes::FingerprintToGpgKeyDist,
+        )?
+        .build(),
+    )?;
+
+    if fingerprint_links.is_empty() {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "No GPG key found with the given fingerprint"
+        ))));
+    }
+
+    if fingerprint_links.len() > 1 {
+        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
+            "Multiple GPG keys found with the given fingerprint"
+        ))));
+    }
+
+    // Target is the entry hash of the GpgKeyDist
+    let fingerprint_link = fingerprint_links[0].clone();
+
+    let my_key_collections = inner_get_my_key_collections()?;
+
+    let matched_collection = my_key_collections.into_iter().find(|r| {
+        r.entry
+            .as_option()
+            .and_then(|e| e.as_app_entry())
+            .and_then(|e| {
+                let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
+                Some(key_collection.name == request.key_collection_name)
+            })
+            .unwrap_or(false)
+    });
+
+    let key_collection = matched_collection.ok_or(wasm_error!(WasmErrorInner::Guest(
+        String::from("No key collection found with the given name")
+    )))?;
+
+    let agent_info = agent_info()?;
+
+    let potential_links_from_selected_collection = get_links(
+        GetLinksInputBuilder::try_new(
+            key_collection.action_hashed().as_hash().clone(),
+            LinkTypes::KeyCollectionToGpgKeyDist.try_into_filter()?,
+        )?
+        .author(agent_info.agent_initial_pubkey.clone())
+        .build(),
+    )?;
+
+    // Unlink the the key collection from the GpgKeyDist
+    let mut removing_tags = HashSet::new();
+    for link in potential_links_from_selected_collection.into_iter() {
+        // Find the links from this collection that target the key to remove
+        if link.target == fingerprint_link.target.clone() {
+            removing_tags.insert(link.tag);
+            delete_link(link.create_link_hash)?;
+        }
+    }
+
+    let potential_links_from_fingerprint = get_links(
+        GetLinksInputBuilder::try_new(
+            fingerprint_link.target,
+            LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
+        )?
+        .author(agent_info.agent_initial_pubkey)
+        .build(),
+    )?;
+
+    // Unlink the key fingerprint from the key collection
+    for link in potential_links_from_fingerprint.into_iter() {
+        // Find the links from this collection that target the key to remove
+        if link.target == key_collection.action_hashed().as_hash().clone().into() {
+            if !removing_tags.remove(&link.tag) {
+                return Err(wasm_error!(WasmErrorInner::Guest(format!(
+                    "Link from fingerprint to key collection has tag {:?} but no corresponding link from key collection to fingerprint was deleted",
+                    link.tag
+                ))));
+            }
+            delete_link(link.create_link_hash)?;
+        }
+    }
+
+    if !removing_tags.is_empty() {
+        tracing::warn!("There were links from the key collection that did not correspond to a link from the key fingerprint. Validation is supposed to prevent this. {:?}", removing_tags);
+    }
+
+    Ok(())
 }
 
 /// Checks if the key collection can be created.

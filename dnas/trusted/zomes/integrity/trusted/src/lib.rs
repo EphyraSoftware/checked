@@ -161,9 +161,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 )
             }
         },
-        FlatOp::RegisterDeleteLink { .. } => Ok(ValidateCallbackResult::Invalid(String::from(
-            "There are no link types in this integrity zome",
-        ))),
+        FlatOp::RegisterDeleteLink { original_action, link_type, tag, .. } => match link_type {
+            _ => Ok(ValidateCallbackResult::Valid)
+        },
         FlatOp::StoreRecord(store_record) => {
             match store_record {
                 // Complementary validation to the `StoreEntry` Op, in which the record itself is validated
@@ -337,9 +337,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterDeleteLink`
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `RegisterDeleteLink` validation failed
-                OpRecord::DeleteLink { .. } => Ok(ValidateCallbackResult::Invalid(
-                    "There are no link types in this integrity zome".to_string(),
-                )),
+                OpRecord::DeleteLink {  .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::CreatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::UpdatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::CreateCapClaim { .. } => Ok(ValidateCallbackResult::Valid),
