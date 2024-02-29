@@ -222,5 +222,19 @@ test("Remote validation", async () => {
 
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
+
+    // Alice unlinks the GPG key from the key collection
+    await alice.cells[0].callZome({
+      zome_name: "trusted",
+      fn_name: "unlink_gpg_key_from_key_collection",
+      payload: {
+        gpg_key_fingerprint:
+          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        key_collection_name: "a test 2",
+      },
+    });
+
+    // The DHT shouldn't sync if the remote validation fails
+    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
   });
 });

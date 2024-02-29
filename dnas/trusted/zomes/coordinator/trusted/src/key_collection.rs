@@ -198,38 +198,38 @@ pub fn unlink_gpg_key_from_key_collection(
 
     let agent_info = agent_info()?;
 
-    let potential_links_from_selected_collection = get_links(
+    let potential_links_from_fingerprint = get_links(
         GetLinksInputBuilder::try_new(
-            key_collection.action_hashed().as_hash().clone(),
-            LinkTypes::KeyCollectionToGpgKeyDist.try_into_filter()?,
+            fingerprint_link.target.clone(),
+            LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
         )?
         .author(agent_info.agent_initial_pubkey.clone())
         .build(),
     )?;
 
-    // Unlink the the key collection from the GpgKeyDist
+    // Unlink the key fingerprint from the key collection
     let mut removing_tags = HashSet::new();
-    for link in potential_links_from_selected_collection.into_iter() {
+    for link in potential_links_from_fingerprint.into_iter() {
         // Find the links from this collection that target the key to remove
-        if link.target == fingerprint_link.target.clone() {
+        if link.target == key_collection.action_hashed().as_hash().clone().into() {
             removing_tags.insert(link.tag);
             delete_link(link.create_link_hash)?;
         }
     }
 
-    let potential_links_from_fingerprint = get_links(
+    let potential_links_from_selected_collection = get_links(
         GetLinksInputBuilder::try_new(
-            fingerprint_link.target,
-            LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
+            key_collection.action_hashed().as_hash().clone(),
+            LinkTypes::KeyCollectionToGpgKeyDist.try_into_filter()?,
         )?
         .author(agent_info.agent_initial_pubkey)
         .build(),
     )?;
 
-    // Unlink the key fingerprint from the key collection
-    for link in potential_links_from_fingerprint.into_iter() {
+    // Unlink the the key collection from the GpgKeyDist
+    for link in potential_links_from_selected_collection.into_iter() {
         // Find the links from this collection that target the key to remove
-        if link.target == key_collection.action_hashed().as_hash().clone().into() {
+        if link.target == fingerprint_link.target {
             if !removing_tags.remove(&link.tag) {
                 return Err(wasm_error!(WasmErrorInner::Guest(format!(
                     "Link from fingerprint to key collection has tag {:?} but no corresponding link from key collection to fingerprint was deleted",
@@ -241,7 +241,7 @@ pub fn unlink_gpg_key_from_key_collection(
     }
 
     if !removing_tags.is_empty() {
-        tracing::warn!("There were links from the key collection that did not correspond to a link from the key fingerprint. Validation is supposed to prevent this. {:?}", removing_tags);
+        tracing::warn!("There were links from the key fingerprint that did not correspond to a link from the key collection. Validation is supposed to prevent this. {:?}", removing_tags);
     }
 
     Ok(())

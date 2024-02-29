@@ -161,8 +161,20 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 )
             }
         },
-        FlatOp::RegisterDeleteLink { original_action, link_type, tag, .. } => match link_type {
-            _ => Ok(ValidateCallbackResult::Valid)
+        FlatOp::RegisterDeleteLink { link_type, original_action, action, .. } => match link_type {
+            LinkTypes::GpgKeyDistToKeyCollection => {
+                key_collection::validate_delete_gpg_key_dist_to_key_collection_link(
+                    original_action,
+                    action,
+                )
+            }
+            LinkTypes::KeyCollectionToGpgKeyDist => {
+                key_collection::validate_delete_key_collection_to_gpg_key_dist_link(
+                    original_action,
+                    action,
+                )
+            }
+            lt => Ok(ValidateCallbackResult::Invalid(format!("Link type [{:?}] cannot be deleted", lt))),
         },
         FlatOp::StoreRecord(store_record) => {
             match store_record {
