@@ -161,7 +161,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 )
             }
         },
-        FlatOp::RegisterDeleteLink { link_type, original_action, action, .. } => match link_type {
+        FlatOp::RegisterDeleteLink {
+            link_type,
+            original_action,
+            action,
+            ..
+        } => match link_type {
             LinkTypes::GpgKeyDistToKeyCollection => {
                 key_collection::validate_delete_gpg_key_dist_to_key_collection_link(
                     original_action,
@@ -174,7 +179,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     action,
                 )
             }
-            lt => Ok(ValidateCallbackResult::Invalid(format!("Link type [{:?}] cannot be deleted", lt))),
+            lt => Ok(ValidateCallbackResult::Invalid(format!(
+                "Link type [{:?}] cannot be deleted",
+                lt
+            ))),
         },
         FlatOp::StoreRecord(store_record) => {
             match store_record {
@@ -349,7 +357,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // Complementary validation to the `RegisterDeleteLink` Op, in which the record itself is validated
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `RegisterDeleteLink`
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `RegisterDeleteLink` validation failed
-                OpRecord::DeleteLink {  .. } => Ok(ValidateCallbackResult::Valid),
+                OpRecord::DeleteLink { .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::CreatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::UpdatePrivateEntry { .. } => Ok(ValidateCallbackResult::Valid),
                 OpRecord::CreateCapClaim { .. } => Ok(ValidateCallbackResult::Valid),

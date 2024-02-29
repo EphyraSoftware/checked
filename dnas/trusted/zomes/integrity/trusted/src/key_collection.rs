@@ -221,53 +221,51 @@ pub fn validate_delete_key_collection_to_gpg_key_dist_link(
         let action: Action = action.clone().into();
         hash_action(action)?
     };
-    let activity = must_get_agent_activity(action.author, ChainFilter::new(action_hash).until(original_action_hash))?;
+    let activity = must_get_agent_activity(
+        action.author,
+        ChainFilter::new(action_hash).until(original_action_hash),
+    )?;
 
-    
     // Look for the reverse create link, needed to find the associated delete.
     let reverse_link_type = {
         let scoped_link_type: ScopedLinkType = LinkTypes::GpgKeyDistToKeyCollection.try_into()?;
         scoped_link_type.zome_type
     };
-    let matched_gpg_key_dist_to_collection_creates = activity.iter().filter(|agent_activity| {
-        match agent_activity.action.action() {
-            Action::CreateLink(CreateLink {
-                link_type,
-                tag,
-                ..
-            }) if *link_type == reverse_link_type && *tag == original_action.tag => true,
-            _ => false,
-        }
-    }).collect::<Vec<_>>();
+    let matched_gpg_key_dist_to_collection_creates = activity
+        .iter()
+        .filter(|agent_activity| matches!(agent_activity.action.action(), Action::CreateLink(CreateLink { link_type, tag, .. }) if *link_type == reverse_link_type && *tag == original_action.tag))
+        .collect::<Vec<_>>();
 
     if matched_gpg_key_dist_to_collection_creates.len() > 1 {
         return Ok(ValidateCallbackResult::Invalid(
-            "Found duplicate create links to delete, this should have been prevented on create".to_string(),
+            "Found duplicate create links to delete, this should have been prevented on create"
+                .to_string(),
         ));
     }
 
-    if matched_gpg_key_dist_to_collection_creates.len() == 0 {
+    if matched_gpg_key_dist_to_collection_creates.is_empty() {
         return Ok(ValidateCallbackResult::Invalid(
             "The create link to delete does not exist".to_string(),
         ));
     }
 
-    let reverse_create = matched_gpg_key_dist_to_collection_creates.first().ok_or_else(|| {
-        wasm_error!(WasmErrorInner::Guest(
-            "The create link to delete does not exist".to_string()
-        ))
-    })?;
+    let reverse_create = matched_gpg_key_dist_to_collection_creates
+        .first()
+        .ok_or_else(|| {
+            wasm_error!(WasmErrorInner::Guest(
+                "The create link to delete does not exist".to_string()
+            ))
+        })?;
 
     let reverse_create_hash = reverse_create.action.as_hash();
-    let match_gpg_key_dist_to_collection_deletes = activity.iter().filter(|agent_activity| {
-        match agent_activity.action.action() {
-            Action::DeleteLink(DeleteLink {
-                link_add_address,
-                ..
-            }) if link_add_address == reverse_create_hash => true,
-            _ => false,
-        }
-    }).collect::<Vec<_>>();
+    let match_gpg_key_dist_to_collection_deletes = activity
+        .iter()
+        .filter(|agent_activity| {
+            matches!(agent_activity.action.action(), Action::DeleteLink(DeleteLink {
+                             link_add_address, ..
+                         }) if link_add_address == reverse_create_hash)
+        })
+        .collect::<Vec<_>>();
 
     if match_gpg_key_dist_to_collection_deletes.len() > 1 {
         return Ok(ValidateCallbackResult::Invalid(
@@ -275,7 +273,7 @@ pub fn validate_delete_key_collection_to_gpg_key_dist_link(
         ));
     }
 
-    if match_gpg_key_dist_to_collection_deletes.len() == 0 {
+    if match_gpg_key_dist_to_collection_deletes.is_empty() {
         return Ok(ValidateCallbackResult::Invalid(
             "Missing associated reverse deletion".to_string(),
         ));

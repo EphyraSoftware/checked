@@ -18,7 +18,12 @@ const { loading, keyCollections } = storeToRefs(useKeyCollectionsStore());
       <div>
         <!-- Single root for loading transition -->
         <div v-if="keyCollections.length === 0" class="ms-5 italic">
-          <p>You don't have any key collections yet. <router-link to="/search" class="link link-neutral">Search for one to add</router-link>?</p>
+          <p>
+            You don't have any key collections yet.
+            <router-link to="/search" class="link link-neutral"
+              >Search for one to add</router-link
+            >?
+          </p>
         </div>
         <template v-else>
           <div v-for="c in keyCollections" v-bind:key="c.name" class="mt-3">
