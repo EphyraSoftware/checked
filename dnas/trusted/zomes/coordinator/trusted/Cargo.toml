@@ -12,7 +12,8 @@ hdk = { workspace = true }
 
 serde = { workspace = true }
 
-trusted_integrity = { workspace = true } 
+trusted_integrity = { workspace = true }
 
+minisign-verify = { workspace = true }
 chrono = { workspace = true }
 nanoid = { workspace = true }

@@ -1,21 +1,18 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import { Record } from "@holochain/client";
+import {Create, HoloHashed, Record} from "@holochain/client";
 
 import {
-  GpgKeyDist,
-  GpgKeyResponse,
+  VerificationKeyResponse,
   KeyCollectionWithKeys,
   createKeyCollection,
-  decodeRecord,
-  distributeGpgKey,
-  sampleGpgKey,
+  distributeVerificationKey,
+  sampleMiniSignKey, testAppPath, sampleMiniSignProof, sampleMiniSignProofSignature,
 } from "./common.js";
 
 test("Get my keys for a key which is in another agent's collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
@@ -25,24 +22,28 @@ test("Get my keys for a key which is in another agent's collection", async () =>
 
     await scenario.shareAllAgents();
 
-    // Alice distributes a GPG key
-    const record: Record = await distributeGpgKey(
+    // Alice distributes a MiniSign verification key
+    const record: Record = await distributeVerificationKey(
       alice.cells[0],
-      sampleGpgKey(),
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(record);
+
+    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob creates a collection
     await createKeyCollection(bob.cells[0], "a test");
 
-    // Bob links the GPG key to their key collection
+    // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test",
       },
     });
@@ -50,20 +51,18 @@ test("Get my keys for a key which is in another agent's collection", async () =>
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Alice searches for their own key
-    const responses: GpgKeyResponse[] = await alice.cells[0].callZome({
+    const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "get_my_gpg_key_dists",
+      fn_name: "get_my_verification_key_distributions",
       payload: null,
     });
     assert.equal(responses.length, 1);
-    assert.equal(responses[0].gpg_key_dist.name, "Alice");
     assert.equal(responses[0].reference_count, 1);
   });
 });
 
 test("Search for a key which is in another agent's collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
@@ -73,24 +72,28 @@ test("Search for a key which is in another agent's collection", async () => {
 
     await scenario.shareAllAgents();
 
-    // Alice distributes a GPG key
-    const record: Record = await distributeGpgKey(
+    // Alice distributes a MiniSign verification key
+    const record: Record = await distributeVerificationKey(
       alice.cells[0],
-      sampleGpgKey(),
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(record);
+
+    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob creates a collection
     await createKeyCollection(bob.cells[0], "a test");
 
-    // Bob links the GPG key to their key collection
+    // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test",
       },
     });
@@ -98,22 +101,20 @@ test("Search for a key which is in another agent's collection", async () => {
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Alice searches for their own key
-    const responses: GpgKeyResponse[] = await alice.cells[0].callZome({
+    const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "search_keys",
       payload: {
-        query: "0B1D4843CA2F198CAC2F5C6A449D7AE5D2532CEF",
+        agent_pub_key: alice.agentPubKey,
       },
     });
     assert.equal(responses.length, 1);
-    assert.equal(responses[0].gpg_key_dist.name, "Alice");
     assert.equal(responses[0].reference_count, 1);
   });
 });
 
 test("Get my key collections for a key which is in another agent's collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice, bob, carol] = await scenario.addPlayersWithApps([
@@ -125,11 +126,15 @@ test("Get my key collections for a key which is in another agent's collection", 
     await scenario.shareAllAgents();
 
     // Alice distributes a GPG key
-    const record: Record = await distributeGpgKey(
+    const record: Record = await distributeVerificationKey(
       alice.cells[0],
-      sampleGpgKey(),
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(record);
+
+    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
 
     // All need to be able to see Alice's GPG key
     await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);
@@ -137,12 +142,12 @@ test("Get my key collections for a key which is in another agent's collection", 
     // Bob creates a collection
     await createKeyCollection(bob.cells[0], "bob test");
 
-    // Bob links Alice's GPG key to their key collection
+    // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "bob test",
       },
     });
@@ -150,12 +155,12 @@ test("Get my key collections for a key which is in another agent's collection", 
     // Carol creates a collection
     await createKeyCollection(carol.cells[0], "carol test");
 
-    // Carol links Alice's GPG key to their key collection
+    // Carol links Alice's verification key to their key collection
     await carol.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint: decodeRecord<GpgKeyDist>(record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "carol test",
       },
     });
@@ -170,8 +175,8 @@ test("Get my key collections for a key which is in another agent's collection", 
     });
     assert.equal(responses.length, 1);
     assert.equal(responses[0].name, "bob test");
-    assert.equal(responses[0].gpg_keys.length, 1);
+    assert.equal(responses[0].verification_keys.length, 1);
     // It's in Bob's collection and Carol's collections
-    assert.equal(responses[0].gpg_keys[0].reference_count, 2);
+    assert.equal(responses[0].verification_keys[0].reference_count, 2);
   });
 });

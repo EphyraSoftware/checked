@@ -13,3 +13,5 @@
 .running
 .gnupg
 *.asc
+*.pub
+*.minisig

@@ -1,6 +1,6 @@
 use crate::{
     convert_to_app_entry_type,
-    gpg_key_dist::{make_base_hash, GpgKeyResponse},
+    verification_key_dist::VfKeyResponse,
 };
 use hdk::prelude::*;
 use nanoid::nanoid;
@@ -25,7 +25,7 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct KeyCollectionWithKeys {
     pub name: String,
-    pub gpg_keys: Vec<GpgKeyResponse>,
+    pub verification_keys: Vec<VfKeyResponse>,
 }
 
 #[hdk_extern]
@@ -36,39 +36,47 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
         let key_collection: KeyCollection = convert_to_app_entry_type(record)?;
         let mut key_collection = KeyCollectionWithKeys {
             name: key_collection.name,
-            gpg_keys: Vec::new(),
+            verification_keys: Vec::new(),
         };
 
-        let linked_keys = get_links(
+        let linked_vf_keys = get_links(
             GetLinksInputBuilder::try_new(
                 collection_action_hash,
-                LinkTypes::KeyCollectionToGpgKeyDist,
+                LinkTypes::KeyCollectionToVfKeyDist,
             )?
+            // We created these links so only look locally.
+            .get_options(GetStrategy::Content)
             .build(),
         )?;
 
-        for link in linked_keys {
-            let gpg_key_dist: Option<GpgKeyDist> = get(
-                <AnyLinkableHash as TryInto<AnyDhtHash>>::try_into(link.target.clone()).map_err(
-                    |_| wasm_error!(WasmErrorInner::Guest(String::from("Not a DHT hash"))),
-                )?,
-                GetOptions::content(),
-            )?
-            .and_then(|r| convert_to_app_entry_type::<GpgKeyDist>(r).ok());
+        for link in linked_vf_keys {
+            let key_dist_address: EntryHash = link.target.try_into().map_err(|_| {
+                wasm_error!(WasmErrorInner::Guest(String::from(
+                    "Not an entry hash hash"
+                )))
+            })?;
 
-            if let Some(gpg_key_dist) = gpg_key_dist {
-                let reference_count = get_reference_count_from_gpg_key_dist_entry_hash(
-                    link.target.try_into().map_err(|_| {
-                        wasm_error!(WasmErrorInner::Guest(String::from(
-                            "Not an entry hash hash"
-                        )))
-                    })?,
-                )?;
-                key_collection.gpg_keys.push(GpgKeyResponse {
-                    gpg_key_dist,
-                    reference_count,
-                });
-            }
+            let vf_key_dist_record = get(key_dist_address.clone(), GetOptions::content())?;
+
+            let (created_at, vf_key_dist) = if let Some(vf_key_dist_record) = vf_key_dist_record {
+                let vf_key_dist: VerificationKeyDist =
+                    convert_to_app_entry_type(vf_key_dist_record.clone())?;
+                (vf_key_dist_record.action().timestamp(), vf_key_dist)
+            } else {
+                continue;
+            };
+
+            let reference_count = get_key_collections_reference_count(
+                key_dist_address.clone(),
+                // This is collective across the network, so prefer latest.
+                &GetOptions::latest(),
+            )?;
+            key_collection.verification_keys.push(VfKeyResponse {
+                verification_key_dist: vf_key_dist.into(),
+                key_dist_address,
+                reference_count,
+                created_at,
+            });
         }
 
         key_collections.push(key_collection);
@@ -78,161 +86,92 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct LinkGpgKeyToKeyCollectionRequest {
-    pub gpg_key_fingerprint: String,
+pub struct LinkVfKeyDistToKeyCollectionRequest {
+    pub verification_key_dist_address: EntryHash,
     pub key_collection_name: String,
 }
 
 #[hdk_extern]
-pub fn link_gpg_key_to_key_collection(
-    request: LinkGpgKeyToKeyCollectionRequest,
+pub fn link_verification_key_to_key_collection(
+    request: LinkVfKeyDistToKeyCollectionRequest,
 ) -> ExternResult<ActionHash> {
-    let fingerprint_links = get_links(
-        GetLinksInputBuilder::try_new(
-            make_base_hash(&request.gpg_key_fingerprint)?,
-            LinkTypes::FingerprintToGpgKeyDist,
-        )?
-        .build(),
-    )?;
-
-    if fingerprint_links.is_empty() {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "No GPG key found with the given fingerprint"
-        ))));
-    }
-
-    if fingerprint_links.len() > 1 {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Multiple GPG keys found with the given fingerprint"
-        ))));
-    }
-
-    // Target is the entry hash of the GpgKeyDist
-    let fingerprint_link = fingerprint_links[0].clone();
-
-    let my_key_collections = inner_get_my_key_collections()?;
-
-    let matched_collection = my_key_collections.into_iter().find(|r| {
-        r.entry
-            .as_option()
-            .and_then(|e| e.as_app_entry())
-            .and_then(|e| {
-                let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
-                Some(key_collection.name == request.key_collection_name)
-            })
-            .unwrap_or(false)
-    });
-
-    let key_collection = matched_collection.ok_or(wasm_error!(WasmErrorInner::Guest(
-        String::from("No key collection found with the given name")
-    )))?;
+    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
+            "No key collection found with the given name"
+        ))))?;
 
     let tag_id = nanoid!();
 
-    // Link from the key collection to the GpgKeyDist so that we can find them from the key collection later
+    // Link from the key collection ActionHash to the VerificationKeyDist EntryHash so that we can find them from the key collection later
     create_link(
-        key_collection.action_hashed().as_hash().clone(),
-        fingerprint_link.target.clone(), // entry address
-        LinkTypes::KeyCollectionToGpgKeyDist,
+        kc_action.clone(),
+        request.verification_key_dist_address.clone(),
+        LinkTypes::KeyCollectionToVfKeyDist,
         tag_id.as_bytes().to_vec(),
     )?;
 
-    // Link from the key fingerprint to the key collection so that we can report how many key collections a key is in
+    // Link from the VerificationKeyDist EntryHash to the key collection so that we can report how many key collections a key is in
     create_link(
-        fingerprint_link.target, // entry address
-        key_collection.action_hashed().as_hash().clone(),
-        LinkTypes::GpgKeyDistToKeyCollection,
+        request.verification_key_dist_address,
+        kc_action,
+        LinkTypes::VfKeyDistToKeyCollection,
         tag_id.as_bytes().to_vec(),
     )
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct UnlinkGpgKeyFromKeyCollectionRequest {
-    pub gpg_key_fingerprint: String,
+pub struct UnlinkVfKeyFromKeyCollectionRequest {
+    pub verification_key_dist_address: EntryHash,
     pub key_collection_name: String,
 }
 
 #[hdk_extern]
-pub fn unlink_gpg_key_from_key_collection(
-    request: UnlinkGpgKeyFromKeyCollectionRequest,
+pub fn unlink_verification_key_from_key_collection(
+    request: UnlinkVfKeyFromKeyCollectionRequest,
 ) -> ExternResult<()> {
-    let fingerprint_links = get_links(
-        GetLinksInputBuilder::try_new(
-            make_base_hash(&request.gpg_key_fingerprint)?,
-            LinkTypes::FingerprintToGpgKeyDist,
-        )?
-        .build(),
-    )?;
-
-    if fingerprint_links.is_empty() {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "No GPG key found with the given fingerprint"
-        ))));
-    }
-
-    if fingerprint_links.len() > 1 {
-        return Err(wasm_error!(WasmErrorInner::Guest(String::from(
-            "Multiple GPG keys found with the given fingerprint"
-        ))));
-    }
-
-    // Target is the entry hash of the GpgKeyDist
-    let fingerprint_link = fingerprint_links[0].clone();
-
-    let my_key_collections = inner_get_my_key_collections()?;
-
-    let matched_collection = my_key_collections.into_iter().find(|r| {
-        r.entry
-            .as_option()
-            .and_then(|e| e.as_app_entry())
-            .and_then(|e| {
-                let key_collection: KeyCollection = e.clone().into_sb().try_into().ok()?;
-                Some(key_collection.name == request.key_collection_name)
-            })
-            .unwrap_or(false)
-    });
-
-    let key_collection = matched_collection.ok_or(wasm_error!(WasmErrorInner::Guest(
+    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(WasmErrorInner::Guest(
         String::from("No key collection found with the given name")
     )))?;
 
     let agent_info = agent_info()?;
 
-    let potential_links_from_fingerprint = get_links(
+    let links_from_vf_key_dist = get_links(
         GetLinksInputBuilder::try_new(
-            fingerprint_link.target.clone(),
-            LinkTypes::GpgKeyDistToKeyCollection.try_into_filter()?,
+            request.verification_key_dist_address.clone(),
+            LinkTypes::VfKeyDistToKeyCollection.try_into_filter()?,
         )?
+        // Always created by the current agent so only look locally.
+        .get_options(GetStrategy::Content)
         .author(agent_info.agent_initial_pubkey.clone())
         .build(),
     )?;
 
     // Unlink the key fingerprint from the key collection
     let mut removing_tags = HashSet::new();
-    for link in potential_links_from_fingerprint.into_iter() {
+    for link in links_from_vf_key_dist.into_iter() {
         // Find the links from this collection that target the key to remove
-        if link.target == key_collection.action_hashed().as_hash().clone().into() {
+        if link.target == kc_action.clone().into() {
             removing_tags.insert(link.tag);
             delete_link(link.create_link_hash)?;
         }
     }
 
-    let potential_links_from_selected_collection = get_links(
+    let links_from_selected_collection = get_links(
         GetLinksInputBuilder::try_new(
-            key_collection.action_hashed().as_hash().clone(),
-            LinkTypes::KeyCollectionToGpgKeyDist.try_into_filter()?,
+            kc_action,
+            LinkTypes::KeyCollectionToVfKeyDist.try_into_filter()?,
         )?
         .author(agent_info.agent_initial_pubkey)
         .build(),
     )?;
 
-    // Unlink the the key collection from the GpgKeyDist
-    for link in potential_links_from_selected_collection.into_iter() {
+    let target_as_any: AnyLinkableHash = request.verification_key_dist_address.clone().into();
+    // Unlink the the key collection from the VerificationKeyDist
+    for link in links_from_selected_collection.into_iter() {
         // Find the links from this collection that target the key to remove
-        if link.target == fingerprint_link.target {
+        if link.target == target_as_any {
             if !removing_tags.remove(&link.tag) {
                 return Err(wasm_error!(WasmErrorInner::Guest(format!(
-                    "Link from fingerprint to key collection has tag {:?} but no corresponding link from key collection to fingerprint was deleted",
+                    "Link from verification key dist to key collection has tag {:?} but no corresponding link from key collection to verification key dist was deleted",
                     link.tag
                 ))));
             }
@@ -241,7 +180,7 @@ pub fn unlink_gpg_key_from_key_collection(
     }
 
     if !removing_tags.is_empty() {
-        tracing::warn!("There were links from the key fingerprint that did not correspond to a link from the key collection. Validation is supposed to prevent this. {:?}", removing_tags);
+        warn!("There were links from the verification key dist that did not correspond to a link from the key collection. Validation is supposed to prevent this. {:?}", removing_tags);
     }
 
     Ok(())
@@ -303,38 +242,33 @@ fn inner_get_my_key_collections() -> ExternResult<Vec<Record>> {
     )
 }
 
-/// Counts the number of references from a GpgKeyDist to a KeyCollection.
+fn find_key_collection(name: &str) -> ExternResult<Option<(ActionHash, KeyCollection)>> {
+    let my_key_collections = inner_get_my_key_collections()?;
+
+    Ok(my_key_collections
+        .into_iter()
+        .filter_map(|r| -> Option<(ActionHash, KeyCollection)> {
+            let action_hash = r.action_hashed().hash.clone();
+
+            convert_to_app_entry_type(r).ok().map(|kc| {
+                (action_hash, kc)
+            })
+        })
+        .find(|(_, kc)| &kc.name == name))
+}
+
+/// Counts the number of references from a [VerificationKeyDist] to [KeyCollection]s.
 ///
 /// Each author may put the same key in multiple collections, but that is only counted once.
 /// That means this is the number of unique agents who are referencing this key.
-pub fn get_reference_count(gpg_key_dist: &GpgKeyDist) -> ExternResult<usize> {
-    let to_gpg_key_dist_links = get_links(
-        GetLinksInputBuilder::try_new(
-            make_base_hash(&gpg_key_dist.fingerprint)?,
-            LinkTypes::FingerprintToGpgKeyDist,
-        )?
-        .build(),
-    )?;
-
-    let mut count = 0;
-    for link in to_gpg_key_dist_links {
-        count += get_reference_count_from_gpg_key_dist_entry_hash(
-            link.target.try_into().map_err(|_| {
-                wasm_error!(WasmErrorInner::Guest(String::from(
-                    "Not an entry hash hash"
-                )))
-            })?,
-        )?;
-    }
-
-    Ok(count)
-}
-
-pub fn get_reference_count_from_gpg_key_dist_entry_hash(
+pub fn get_key_collections_reference_count(
     entry_hash: EntryHash,
+    get_options: &GetOptions,
 ) -> ExternResult<usize> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(entry_hash, LinkTypes::GpgKeyDistToKeyCollection)?.build(),
+        GetLinksInputBuilder::try_new(entry_hash, LinkTypes::VfKeyDistToKeyCollection)?
+            .get_options(get_options.strategy.clone())
+            .build(),
     )?;
     Ok(links
         .into_iter()

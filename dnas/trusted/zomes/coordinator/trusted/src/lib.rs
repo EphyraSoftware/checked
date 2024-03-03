@@ -1,5 +1,5 @@
-mod gpg_key_dist;
 mod key_collection;
+mod verification_key_dist;
 
 use hdk::prelude::*;
 use trusted_integrity::*;

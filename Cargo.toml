@@ -9,14 +9,18 @@ members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "=0.4.0-beta-dev.27"
-hdk = "=0.3.0-beta-dev.31"
+hdi = "=0.4.0-beta-dev.28"
+hdk = "=0.3.0-beta-dev.32"
 serde = "1.0"
 chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
-pgp = "0.10.2"
 hex = "0.4.3"
 regex = "1.10.3"
 nanoid = "0.4.0"
+anyhow = "1.0.40"
+
+minisign = { version = "0.7.6", path = "../rust-minisign" }
+minisign-verify = "0.2.1"
+getrandom = { version = "0.2", default-features = false }
 
 [workspace.dependencies.trusted]
 path = "dnas/trusted/zomes/coordinator/trusted"

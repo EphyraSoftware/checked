@@ -64,7 +64,16 @@ Create a GPG key for testing
 
 ```
 gpg --quick-generate-key tester
-gpg --export --armor tester > tester_key.asc
+gpg --export --armor tester > tester-key.asc
+```
+
+Revoke a GPG key for testing
+
+```
+gpg --list-keys
+gpg --output tester-revocation.asc --gen-revoke tester
+gpg --import tester-revocation.asc
+gpg --export --armor tester > tester-key-revoked.asc
 ```
 
 ### Setup issues

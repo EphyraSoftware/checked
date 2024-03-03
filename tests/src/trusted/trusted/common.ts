@@ -2,22 +2,27 @@ import { CallableCell } from "@holochain/tryorama";
 import { Record } from "@holochain/client";
 import { decode } from "@msgpack/msgpack";
 
-export interface GpgKeyDist {
-  public_key: string;
-  fingerprint: string;
+const utf8Encode = new TextEncoder();
+
+export const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
+
+export interface VerificationKeyDist {
+  verification_key: string;
+  key_type: { 'MiniSignEd25519': null };
   name: string;
-  email?: string;
   expires_at: number;
 }
 
-export interface GpgKeyResponse {
-  gpg_key_dist: GpgKeyDist;
+export interface VerificationKeyResponse {
+  verification_key_dist: VerificationKeyDist;
+  key_dist_address: number[],
   reference_count: number;
+  created_at: number;
 }
 
 export interface KeyCollectionWithKeys {
   name: string;
-  gpg_keys: GpgKeyResponse[];
+  verification_keys: VerificationKeyResponse[];
 }
 
 export const decodeRecord = <T>(record: Record): T => {
@@ -25,33 +30,42 @@ export const decodeRecord = <T>(record: Record): T => {
   return decode((record.entry as any).Present.entry) as T;
 };
 
-export function sampleGpgKey() {
+export function sampleMiniSignKey() {
   return `
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-mDMEZdDsIBYJKwYBBAHaRw8BAQdAed156Mxx8965zeCQwuGxP1IbkyebXlSyY8Ux
-bOEgBUu0GUFsaWNlIDxhbGljZUB0ZXN0aW5nLmNvbT6ImQQTFgoAQRYhBAsdSEPK
-LxmMrC9cakSdeuXSUyzvBQJl0OwgAhsDBQkFo5qABQsJCAcCAiICBhUKCQgLAgQW
-AgMBAh4HAheAAAoJEESdeuXSUyzvBcQA/Rbg+fLGubvhYRsL2PFLwWQjgG8nyWKm
-QFeEVnBvaAGOAQChHakNklfdeqQ4G/+Wp60UnLnJi5JfkAZRTLGEFyjuDbg4BGXQ
-7CASCisGAQQBl1UBBQEBB0D6qt2YFWWwj/sXAiifVsPBmMZfRWG/CPi7W3MiFpgw
-HgMBCAeIfgQYFgoAJhYhBAsdSEPKLxmMrC9cakSdeuXSUyzvBQJl0OwgAhsMBQkF
-o5qAAAoJEESdeuXSUyzvh4sA/3XkOHCxs5fAGpSyCMor9JV0psg9aVpWLOFe3Sdc
-NTxJAQC4xdYMveSHdOiKO4ZhoojG6r7IqX8B8vAZsod6cF/8CA==
-=d0p+
------END PGP PUBLIC KEY BLOCK-----
-    `;
+untrusted comment: minisign public key 5DDF4BB342787FB5
+RWS1f3hCs0vfXeaPCLyiQt9NDQ+MzReDNLz+kaw+hK9NV8nb9G7opa7q
+`;
 }
 
-export async function distributeGpgKey(
+export const sampleMiniSignProof = () => {
+  // The formatting of this must be EXACT, since this content is being signed
+  return 'some test data\n';
+}
+
+export function sampleMiniSignProofSignature() {
+  // Similar with the signature, this must be EXACT. Removing whitespace is permitted but extra whitespace is not.
+  return Array.from(utf8Encode.encode(`untrusted comment: signature from minisign secret key
+RUS1f3hCs0vfXb4ExmkOtLWNkqaPkEyzEIRrcmHWyoJuSMUR3U7jx08hri3cr8EYyBNVnH1LOSdjY3Hfk2BQU15jMD25ub5sBAU=
+trusted comment: timestamp:1709423483\tfile:test.txt\thashed
+Gjpn4nbsrDPysp3Nl63GZO5YWaB0aiJljBlUOQWIYE6tgUL7inOyiYcx5EWb2yOKvwbIjRk3u0ShhgqBIwM7Dg==
+`));
+}
+
+export const distributeVerificationKey = async (
   cell: CallableCell,
-  gpgKey: string,
-): Promise<Record> {
+  verificationKey: string,
+  proof: string,
+  proofSignature: number[],
+): Promise<Record> => {
   return cell.callZome({
     zome_name: "trusted",
-    fn_name: "distribute_gpg_key",
+    fn_name: "distribute_verification_key",
     payload: {
-      public_key: gpgKey,
+      name: "test",
+      verification_key: verificationKey,
+      key_type: {"MiniSignEd25519": null},
+      proof,
+      proof_signature: proofSignature,
     },
   });
 }

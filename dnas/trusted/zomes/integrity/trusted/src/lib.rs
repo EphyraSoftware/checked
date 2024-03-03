@@ -1,13 +1,14 @@
-pub(crate) mod gpg_key_dist;
-pub(crate) mod gpg_util;
+pub(crate) mod convert;
 pub(crate) mod key_collection;
+pub(crate) mod key_util;
+pub(crate) mod verification_key_dist;
 
 use hdi::prelude::*;
 
 pub mod prelude {
-    pub use crate::gpg_key_dist::*;
-    pub use crate::gpg_util::*;
     pub use crate::key_collection::*;
+    pub use crate::key_util::*;
+    pub use crate::verification_key_dist::*;
     pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
 }
@@ -17,18 +18,17 @@ pub mod prelude {
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    GpgKeyDist(gpg_key_dist::GpgKeyDist),
+    VerificationKeyDist(verification_key_dist::VerificationKeyDist),
     #[entry_type(visibility = "private")]
     KeyCollection(key_collection::KeyCollection),
 }
 
 #[hdk_link_types]
 pub enum LinkTypes {
-    UserIdToGpgKeyDist,
-    EmailToGpgKeyDist,
-    FingerprintToGpgKeyDist,
-    KeyCollectionToGpgKeyDist,
-    GpgKeyDistToKeyCollection,
+    AgentToVfKeyDist,
+    VfKeyDistToAgent,
+    KeyCollectionToVfKeyDist,
+    VfKeyDistToKeyCollection,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -72,10 +72,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
     match op.flattened::<EntryTypes, LinkTypes>()? {
         FlatOp::StoreEntry(store_entry) => match store_entry {
             OpEntry::CreateEntry { app_entry, action } => match app_entry {
-                EntryTypes::GpgKeyDist(gpg_key) => gpg_key_dist::validate_create_gpg_key_dist(
-                    EntryCreationAction::Create(action),
-                    gpg_key,
-                ),
+                EntryTypes::VerificationKeyDist(vf_key_dist) => {
+                    verification_key_dist::validate_create_vf_key_dist(
+                        EntryCreationAction::Create(action),
+                        vf_key_dist,
+                    )
+                }
                 EntryTypes::KeyCollection(key_collection) => {
                     key_collection::validate_create_key_collection(
                         EntryCreationAction::Create(action),
@@ -86,10 +88,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             OpEntry::UpdateEntry {
                 app_entry, action, ..
             } => match app_entry {
-                EntryTypes::GpgKeyDist(gpg_key) => gpg_key_dist::validate_create_gpg_key_dist(
-                    EntryCreationAction::Update(action),
-                    gpg_key,
-                ),
+                EntryTypes::VerificationKeyDist(gpg_key) => {
+                    verification_key_dist::validate_create_vf_key_dist(
+                        EntryCreationAction::Update(action),
+                        gpg_key,
+                    )
+                }
                 _ => Ok(ValidateCallbackResult::Invalid(
                     "todo: update entry".to_string(),
                 )),
@@ -103,14 +107,15 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 app_entry,
                 action,
             } => match (app_entry, original_app_entry) {
-                (EntryTypes::GpgKeyDist(gpg_key), EntryTypes::GpgKeyDist(original_gpg_key)) => {
-                    gpg_key_dist::validate_update_gpg_key_dist(
-                        action,
-                        gpg_key,
-                        original_action,
-                        original_gpg_key,
-                    )
-                }
+                (
+                    EntryTypes::VerificationKeyDist(gpg_key),
+                    EntryTypes::VerificationKeyDist(original_gpg_key),
+                ) => verification_key_dist::validate_update_vf_key_dist(
+                    action,
+                    gpg_key,
+                    original_action,
+                    original_gpg_key,
+                ),
                 _ => Ok(ValidateCallbackResult::Invalid(
                     "todo: register update".to_string(),
                 )),
@@ -123,8 +128,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 original_app_entry,
                 action,
             } => match original_app_entry {
-                EntryTypes::GpgKeyDist(gpg_key) => {
-                    gpg_key_dist::validate_delete_gpg_key_dist(action, original_action, gpg_key)
+                EntryTypes::VerificationKeyDist(gpg_key) => {
+                    verification_key_dist::validate_delete_vf_key_dist(
+                        action,
+                        original_action,
+                        gpg_key,
+                    )
                 }
                 _ => Ok(ValidateCallbackResult::Invalid(
                     "todo: register delete".to_string(),
@@ -140,19 +149,28 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             tag,
             ..
         } => match link_type {
-            LinkTypes::FingerprintToGpgKeyDist
-            | LinkTypes::UserIdToGpgKeyDist
-            | LinkTypes::EmailToGpgKeyDist => {
-                gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
-            }
-            LinkTypes::KeyCollectionToGpgKeyDist => {
-                key_collection::validate_key_collection_to_gpg_key_dist_link(
+            LinkTypes::AgentToVfKeyDist => verification_key_dist::validate_create_agent_to_vf_key_dist_link(
+                action,
+                base_address,
+                target_address,
+                link_type,
+            ),
+            LinkTypes::VfKeyDistToAgent => {
+                verification_key_dist::validate_create_vf_key_dist_to_agent_link(
+                    action,
+                    base_address,
                     target_address,
                     link_type,
                 )
             }
-            LinkTypes::GpgKeyDistToKeyCollection => {
-                key_collection::validate_gpg_key_dist_to_key_collection_link(
+            LinkTypes::KeyCollectionToVfKeyDist => {
+                key_collection::validate_key_collection_to_vf_key_dist_link(
+                    target_address,
+                    link_type,
+                )
+            }
+            LinkTypes::VfKeyDistToKeyCollection => {
+                key_collection::validate_vf_key_dist_to_key_collection_link(
                     action,
                     base_address,
                     target_address,
@@ -167,14 +185,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             action,
             ..
         } => match link_type {
-            LinkTypes::GpgKeyDistToKeyCollection => {
-                key_collection::validate_delete_gpg_key_dist_to_key_collection_link(
+            LinkTypes::VfKeyDistToKeyCollection => {
+                key_collection::validate_delete_vf_key_dist_to_key_collection_link(
                     original_action,
                     action,
                 )
             }
-            LinkTypes::KeyCollectionToGpgKeyDist => {
-                key_collection::validate_delete_key_collection_to_gpg_key_dist_link(
+            LinkTypes::KeyCollectionToVfKeyDist => {
+                key_collection::validate_delete_key_collection_to_vf_key_dist_link(
                     original_action,
                     action,
                 )
@@ -190,10 +208,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `StoreEntry`
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `StoreEntry` validation failed
                 OpRecord::CreateEntry { app_entry, action } => match app_entry {
-                    EntryTypes::GpgKeyDist(gpg_key) => gpg_key_dist::validate_create_gpg_key_dist(
-                        EntryCreationAction::Create(action),
-                        gpg_key,
-                    ),
+                    EntryTypes::VerificationKeyDist(gpg_key) => {
+                        verification_key_dist::validate_create_vf_key_dist(
+                            EntryCreationAction::Create(action),
+                            gpg_key,
+                        )
+                    }
                     _ => Ok(ValidateCallbackResult::Invalid(
                         "todo: store record".to_string(),
                     )),
@@ -220,17 +240,18 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match app_entry {
-                        EntryTypes::GpgKeyDist(gpg_key) => {
-                            let result = gpg_key_dist::validate_create_gpg_key_dist(
+                        EntryTypes::VerificationKeyDist(gpg_key) => {
+                            let result = verification_key_dist::validate_create_vf_key_dist(
                                 EntryCreationAction::Update(action.clone()),
                                 gpg_key.clone(),
                             )?;
                             if let ValidateCallbackResult::Valid = result {
-                                let original_gpg_key: Option<gpg_key_dist::GpgKeyDist> =
-                                    original_record
-                                        .entry()
-                                        .to_app_option()
-                                        .map_err(|e| wasm_error!(e))?;
+                                let original_gpg_key: Option<
+                                    verification_key_dist::VerificationKeyDist,
+                                > = original_record
+                                    .entry()
+                                    .to_app_option()
+                                    .map_err(|e| wasm_error!(e))?;
                                 let original_gpg_key = match original_gpg_key {
                                     Some(gpg_key) => gpg_key,
                                     None => {
@@ -242,7 +263,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                         );
                                     }
                                 };
-                                gpg_key_dist::validate_update_gpg_key_dist(
+                                verification_key_dist::validate_update_vf_key_dist(
                                     action,
                                     gpg_key,
                                     original_action,
@@ -312,8 +333,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match original_app_entry {
-                        EntryTypes::GpgKeyDist(original_gpg_key) => {
-                            gpg_key_dist::validate_delete_gpg_key_dist(
+                        EntryTypes::VerificationKeyDist(original_gpg_key) => {
+                            verification_key_dist::validate_delete_vf_key_dist(
                                 action,
                                 original_action,
                                 original_gpg_key,
@@ -333,19 +354,30 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     tag,
                     ..
                 } => match link_type {
-                    LinkTypes::FingerprintToGpgKeyDist
-                    | LinkTypes::UserIdToGpgKeyDist
-                    | LinkTypes::EmailToGpgKeyDist => {
-                        gpg_key_dist::validate_create_gpg_key_dist_link(target_address, link_type)
-                    }
-                    LinkTypes::KeyCollectionToGpgKeyDist => {
-                        key_collection::validate_key_collection_to_gpg_key_dist_link(
+                    LinkTypes::AgentToVfKeyDist => {
+                        verification_key_dist::validate_create_agent_to_vf_key_dist_link(
+                            action,
+                            base_address,
                             target_address,
                             link_type,
                         )
                     }
-                    LinkTypes::GpgKeyDistToKeyCollection => {
-                        key_collection::validate_gpg_key_dist_to_key_collection_link(
+                    LinkTypes::VfKeyDistToAgent => {
+                        verification_key_dist::validate_create_vf_key_dist_to_agent_link(
+                            action,
+                            base_address,
+                            target_address,
+                            link_type,
+                        )
+                    }
+                    LinkTypes::KeyCollectionToVfKeyDist => {
+                        key_collection::validate_key_collection_to_vf_key_dist_link(
+                            target_address,
+                            link_type,
+                        )
+                    }
+                    LinkTypes::VfKeyDistToKeyCollection => {
+                        key_collection::validate_vf_key_dist_to_key_collection_link(
                             action,
                             base_address,
                             target_address,

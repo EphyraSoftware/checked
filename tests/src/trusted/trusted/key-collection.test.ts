@@ -1,20 +1,19 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import { Record } from "@holochain/client";
+import {Create, HoloHashed, Record} from "@holochain/client";
 
 import {
-  GpgKeyDist,
+  VerificationKeyDist,
   KeyCollectionWithKeys,
   createKeyCollection,
   decodeRecord,
-  distributeGpgKey,
-  sampleGpgKey,
+  distributeVerificationKey,
+  sampleMiniSignKey, testAppPath, sampleMiniSignProof, sampleMiniSignProofSignature,
 } from "./common.js";
 
 test("Create key collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
@@ -27,7 +26,6 @@ test("Create key collection", async () => {
 
 test("Create key collection limit", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
@@ -53,7 +51,6 @@ test("Create key collection limit", async () => {
 
 test("Get my key collections", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
@@ -78,19 +75,22 @@ test("Get my key collections", async () => {
   });
 });
 
-test("Link GPG key to collection", async () => {
+test("Link verification key distribution to collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
-    // Alice distributes a GPG key
-    const gpg_key_record: Record = await distributeGpgKey(
-      alice.cells[0],
-      sampleGpgKey(),
+    // Alice distributes a MiniSign verification key
+    const verification_key_record: Record = await distributeVerificationKey(
+        alice.cells[0],
+        sampleMiniSignKey(),
+        sampleMiniSignProof(),
+        sampleMiniSignProofSignature(),
     );
-    assert.ok(gpg_key_record);
+    assert.ok(verification_key_record);
+
+    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
 
     // Alice creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -99,13 +99,12 @@ test("Link GPG key to collection", async () => {
     );
     assert.ok(key_collection_record);
 
-    // Alice links the GPG key to the key collection
+    // Alice links the verification key to the key collection
     await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint:
-          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test",
       },
     });
@@ -118,23 +117,26 @@ test("Link GPG key to collection", async () => {
       });
 
     assert.equal(key_collections.length, 1);
-    assert.equal(key_collections[0].gpg_keys.length, 1);
+    assert.equal(key_collections[0].verification_keys.length, 1);
   });
 });
 
-test("Unlink GPG key from collection", async () => {
+test("Unlink verification key from collection", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
-    // Alice distributes a GPG key
-    const gpg_key_record: Record = await distributeGpgKey(
-      alice.cells[0],
-      sampleGpgKey(),
+    // Alice distributes a MiniSign verification key
+    const verification_key_record: Record = await distributeVerificationKey(
+        alice.cells[0],
+        sampleMiniSignKey(),
+        sampleMiniSignProof(),
+        sampleMiniSignProofSignature(),
     );
-    assert.ok(gpg_key_record);
+    assert.ok(verification_key_record);
+
+    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
 
     // Alice creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -143,24 +145,22 @@ test("Unlink GPG key from collection", async () => {
     );
     assert.ok(key_collection_record);
 
-    // Alice links the GPG key to the key collection
+    // Alice links the verification key to the key collection
     await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint:
-          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test",
       },
     });
 
-    // Alice unlinks the GPG key from the key collection
+    // Alice unlinks the verification key from the key collection
     await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "unlink_gpg_key_from_key_collection",
+      fn_name: "unlink_verification_key_from_key_collection",
       payload: {
-        gpg_key_fingerprint:
-          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test",
       },
     });
@@ -174,7 +174,7 @@ test("Unlink GPG key from collection", async () => {
       });
 
     assert.equal(key_collections.length, 1);
-    assert.equal(key_collections[0].gpg_keys.length, 0);
+    assert.equal(key_collections[0].verification_keys.length, 0);
   });
 });
 
@@ -202,35 +202,37 @@ test("Remote validation", async () => {
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
-    // Alice distributes a GPG key
-    const gpg_key_record: Record = await distributeGpgKey(
+    // Alice distributes a MiniSign verification key
+    const verification_key_record: Record = await distributeVerificationKey(
       alice.cells[0],
-      sampleGpgKey(),
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
-    assert.ok(gpg_key_record);
+    assert.ok(verification_key_record);
 
-    // Alice links the GPG key to a key collection
+    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+
+    // Alice links the verification key to the key collection
     await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint:
-          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
+        verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test 1",
-      },
+      }
     });
 
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
-    // Alice unlinks the GPG key from the key collection
+    // Alice unlinks the verification key from the key collection
     await alice.cells[0].callZome({
       zome_name: "trusted",
-      fn_name: "unlink_gpg_key_from_key_collection",
+      fn_name: "unlink_verification_key_from_key_collection",
       payload: {
-        gpg_key_fingerprint:
-          decodeRecord<GpgKeyDist>(gpg_key_record).fingerprint,
-        key_collection_name: "a test 2",
+        verification_key_dist_address: vf_key_dist_address,
+        key_collection_name: "a test 1",
       },
     });
 

@@ -11,8 +11,8 @@ name = "trusted_integrity"
 hdi = { workspace = true }
 
 serde = { workspace = true }
-
-pgp = { workspace = true }
+minisign-verify = { workspace = true }
 hex = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
+anyhow = { workspace = true }
