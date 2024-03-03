@@ -1,9 +1,8 @@
 use hdi::prelude::*;
 
-///! Conversions that are fiddly to code by hand again and again that should probably be affordances
-///! of the SDK rather than being here.
-
-pub fn try_extract_entry_to_app_type<T: TryFrom<SerializedBytes>>(entry: EntryHashed) -> ExternResult<T> {
+pub fn try_extract_entry_to_app_type<T: TryFrom<SerializedBytes>>(
+    entry: EntryHashed,
+) -> ExternResult<T> {
     match entry.as_app_entry() {
         Some(app_entry) => {
             match <SerializedBytes as TryInto<T>>::try_into(app_entry.clone().into_sb()) {

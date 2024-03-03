@@ -8,14 +8,14 @@ export const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
 
 export interface VerificationKeyDist {
   verification_key: string;
-  key_type: { 'MiniSignEd25519': null };
+  key_type: { MiniSignEd25519: null };
   name: string;
   expires_at: number;
 }
 
 export interface VerificationKeyResponse {
   verification_key_dist: VerificationKeyDist;
-  key_dist_address: number[],
+  key_dist_address: number[];
   reference_count: number;
   created_at: number;
 }
@@ -39,16 +39,18 @@ RWS1f3hCs0vfXeaPCLyiQt9NDQ+MzReDNLz+kaw+hK9NV8nb9G7opa7q
 
 export const sampleMiniSignProof = () => {
   // The formatting of this must be EXACT, since this content is being signed
-  return 'some test data\n';
-}
+  return "some test data\n";
+};
 
 export function sampleMiniSignProofSignature() {
   // Similar with the signature, this must be EXACT. Removing whitespace is permitted but extra whitespace is not.
-  return Array.from(utf8Encode.encode(`untrusted comment: signature from minisign secret key
+  return Array.from(
+    utf8Encode.encode(`untrusted comment: signature from minisign secret key
 RUS1f3hCs0vfXb4ExmkOtLWNkqaPkEyzEIRrcmHWyoJuSMUR3U7jx08hri3cr8EYyBNVnH1LOSdjY3Hfk2BQU15jMD25ub5sBAU=
 trusted comment: timestamp:1709423483\tfile:test.txt\thashed
 Gjpn4nbsrDPysp3Nl63GZO5YWaB0aiJljBlUOQWIYE6tgUL7inOyiYcx5EWb2yOKvwbIjRk3u0ShhgqBIwM7Dg==
-`));
+`),
+  );
 }
 
 export const distributeVerificationKey = async (
@@ -63,12 +65,12 @@ export const distributeVerificationKey = async (
     payload: {
       name: "test",
       verification_key: verificationKey,
-      key_type: {"MiniSignEd25519": null},
+      key_type: { MiniSignEd25519: null },
       proof,
       proof_signature: proofSignature,
     },
   });
-}
+};
 
 export async function createKeyCollection(
   cell: CallableCell,

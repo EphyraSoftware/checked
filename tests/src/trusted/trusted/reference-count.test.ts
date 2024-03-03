@@ -1,14 +1,17 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import {Create, HoloHashed, Record} from "@holochain/client";
+import { Create, HoloHashed, Record } from "@holochain/client";
 
 import {
   VerificationKeyResponse,
   KeyCollectionWithKeys,
   createKeyCollection,
   distributeVerificationKey,
-  sampleMiniSignKey, testAppPath, sampleMiniSignProof, sampleMiniSignProofSignature,
+  sampleMiniSignKey,
+  testAppPath,
+  sampleMiniSignProof,
+  sampleMiniSignProofSignature,
 } from "./common.js";
 
 test("Get my keys for a key which is in another agent's collection", async () => {
@@ -31,7 +34,9 @@ test("Get my keys for a key which is in another agent's collection", async () =>
     );
     assert.ok(record);
 
-    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
@@ -81,7 +86,9 @@ test("Search for a key which is in another agent's collection", async () => {
     );
     assert.ok(record);
 
-    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
@@ -134,7 +141,9 @@ test("Get my key collections for a key which is in another agent's collection", 
     );
     assert.ok(record);
 
-    const vf_key_dist_address = (record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     // All need to be able to see Alice's GPG key
     await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);

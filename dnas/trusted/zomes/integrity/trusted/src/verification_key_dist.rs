@@ -1,10 +1,10 @@
 //! Distribute public keys to be used for verification.
 
 use crate::convert::try_extract_entry_to_app_type;
+use crate::key_util::{check_mini_sign_proof, try_read_mini_sign_vf_key};
 use crate::{LinkTypes, UnitEntryTypes};
 use chrono::{DateTime, Utc};
 use hdi::prelude::*;
-use crate::key_util::{check_mini_sign_proof, try_read_mini_sign_vf_key};
 
 pub const VERIFICATION_KEY_NAME_MIN_LENGTH: usize = 3;
 
@@ -81,7 +81,10 @@ pub fn validate_create_vf_key_dist(
     let activity = {
         // Must check from the previous action otherwise this create action will show up and appear as an
         // existing distribution of the key we're checking isn't already present.
-        must_get_agent_activity(create_action.author().clone(), ChainFilter::new(create_action.prev_action().clone()))?
+        must_get_agent_activity(
+            create_action.author().clone(),
+            ChainFilter::new(create_action.prev_action().clone()),
+        )?
     };
 
     let entry_def: AppEntryDef = UnitEntryTypes::VerificationKeyDist.try_into()?;
@@ -180,7 +183,7 @@ pub fn validate_create_agent_to_vf_key_dist_link(
         }
     };
     let entry = must_get_entry(entry_hash)?;
-    if let Err(_) = try_extract_entry_to_app_type::<VerificationKeyDist>(entry) {
+    if try_extract_entry_to_app_type::<VerificationKeyDist>(entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The target for {:?} must be a {}",
             link_type,
@@ -219,7 +222,7 @@ pub fn validate_create_vf_key_dist_to_agent_link(
         }
     };
     let entry = must_get_entry(entry_hash)?;
-    if let Err(_) = try_extract_entry_to_app_type::<VerificationKeyDist>(entry) {
+    if try_extract_entry_to_app_type::<VerificationKeyDist>(entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The base for {:?} must be a {}",
             link_type,

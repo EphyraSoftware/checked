@@ -1,3 +1,5 @@
+/// Conversions that are fiddly to code by hand again and again that should probably be affordances
+/// of the SDK rather than being here.
 pub(crate) mod convert;
 pub(crate) mod key_collection;
 pub(crate) mod key_util;
@@ -149,12 +151,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             tag,
             ..
         } => match link_type {
-            LinkTypes::AgentToVfKeyDist => verification_key_dist::validate_create_agent_to_vf_key_dist_link(
-                action,
-                base_address,
-                target_address,
-                link_type,
-            ),
+            LinkTypes::AgentToVfKeyDist => {
+                verification_key_dist::validate_create_agent_to_vf_key_dist_link(
+                    action,
+                    base_address,
+                    target_address,
+                    link_type,
+                )
+            }
             LinkTypes::VfKeyDistToAgent => {
                 verification_key_dist::validate_create_vf_key_dist_to_agent_link(
                     action,

@@ -8,7 +8,8 @@ import {
   distributeVerificationKey,
   sampleMiniSignKey,
   testAppPath,
-  sampleMiniSignProof, sampleMiniSignProofSignature
+  sampleMiniSignProof,
+  sampleMiniSignProofSignature,
 } from "./common.js";
 
 test("Distribute a MiniSign key", async () => {
@@ -35,22 +36,21 @@ test("Distribute a MiniSign key with invalid proof", async () => {
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
     // Alice distributes a MiniSign key with an invalid proof
-    let errMsg = '';
+    let errMsg = "";
     try {
       await distributeVerificationKey(
-          alice.cells[0],
-          sampleMiniSignKey(),
-          sampleMiniSignProof() + 'invalid', // Changing the proof makes the signature invalid
-          sampleMiniSignProofSignature(),
+        alice.cells[0],
+        sampleMiniSignKey(),
+        sampleMiniSignProof() + "invalid", // Changing the proof makes the signature invalid
+        sampleMiniSignProofSignature(),
       );
-    } catch(e) {
-        errMsg = e.message;
+    } catch (e) {
+      errMsg = e.message;
     }
 
     assert.isTrue(errMsg.includes("Failed to verify proof signature"));
   });
 });
-
 
 test("Get my keys", async () => {
   await runScenario(async (scenario) => {
@@ -60,10 +60,10 @@ test("Get my keys", async () => {
 
     // Alice distributes a MiniSign verification key
     const record: Record = await distributeVerificationKey(
-        alice.cells[0],
-        sampleMiniSignKey(),
-        sampleMiniSignProof(),
-        sampleMiniSignProofSignature(),
+      alice.cells[0],
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(record);
 
@@ -74,7 +74,10 @@ test("Get my keys", async () => {
       payload: null,
     });
     assert.equal(keys.length, 1);
-    assert.deepEqual(keys[0].verification_key_dist.verification_key, sampleMiniSignKey().trim());
+    assert.deepEqual(
+      keys[0].verification_key_dist.verification_key,
+      sampleMiniSignKey().trim(),
+    );
     assert.deepEqual(keys[0].reference_count, 0);
   });
 });
@@ -92,10 +95,10 @@ test("Search for a key", async () => {
 
     // Alice distributes a MiniSign verification key
     const record: Record = await distributeVerificationKey(
-        alice.cells[0],
-        sampleMiniSignKey(),
-        sampleMiniSignProof(),
-        sampleMiniSignProofSignature(),
+      alice.cells[0],
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(record);
 
@@ -111,20 +114,27 @@ test("Search for a key", async () => {
     });
     assert.equal(responses.length, 1);
     assert.equal(responses[0].verification_key_dist.name, "test");
-    assert.equal(responses[0].verification_key_dist.verification_key, sampleMiniSignKey().trim());
+    assert.equal(
+      responses[0].verification_key_dist.verification_key,
+      sampleMiniSignKey().trim(),
+    );
 
     // Note: This is more of a PoC than anything at this point, but it's a start
     // Bob searches for Alice's key while offline
-    const offline_responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "trusted",
-      fn_name: "search_keys_local",
-      payload: {
-        agent_pub_key: alice.agentPubKey,
-      },
-    });
+    const offline_responses: VerificationKeyResponse[] =
+      await bob.cells[0].callZome({
+        zome_name: "trusted",
+        fn_name: "search_keys_local",
+        payload: {
+          agent_pub_key: alice.agentPubKey,
+        },
+      });
     assert.equal(offline_responses.length, 1);
     assert.equal(offline_responses[0].verification_key_dist.name, "test");
-    assert.equal(offline_responses[0].verification_key_dist.verification_key, sampleMiniSignKey().trim());
+    assert.equal(
+      offline_responses[0].verification_key_dist.verification_key,
+      sampleMiniSignKey().trim(),
+    );
 
     // Should be an identical result
     assert.deepEqual(responses, offline_responses);

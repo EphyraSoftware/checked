@@ -1,8 +1,5 @@
+use crate::{convert_to_app_entry_type, key_collection::get_key_collections_reference_count};
 use chrono::{DateTime, Utc};
-use crate::{
-    convert_to_app_entry_type,
-    key_collection::get_key_collections_reference_count,
-};
 use hdk::prelude::*;
 use trusted_integrity::prelude::*;
 
@@ -94,13 +91,18 @@ pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyRes
     let mut out = Vec::with_capacity(vf_key_dist_entries.len());
     for r in vf_key_dist_entries.into_iter() {
         let created_at = r.action().timestamp();
-        let key_dist_address = r.action().entry_hash().ok_or_else(|| {
-            wasm_error!(WasmErrorInner::Guest(
-                "Missing entry hash for VerificationKeyDist".to_string()
-            ))
-        })?.clone();
+        let key_dist_address = r
+            .action()
+            .entry_hash()
+            .ok_or_else(|| {
+                wasm_error!(WasmErrorInner::Guest(
+                    "Missing entry hash for VerificationKeyDist".to_string()
+                ))
+            })?
+            .clone();
         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
-        let reference_count = get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::content())?;
+        let reference_count =
+            get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::content())?;
         out.push(VfKeyResponse {
             verification_key_dist: vf_key_dist.into(),
             key_dist_address,
@@ -135,7 +137,7 @@ fn search_keys_with_get_options(
         Some(agent_pub_key) => {
             let links = get_links(
                 GetLinksInputBuilder::try_new(agent_pub_key, LinkTypes::AgentToVfKeyDist)?
-                    .get_options(get_options.strategy.clone())
+                    .get_options(get_options.strategy)
                     .build(),
             )?;
 
@@ -144,7 +146,8 @@ fn search_keys_with_get_options(
                 .into_iter()
                 .flat_map(|l| EntryHash::try_from(l.target).ok())
             {
-                let reference_count = get_key_collections_reference_count(key_dist_address.clone(), &get_options)?;
+                let reference_count =
+                    get_key_collections_reference_count(key_dist_address.clone(), &get_options)?;
 
                 match get(key_dist_address.clone(), GetOptions::latest())? {
                     Some(r) => {
@@ -166,9 +169,9 @@ fn search_keys_with_get_options(
             Ok(out)
         }
         None => {
-            return Err(wasm_error!(WasmErrorInner::Guest(
+            Err(wasm_error!(WasmErrorInner::Guest(
                 "No fields on the request to perform a search on".to_string()
-            )));
+            )))
         }
     }
 }
@@ -212,10 +215,12 @@ fn verify_key_not_distributed_by_me(
     key_type: &VerificationKeyType,
 ) -> ExternResult<()> {
     // Check that we haven't already distributed this key, that would never be valid and will be checked by our peers.
-    let has_key = get_my_verification_key_distributions(())?.iter().any(|response| {
-        response.verification_key_dist.verification_key == vf_key
-            && &response.verification_key_dist.key_type == key_type
-    });
+    let has_key = get_my_verification_key_distributions(())?
+        .iter()
+        .any(|response| {
+            response.verification_key_dist.verification_key == vf_key
+                && &response.verification_key_dist.key_type == key_type
+        });
     if has_key {
         return Err(wasm_error!(WasmErrorInner::Guest(
             "You have already distributed this key".to_string()

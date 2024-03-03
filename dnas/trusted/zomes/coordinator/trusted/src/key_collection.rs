@@ -1,7 +1,4 @@
-use crate::{
-    convert_to_app_entry_type,
-    verification_key_dist::VfKeyResponse,
-};
+use crate::{convert_to_app_entry_type, verification_key_dist::VfKeyResponse};
 use hdk::prelude::*;
 use nanoid::nanoid;
 use trusted_integrity::prelude::*;
@@ -95,9 +92,9 @@ pub struct LinkVfKeyDistToKeyCollectionRequest {
 pub fn link_verification_key_to_key_collection(
     request: LinkVfKeyDistToKeyCollectionRequest,
 ) -> ExternResult<ActionHash> {
-    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(WasmErrorInner::Guest(String::from(
-            "No key collection found with the given name"
-        ))))?;
+    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(
+        WasmErrorInner::Guest(String::from("No key collection found with the given name"))
+    ))?;
 
     let tag_id = nanoid!();
 
@@ -128,9 +125,9 @@ pub struct UnlinkVfKeyFromKeyCollectionRequest {
 pub fn unlink_verification_key_from_key_collection(
     request: UnlinkVfKeyFromKeyCollectionRequest,
 ) -> ExternResult<()> {
-    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(WasmErrorInner::Guest(
-        String::from("No key collection found with the given name")
-    )))?;
+    let (kc_action, _) = find_key_collection(&request.key_collection_name)?.ok_or(wasm_error!(
+        WasmErrorInner::Guest(String::from("No key collection found with the given name"))
+    ))?;
 
     let agent_info = agent_info()?;
 
@@ -250,11 +247,11 @@ fn find_key_collection(name: &str) -> ExternResult<Option<(ActionHash, KeyCollec
         .filter_map(|r| -> Option<(ActionHash, KeyCollection)> {
             let action_hash = r.action_hashed().hash.clone();
 
-            convert_to_app_entry_type(r).ok().map(|kc| {
-                (action_hash, kc)
-            })
+            convert_to_app_entry_type(r)
+                .ok()
+                .map(|kc| (action_hash, kc))
         })
-        .find(|(_, kc)| &kc.name == name))
+        .find(|(_, kc)| kc.name == name))
 }
 
 /// Counts the number of references from a [VerificationKeyDist] to [KeyCollection]s.
@@ -267,7 +264,7 @@ pub fn get_key_collections_reference_count(
 ) -> ExternResult<usize> {
     let links = get_links(
         GetLinksInputBuilder::try_new(entry_hash, LinkTypes::VfKeyDistToKeyCollection)?
-            .get_options(get_options.strategy.clone())
+            .get_options(get_options.strategy)
             .build(),
     )?;
     Ok(links

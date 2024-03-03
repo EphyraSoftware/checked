@@ -1,8 +1,8 @@
-use hdi::prelude::*;
 use crate::convert::try_extract_entry_to_app_type;
+use hdi::prelude::*;
 
-use crate::LinkTypes;
 use crate::prelude::VerificationKeyDist;
+use crate::LinkTypes;
 use crate::UnitEntryTypes;
 
 pub const KEY_COLLECTION_LIMIT: usize = 10;
@@ -103,7 +103,7 @@ pub fn validate_key_collection_to_vf_key_dist_link(
 
     let maybe_vf_key_dist_entry = must_get_entry(vf_key_dist_address)?;
 
-    if let Err(_) = try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry) {
+    if try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The target for {:?} must be a {}",
             link_type,
@@ -140,7 +140,7 @@ pub fn validate_vf_key_dist_to_key_collection_link(
 
     let maybe_vf_key_dist_entry = must_get_entry(vf_key_dist_address)?;
 
-    if let Err(_) = try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry) {
+    if try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The base for {:?} must be a {}",
             link_type,
@@ -165,12 +165,13 @@ pub fn validate_vf_key_dist_to_key_collection_link(
     if !matches!(key_collection_action.action(), Action::Create(Create {
         entry_type: EntryType::App(def),
         ..
-    }) if def == &entry_def) {
+    }) if def == &entry_def)
+    {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The target for {:?} must be a {}",
             link_type,
             std::any::type_name::<KeyCollection>()
-        )))
+        )));
     }
 
     //

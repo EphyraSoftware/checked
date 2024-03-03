@@ -1,15 +1,16 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import {Create, HoloHashed, Record} from "@holochain/client";
+import { Create, HoloHashed, Record } from "@holochain/client";
 
 import {
-  VerificationKeyDist,
   KeyCollectionWithKeys,
   createKeyCollection,
-  decodeRecord,
   distributeVerificationKey,
-  sampleMiniSignKey, testAppPath, sampleMiniSignProof, sampleMiniSignProofSignature,
+  sampleMiniSignKey,
+  testAppPath,
+  sampleMiniSignProof,
+  sampleMiniSignProofSignature,
 } from "./common.js";
 
 test("Create key collection", async () => {
@@ -83,14 +84,16 @@ test("Link verification key distribution to collection", async () => {
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
-        alice.cells[0],
-        sampleMiniSignKey(),
-        sampleMiniSignProof(),
-        sampleMiniSignProofSignature(),
+      alice.cells[0],
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      verification_key_record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     // Alice creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -129,14 +132,16 @@ test("Unlink verification key from collection", async () => {
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
-        alice.cells[0],
-        sampleMiniSignKey(),
-        sampleMiniSignProof(),
-        sampleMiniSignProofSignature(),
+      alice.cells[0],
+      sampleMiniSignKey(),
+      sampleMiniSignProof(),
+      sampleMiniSignProofSignature(),
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      verification_key_record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     // Alice creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -211,7 +216,9 @@ test("Remote validation", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (verification_key_record.signed_action.hashed as HoloHashed<Create>).content.entry_hash;
+    const vf_key_dist_address = (
+      verification_key_record.signed_action.hashed as HoloHashed<Create>
+    ).content.entry_hash;
 
     // Alice links the verification key to the key collection
     await alice.cells[0].callZome({
@@ -220,7 +227,7 @@ test("Remote validation", async () => {
       payload: {
         verification_key_dist_address: vf_key_dist_address,
         key_collection_name: "a test 1",
-      }
+      },
     });
 
     // The DHT shouldn't sync if the remote validation fails
