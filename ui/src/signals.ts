@@ -18,7 +18,7 @@ export const registerSignalHandler = (
 ) => {
   client.on("signal", (signal) => {
     // TODO very messy type work, improve me!
-    if (signal.zome_name === "trusted") {
+    if (signal.zome_name === "signing_keys") {
       if ((signal.payload as any).type === "EntryCreated") {
         const app_entry = (signal.payload as any).app_entry;
         if (app_entry.type === "GpgKeyDist") {

@@ -72,7 +72,7 @@ test("Get my keys", async () => {
 
     // Alice gets the created key in her list of keys
     const keys: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "get_my_verification_key_distributions",
       payload: null,
     });
@@ -109,7 +109,7 @@ test("Search for a key", async () => {
 
     // Bob searches for Alice's key
     const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: {
         agent_pub_key: alice.agentPubKey,
@@ -126,7 +126,7 @@ test("Search for a key", async () => {
     // Bob searches for Alice's key while offline
     const offline_responses: VerificationKeyResponse[] =
       await bob.cells[0].callZome({
-        zome_name: "trusted",
+        zome_name: "signing_keys",
         fn_name: "search_keys_local",
         payload: {
           agent_pub_key: alice.agentPubKey,
@@ -172,7 +172,7 @@ test("Mark a key as compromised", async () => {
     // Alice marks her own key as compromised
     const compromisedSince = new Date().getUTCMilliseconds() * 1000;
     await alice.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "mark_verification_key_dist",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -191,7 +191,7 @@ test("Mark a key as compromised", async () => {
 
     // No DHT sync, but Bob does an online search for Alice's keys which *should* do a get_links to the network and see Alice's mark.
     const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: {
         agent_pub_key: alice.agentPubKey,
@@ -252,7 +252,7 @@ test("Mark a key as rotated", async () => {
 
     // Alice marks her own key as compromised
     await alice.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "mark_verification_key_dist",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -270,7 +270,7 @@ test("Mark a key as rotated", async () => {
 
     // No DHT sync, but Bob does an online search for Alice's keys which *should* do a get_links to the network and see Alice's mark.
     const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: {
         agent_pub_key: alice.agentPubKey,

@@ -361,8 +361,8 @@ pub(crate) fn validate_create_vf_key_dist_mark(
     //
     // Check that there is only one mark of each type for a key.
     //
-    // It's valid to rotate a compromised key because the old key does not need to be trusted in order
-    // to do that. It's your agent key that is trusted to rotate the key.
+    // It's valid to rotate a compromised key because the old key does not need to be signing_keys in order
+    // to do that. It's your agent key that is signing_keys to rotate the key.
     // It's valid to mark a key as compromised because you might not know it had been compromised until
     // after you rotated it.
     //

@@ -27,7 +27,7 @@ const searchKeys = async () => {
 
     results.value = await client.value.callZome({
       role_name: "trusted",
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: request,
       cap_secret: null,

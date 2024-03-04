@@ -67,7 +67,7 @@ test("Get my key collections", async () => {
 
     const key_collections: KeyCollectionWithKeys[] =
       await alice.cells[0].callZome({
-        zome_name: "trusted",
+        zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,
       });
@@ -106,7 +106,7 @@ test("Link verification key distribution to collection", async () => {
 
     // Bob links Alice's verification key to the key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -116,7 +116,7 @@ test("Link verification key distribution to collection", async () => {
 
     const key_collections: KeyCollectionWithKeys[] =
       await bob.cells[0].callZome({
-        zome_name: "trusted",
+        zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,
       });
@@ -156,7 +156,7 @@ test("Unlink verification key from collection", async () => {
 
     // Bob links Alice's verification key to the key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -166,7 +166,7 @@ test("Unlink verification key from collection", async () => {
 
     // Bob unlinks Alice's verification key from the key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "unlink_verification_key_from_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -177,7 +177,7 @@ test("Unlink verification key from collection", async () => {
     // Now getting key collections should return a single, empty key collection
     const key_collections: KeyCollectionWithKeys[] =
       await bob.cells[0].callZome({
-        zome_name: "trusted",
+        zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,
       });
@@ -225,7 +225,7 @@ test("Remote validation", async () => {
 
     // Bob links Alice's verification key to the key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -238,7 +238,7 @@ test("Remote validation", async () => {
 
     // Bob unlinks Alice's verification key from the key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "unlink_verification_key_from_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,

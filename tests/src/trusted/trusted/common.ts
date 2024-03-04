@@ -96,7 +96,7 @@ export const distributeVerificationKey = async (
   proofSignature: number[],
 ): Promise<Record> => {
   return cell.callZome({
-    zome_name: "trusted",
+    zome_name: "signing_keys",
     fn_name: "distribute_verification_key",
     payload: {
       name: "test",
@@ -113,7 +113,7 @@ export async function createKeyCollection(
   name: string,
 ): Promise<Record> {
   return cell.callZome({
-    zome_name: "trusted",
+    zome_name: "signing_keys",
     fn_name: "create_key_collection",
     payload: { name },
   });

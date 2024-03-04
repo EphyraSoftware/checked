@@ -43,7 +43,7 @@ test("Get my keys for a key which is in another agent's collection", async () =>
 
     // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -55,7 +55,7 @@ test("Get my keys for a key which is in another agent's collection", async () =>
 
     // Alice searches for their own key
     const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "get_my_verification_key_distributions",
       payload: null,
     });
@@ -93,7 +93,7 @@ test("Search for a key which is in another agent's collection", async () => {
 
     // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -105,7 +105,7 @@ test("Search for a key which is in another agent's collection", async () => {
 
     // Alice searches for their own key
     const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: {
         agent_pub_key: alice.agentPubKey,
@@ -147,7 +147,7 @@ test("Get my key collections for a key which is in another agent's collection", 
 
     // Bob links Alice's verification key to their key collection
     await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -160,7 +160,7 @@ test("Get my key collections for a key which is in another agent's collection", 
 
     // Carol links Alice's verification key to their key collection
     await carol.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
         verification_key_dist_address: vf_key_dist_address,
@@ -172,7 +172,7 @@ test("Get my key collections for a key which is in another agent's collection", 
 
     // Bob checks their key collections
     const responses: KeyCollectionWithKeys[] = await bob.cells[0].callZome({
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "get_my_key_collections",
       payload: null,
     });

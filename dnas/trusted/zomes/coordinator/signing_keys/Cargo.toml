@@ -1,18 +1,18 @@
 [package]
-name = "trusted"
+name = "signing_keys"
 version = "0.0.1"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-name = "trusted"
+name = "signing_keys"
 
 [dependencies]
 hdk = { workspace = true }
 
 serde = { workspace = true }
 
-trusted_integrity = { workspace = true }
+signing_keys_integrity = { workspace = true }
 
 minisign-verify = { workspace = true }
 chrono = { workspace = true }

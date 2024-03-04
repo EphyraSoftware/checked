@@ -6,16 +6,16 @@ integrity:
   properties: ~
   origin_time: 1708106482076894
   zomes:
-    - name: trusted_integrity
+    - name: signing_keys_integrity
       hash: ~
-      bundled: "../../../target/wasm32-unknown-unknown/release/trusted_integrity.wasm"
+      bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys_integrity.wasm"
       dependencies: ~
       dylib: ~
 coordinator:
   zomes:
-    - name: trusted
+    - name: signing_keys
       hash: ~
-      bundled: "../../../target/wasm32-unknown-unknown/release/trusted.wasm"
+      bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys.wasm"
       dependencies:
-        - name: trusted_integrity
+        - name: signing_keys_integrity
       dylib: ~

@@ -2,7 +2,7 @@ use crate::verification_key_dist::get_key_marks;
 use crate::{convert_to_app_entry_type, verification_key_dist::VfKeyResponse};
 use hdk::prelude::*;
 use nanoid::nanoid;
-use trusted_integrity::prelude::*;
+use signing_keys_integrity::prelude::*;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {

@@ -1,7 +1,7 @@
 use crate::{convert_to_app_entry_type, key_collection::get_key_collections_reference_count};
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
-use trusted_integrity::prelude::*;
+use signing_keys_integrity::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct DistributeVfKeyRequest {

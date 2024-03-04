@@ -132,7 +132,7 @@ const distributeGpgKey = async () => {
     await client.value.callZome({
       cap_secret: null,
       role_name: "trusted",
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "distribute_gpg_key",
       payload: distributeGpgKeyRequest,
     });

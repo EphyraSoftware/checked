@@ -1817,6 +1817,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "signing_keys"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "hdk",
+ "minisign-verify",
+ "nanoid",
+ "serde",
+ "signing_keys_integrity",
+]
+
+[[package]]
+name = "signing_keys_integrity"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "hdi",
+ "hex",
+ "minisign-verify",
+ "regex",
+ "serde",
+]
+
+[[package]]
 name = "simdutf8"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2060,31 +2085,6 @@ name = "trilean"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683ba5022fe6dbd7133cad150478ccf51bdb6d861515181e5fc6b4323d4fa424"
-
-[[package]]
-name = "trusted"
-version = "0.0.1"
-dependencies = [
- "chrono",
- "hdk",
- "minisign-verify",
- "nanoid",
- "serde",
- "trusted_integrity",
-]
-
-[[package]]
-name = "trusted_integrity"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "chrono",
- "hdi",
- "hex",
- "minisign-verify",
- "regex",
- "serde",
-]
 
 [[package]]
 name = "typenum"

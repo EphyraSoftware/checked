@@ -22,8 +22,8 @@ minisign = { version = "0.7.6", path = "../rust-minisign" }
 minisign-verify = "0.2.1"
 getrandom = { version = "0.2", default-features = false }
 
-[workspace.dependencies.trusted]
-path = "dnas/trusted/zomes/coordinator/trusted"
+[workspace.dependencies.signing_keys]
+path = "dnas/trusted/zomes/coordinator/signing_keys"
 
-[workspace.dependencies.trusted_integrity]
-path = "dnas/trusted/zomes/integrity/trusted"
+[workspace.dependencies.signing_keys_integrity]
+path = "dnas/trusted/zomes/integrity/signing_keys"

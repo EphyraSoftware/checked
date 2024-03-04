@@ -23,7 +23,7 @@ const createKeyCollection = async () => {
     client.value.callZome({
       cap_secret: null,
       role_name: "trusted",
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "create_key_collection",
       payload: {
         name: keyCollectionName.value,

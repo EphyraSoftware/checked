@@ -67,7 +67,7 @@ const addKeyToCollection = () => {
     client.value.callZome({
       cap_secret: null,
       role_name: "trusted",
-      zome_name: "trusted",
+      zome_name: "signing_keys",
       fn_name: "link_gpg_key_to_key_collection",
       payload: {
         gpg_key_fingerprint: props.selectedKey.gpg_key_dist.fingerprint,
