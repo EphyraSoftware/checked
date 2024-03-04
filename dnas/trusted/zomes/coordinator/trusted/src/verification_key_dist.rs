@@ -19,7 +19,6 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
     let checked_vf_key = checked_vf_key(&request.verification_key, &request.key_type)?;
 
     verify_key_not_distributed_by_me(&checked_vf_key, &request.key_type)?;
-    try_verify_key_not_distributed_by_somebody_else(&checked_vf_key)?;
 
     let vf_key_dist_action_hash =
         create_entry(EntryTypes::VerificationKeyDist(VerificationKeyDist {
@@ -38,12 +37,7 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
         )),
     )?;
 
-    let entry_hash = record
-        .action()
-        .entry_hash()
-        .ok_or_else(|| wasm_error!(WasmErrorInner::Guest(String::from("Missing entry hash"))))?;
-
-    create_vf_key_dist_discovery_links(entry_hash)?;
+    create_vf_key_dist_discovery_links(&vf_key_dist_action_hash)?;
 
     Ok(record)
 }
@@ -55,15 +49,17 @@ pub struct VerificationKeyDistResponse {
     pub key_type: VerificationKeyType,
     pub name: String,
     pub expires_at: Option<DateTime<Utc>>,
+    pub marks: Vec<MarkVfKeyDistOpt>,
 }
 
-impl From<VerificationKeyDist> for VerificationKeyDistResponse {
-    fn from(vf_key_dist: VerificationKeyDist) -> Self {
+impl From<(VerificationKeyDist, Vec<VerificationKeyDistMark>)> for VerificationKeyDistResponse {
+    fn from((vf_key_dist, marks): (VerificationKeyDist, Vec<VerificationKeyDistMark>)) -> Self {
         Self {
             verification_key: vf_key_dist.verification_key,
             key_type: vf_key_dist.key_type,
             name: vf_key_dist.name,
             expires_at: vf_key_dist.expires_at,
+            marks: marks.into_iter().map(|m| m.mark).collect()
         }
     }
 }
@@ -71,7 +67,7 @@ impl From<VerificationKeyDist> for VerificationKeyDistResponse {
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct VfKeyResponse {
     pub verification_key_dist: VerificationKeyDistResponse,
-    pub key_dist_address: EntryHash,
+    pub key_dist_address: ActionHash,
     pub reference_count: usize,
     pub created_at: Timestamp,
 }
@@ -91,20 +87,13 @@ pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyRes
     let mut out = Vec::with_capacity(vf_key_dist_entries.len());
     for r in vf_key_dist_entries.into_iter() {
         let created_at = r.action().timestamp();
-        let key_dist_address = r
-            .action()
-            .entry_hash()
-            .ok_or_else(|| {
-                wasm_error!(WasmErrorInner::Guest(
-                    "Missing entry hash for VerificationKeyDist".to_string()
-                ))
-            })?
-            .clone();
+        let key_dist_address = r.action_address().clone();
         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
+        let marks = get_key_marks(key_dist_address.clone(), GetOptions::content())?;
         let reference_count =
             get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::content())?;
         out.push(VfKeyResponse {
-            verification_key_dist: vf_key_dist.into(),
+            verification_key_dist: (vf_key_dist, marks).into(),
             key_dist_address,
             reference_count,
             created_at,
@@ -144,7 +133,7 @@ fn search_keys_with_get_options(
             let mut out = Vec::with_capacity(links.len());
             for key_dist_address in links
                 .into_iter()
-                .flat_map(|l| EntryHash::try_from(l.target).ok())
+                .flat_map(|l| ActionHash::try_from(l.target).ok())
             {
                 let reference_count =
                     get_key_collections_reference_count(key_dist_address.clone(), &get_options)?;
@@ -152,9 +141,10 @@ fn search_keys_with_get_options(
                 match get(key_dist_address.clone(), GetOptions::latest())? {
                     Some(r) => {
                         let created_at = r.action().timestamp();
+                        let marks = get_key_marks(key_dist_address.clone(), get_options.clone())?;
                         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
                         out.push(VfKeyResponse {
-                            verification_key_dist: vf_key_dist.into(),
+                            verification_key_dist: (vf_key_dist, marks).into(),
                             key_dist_address,
                             reference_count,
                             created_at,
@@ -176,6 +166,50 @@ fn search_keys_with_get_options(
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
+pub struct MarkVfKeyDistRequest {
+    pub verification_key_dist_address: ActionHash,
+    pub mark: MarkVfKeyDistOpt,
+
+}
+
+/// A mark is how the owner of a key can attach metadata to the key to describe its state.
+#[hdk_extern]
+pub fn mark_verification_key_dist(request: MarkVfKeyDistRequest) -> ExternResult<ActionHash> {
+    let record = get(request.verification_key_dist_address.clone(), GetOptions::content())?.ok_or_else(|| {
+        wasm_error!(WasmErrorInner::Guest(
+            format!("Could not find the VerificationKeyDist: {:?}", request.verification_key_dist_address)
+        ))
+    })?;
+
+    // To check it really is a VerificationKeyDist
+    let _: VerificationKeyDist = convert_to_app_entry_type(record)?;
+
+    let mark_action = create_entry(EntryTypes::VerificationKeyDistMark(VerificationKeyDistMark {
+        verification_key_dist_address: request.verification_key_dist_address.clone(),
+        mark: request.mark,
+    }))?;
+
+    let mark_entry = get(mark_action.clone(), GetOptions::content())?.ok_or_else(|| {
+        wasm_error!(WasmErrorInner::Guest(
+            format!("Could not find the VerificationKeyDistMark: {:?}", mark_action)
+        ))
+    })?;
+
+    create_link(
+        request.verification_key_dist_address,
+        mark_entry.signed_action.hashed.content.entry_hash().ok_or_else(|| {
+            wasm_error!(WasmErrorInner::Guest(
+                format!("Could not find the entry hash for VerificationKeyDistMark: {:?}", mark_action)
+            ))
+        })?.clone(),
+        LinkTypes::VfKeyDistToMark,
+        (),
+    )?;
+
+    Ok(mark_action)
+}
+
 fn checked_vf_key(verification_key: &str, key_type: &VerificationKeyType) -> ExternResult<String> {
     match key_type {
         VerificationKeyType::MiniSignEd25519 => {
@@ -189,23 +223,6 @@ fn checked_vf_key(verification_key: &str, key_type: &VerificationKeyType) -> Ext
             Ok(checked_key.to_string())
         }
     }
-}
-
-/// Builds a dummy hash from a string input.
-///
-/// This is useful for working with baseless links, is there something in the HDK I'm missing that can do this?
-pub fn make_base_hash(input: &str) -> ExternResult<EntryHash> {
-    hash_entry(Entry::App(
-        AppEntryBytes::try_from(SerializedBytes::from(UnsafeBytes::from(
-            input.as_bytes().to_vec(),
-        )))
-        .map_err(|e| {
-            wasm_error!(WasmErrorInner::Guest(format!(
-                "Cannot create base hash from {}: {}",
-                input, e
-            )))
-        })?,
-    ))
 }
 
 /// Check our own source chain to see if we already have this key.
@@ -230,46 +247,53 @@ fn verify_key_not_distributed_by_me(
     Ok(())
 }
 
-/// A point in time check that we don't know of somebody else having distributed this key. Somebody could distribute this
-/// key using other code or we might just not have seen it yet.
-///
-/// While this isn't an integrity guarantee, it might help out a somebody who is trying to distribute a key and hasn't realised
-/// they're using a different agent key than they originally distributed the key with.
-fn try_verify_key_not_distributed_by_somebody_else(vf_key: &str) -> ExternResult<()> {
-    let other_has_key = get_links(
-        GetLinksInputBuilder::try_new(make_base_hash(vf_key)?, LinkTypes::VfKeyDistToAgent)?
-            .build(),
-    )?;
-    if !other_has_key.is_empty() {
-        return Err(wasm_error!(WasmErrorInner::Guest(
-            "This key has already been distributed by somebody else".to_string()
-        )));
-    }
-
-    Ok(())
-}
-
 /// Creates discovery links for the VerificationKeyDist:
 /// - From the agent's agent_pub_key to the entry hash of the VerificationKeyDist with type [LinkTypes::AgentToVfKeyDist]
 /// - From the entry hash of the VerificationKeyDist to the agent's agent_pub_key with type [LinkTypes::AgentToVfKeyDist]
-fn create_vf_key_dist_discovery_links(entry_hash: &EntryHash) -> ExternResult<()> {
+fn create_vf_key_dist_discovery_links(action_hash: &ActionHash) -> ExternResult<()> {
     let agent_info = agent_info()?;
 
     create_link(
         agent_info.agent_initial_pubkey.clone(),
-        entry_hash.clone(),
+        action_hash.clone(),
         LinkTypes::AgentToVfKeyDist,
         (),
     )?;
 
     create_link(
-        entry_hash.clone(),
+        action_hash.clone(),
         agent_info.agent_initial_pubkey,
         LinkTypes::VfKeyDistToAgent,
         (),
     )?;
 
     Ok(())
+}
+
+pub fn get_key_marks(
+    vf_key_dist_address: ActionHash,
+    get_options: GetOptions,
+) -> ExternResult<Vec<VerificationKeyDistMark>> {
+    let links = get_links(
+        GetLinksInputBuilder::try_new(vf_key_dist_address, LinkTypes::VfKeyDistToMark)?
+            .get_options(get_options.strategy)
+            .build(),
+    )?;
+
+    let mut out = Vec::with_capacity(links.len());
+    for link in links {
+        let target_addr: AnyDhtHash = link.target.clone().try_into().map_err(|_| {
+            wasm_error!(WasmErrorInner::Guest(
+                format!("Failed to convert link target to AnyDhtHash: {:?}", link.target)
+            ))
+        })?;
+        if let Some(r) = get(target_addr, get_options.clone())? {
+            let mark: VerificationKeyDistMark = convert_to_app_entry_type(r)?;
+            out.push(mark);
+        }
+    }
+
+    Ok(out)
 }
 
 #[cfg(test)]

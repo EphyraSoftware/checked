@@ -6,6 +6,7 @@ pub(crate) mod key_util;
 pub(crate) mod verification_key_dist;
 
 use hdi::prelude::*;
+use crate::verification_key_dist::VerificationKeyDistMark;
 
 pub mod prelude {
     pub use crate::key_collection::*;
@@ -23,6 +24,7 @@ pub enum EntryTypes {
     VerificationKeyDist(verification_key_dist::VerificationKeyDist),
     #[entry_type(visibility = "private")]
     KeyCollection(key_collection::KeyCollection),
+    VerificationKeyDistMark(VerificationKeyDistMark),
 }
 
 #[hdk_link_types]
@@ -31,6 +33,7 @@ pub enum LinkTypes {
     VfKeyDistToAgent,
     KeyCollectionToVfKeyDist,
     VfKeyDistToKeyCollection,
+    VfKeyDistToMark,
 }
 
 // Validation you perform during the genesis process. Nobody else on the network performs it, only you.
@@ -85,6 +88,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         EntryCreationAction::Create(action),
                         key_collection,
                     )
+                }
+                EntryTypes::VerificationKeyDistMark(mark) => {
+                    verification_key_dist::validate_create_vf_key_dist_mark(EntryCreationAction::Create(action), mark)
                 }
             },
             OpEntry::UpdateEntry {
@@ -169,6 +175,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             }
             LinkTypes::KeyCollectionToVfKeyDist => {
                 key_collection::validate_key_collection_to_vf_key_dist_link(
+                    action,
                     target_address,
                     link_type,
                 )
@@ -180,6 +187,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     target_address,
                     link_type,
                     tag,
+                )
+            }
+            LinkTypes::VfKeyDistToMark => {
+                verification_key_dist::verify_vf_key_dist_to_mark_link(
+                    action,
+                    base_address,
+                    target_address,
+                    link_type,
                 )
             }
         },
@@ -216,6 +231,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         verification_key_dist::validate_create_vf_key_dist(
                             EntryCreationAction::Create(action),
                             gpg_key,
+                        )
+                    }
+                    EntryTypes::VerificationKeyDistMark(mark) => {
+                        verification_key_dist::validate_create_vf_key_dist_mark(
+                            EntryCreationAction::Create(action),
+                            mark,
                         )
                     }
                     _ => Ok(ValidateCallbackResult::Invalid(
@@ -376,6 +397,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     }
                     LinkTypes::KeyCollectionToVfKeyDist => {
                         key_collection::validate_key_collection_to_vf_key_dist_link(
+                            action,
                             target_address,
                             link_type,
                         )
@@ -387,6 +409,14 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                             target_address,
                             link_type,
                             tag,
+                        )
+                    }
+                    LinkTypes::VfKeyDistToMark => {
+                        verification_key_dist::verify_vf_key_dist_to_mark_link(
+                            action,
+                            base_address,
+                            target_address,
+                            link_type,
                         )
                     }
                 },

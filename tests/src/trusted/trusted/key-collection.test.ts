@@ -80,7 +80,7 @@ test("Link verification key distribution to collection", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice] = await scenario.addPlayersWithApps([appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
@@ -91,19 +91,17 @@ test("Link verification key distribution to collection", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (
-      verification_key_record.signed_action.hashed as HoloHashed<Create>
-    ).content.entry_hash;
+    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
 
-    // Alice creates a key collection
+    // Bob creates a key collection
     const key_collection_record: Record = await createKeyCollection(
-      alice.cells[0],
+      bob.cells[0],
       "a test",
     );
     assert.ok(key_collection_record);
 
-    // Alice links the verification key to the key collection
-    await alice.cells[0].callZome({
+    // Bob links Alice's verification key to the key collection
+    await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
@@ -113,7 +111,7 @@ test("Link verification key distribution to collection", async () => {
     });
 
     const key_collections: KeyCollectionWithKeys[] =
-      await alice.cells[0].callZome({
+      await bob.cells[0].callZome({
         zome_name: "trusted",
         fn_name: "get_my_key_collections",
         payload: null,
@@ -128,7 +126,7 @@ test("Unlink verification key from collection", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice] = await scenario.addPlayersWithApps([appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
@@ -139,19 +137,17 @@ test("Unlink verification key from collection", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (
-      verification_key_record.signed_action.hashed as HoloHashed<Create>
-    ).content.entry_hash;
+    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
 
-    // Alice creates a key collection
+    // Bob creates a key collection
     const key_collection_record: Record = await createKeyCollection(
-      alice.cells[0],
+      bob.cells[0],
       "a test",
     );
     assert.ok(key_collection_record);
 
-    // Alice links the verification key to the key collection
-    await alice.cells[0].callZome({
+    // Bob links Alice's verification key to the key collection
+    await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
@@ -160,8 +156,8 @@ test("Unlink verification key from collection", async () => {
       },
     });
 
-    // Alice unlinks the verification key from the key collection
-    await alice.cells[0].callZome({
+    // Bob unlinks Alice's verification key from the key collection
+    await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "unlink_verification_key_from_key_collection",
       payload: {
@@ -172,7 +168,7 @@ test("Unlink verification key from collection", async () => {
 
     // Now getting key collections should return a single, empty key collection
     const key_collections: KeyCollectionWithKeys[] =
-      await alice.cells[0].callZome({
+      await bob.cells[0].callZome({
         zome_name: "trusted",
         fn_name: "get_my_key_collections",
         payload: null,
@@ -195,10 +191,10 @@ test("Remote validation", async () => {
 
     await scenario.shareAllAgents();
 
-    // Alice creates some keys collections
+    // Bob creates some keys collections
     for (let i = 0; i < 3; i++) {
       const record: Record = await createKeyCollection(
-        alice.cells[0],
+        bob.cells[0],
         `a test ${i}`,
       );
       assert.ok(record);
@@ -216,12 +212,10 @@ test("Remote validation", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = (
-      verification_key_record.signed_action.hashed as HoloHashed<Create>
-    ).content.entry_hash;
+    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
 
-    // Alice links the verification key to the key collection
-    await alice.cells[0].callZome({
+    // Bob links Alice's verification key to the key collection
+    await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
@@ -233,8 +227,8 @@ test("Remote validation", async () => {
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
-    // Alice unlinks the verification key from the key collection
-    await alice.cells[0].callZome({
+    // Bob unlinks Alice's verification key from the key collection
+    await bob.cells[0].callZome({
       zome_name: "trusted",
       fn_name: "unlink_verification_key_from_key_collection",
       payload: {

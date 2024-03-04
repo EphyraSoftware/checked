@@ -78,6 +78,7 @@ pub fn validate_create_key_collection(
 }
 
 pub fn validate_key_collection_to_vf_key_dist_link(
+    action: CreateLink,
     target_address: AnyLinkableHash,
     link_type: LinkTypes,
 ) -> ExternResult<ValidateCallbackResult> {
@@ -89,21 +90,27 @@ pub fn validate_key_collection_to_vf_key_dist_link(
     );
 
     //
-    // Validate the target address is a VerificationKeyDist entry
+    // Validate the target address is a VerificationKeyDist entry, owned by another agent
     //
-    let vf_key_dist_address: EntryHash = match target_address.clone().try_into() {
-        Ok(entry_hash) => entry_hash,
+    let vf_key_dist_address = match target_address.clone().try_into() {
+        Ok(action_hash) => action_hash,
         Err(_) => {
             return Ok(ValidateCallbackResult::Invalid(format!(
-                "The target address for {:?} must be an entry hash",
+                "The target address for {:?} must be a verification key dist address",
                 link_type
             )));
         }
     };
 
-    let maybe_vf_key_dist_entry = must_get_entry(vf_key_dist_address)?;
+    let maybe_vf_key_dist_entry = must_get_valid_record(vf_key_dist_address)?;
 
-    if try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
+    if maybe_vf_key_dist_entry.signed_action.hashed.author() == &action.author {
+        return Ok(ValidateCallbackResult::Invalid(
+            "You cannot add your own verification key dist to one of your key collections".to_string(),
+        ));
+    }
+
+    if try_extract_entry_to_app_type::<_, VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The target for {:?} must be a {}",
             link_type,
@@ -138,9 +145,15 @@ pub fn validate_vf_key_dist_to_key_collection_link(
         )))
     })?;
 
-    let maybe_vf_key_dist_entry = must_get_entry(vf_key_dist_address)?;
+    let maybe_vf_key_dist_entry = must_get_valid_record(vf_key_dist_address)?;
 
-    if try_extract_entry_to_app_type::<VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
+    if maybe_vf_key_dist_entry.signed_action.hashed.author() == &action.author {
+        return Ok(ValidateCallbackResult::Invalid(
+            "You cannot add your own verification key dist to one of your key collections".to_string(),
+        ));
+    }
+
+    if try_extract_entry_to_app_type::<_, VerificationKeyDist>(maybe_vf_key_dist_entry).is_err() {
         return Ok(ValidateCallbackResult::Invalid(format!(
             "The base for {:?} must be a {}",
             link_type,
@@ -183,13 +196,31 @@ pub fn validate_vf_key_dist_to_key_collection_link(
     };
     let action_hash = hash_action(Action::CreateLink(action.clone()))?;
     let activity = must_get_agent_activity(action.author.clone(), ChainFilter::new(action_hash))?;
-    let found_reverse_link = activity.into_iter().any(|a| {
-        matches!(a.action.action(), Action::CreateLink(CreateLink { link_type: lt, tag: t, .. }) if lt == &link_type && t == &tag)
+    let reverse_link_action = activity.iter().find_map(|a| {
+        if matches!(a.action.action(), Action::CreateLink(CreateLink { link_type: lt, tag: t, .. }) if lt == &link_type && t == &tag) {
+            Some(a.action.as_hash().clone())
+        } else {
+            None
+        }
     });
 
-    if !found_reverse_link {
+    let reverse_link_add_address = match reverse_link_action {
+        Some(reverse_link_action) => reverse_link_action.as_hash().clone(),
+        None => {
+            return Ok(ValidateCallbackResult::Invalid(format!(
+                "The reverse link for {:?} must exist",
+                link_type
+            )));
+        }
+    };
+
+    let reverse_link_deleted = activity.iter().any(|a| {
+        matches!(a.action.action(), Action::DeleteLink(DeleteLink { link_add_address, .. }) if link_add_address == &reverse_link_add_address)
+    });
+
+    if reverse_link_deleted {
         return Ok(ValidateCallbackResult::Invalid(format!(
-            "The reverse link for {:?} must exist",
+            "The reverse link for {:?} must not be deleted",
             link_type
         )));
     }

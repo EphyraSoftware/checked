@@ -1,22 +1,48 @@
 use hdi::prelude::*;
 
-pub fn try_extract_entry_to_app_type<T: TryFrom<SerializedBytes>>(
-    entry: EntryHashed,
+pub struct AppTypeConvertible(AppEntryBytes);
+
+impl TryFrom<EntryHashed> for AppTypeConvertible {
+    type Error = WasmError;
+
+    fn try_from(value: EntryHashed) -> ExternResult<Self> {
+        value
+            .as_app_entry()
+            .cloned()
+            .ok_or(wasm_error!(WasmErrorInner::Guest(
+                "Not an app entry".into()
+            )))
+            .map(AppTypeConvertible)
+    }
+}
+
+impl TryFrom<Record> for AppTypeConvertible {
+    type Error = WasmError;
+
+    fn try_from(value: Record) -> ExternResult<Self> {
+        value
+            .entry
+            .as_option()
+            .and_then(|e| e.as_app_entry())
+            .cloned()
+            .ok_or(wasm_error!(WasmErrorInner::Guest(
+                "Not an app entry".into()
+            )))
+            .map(AppTypeConvertible)
+    }
+}
+
+pub fn try_extract_entry_to_app_type<
+    I: TryInto<AppTypeConvertible, Error = WasmError>,
+    T: TryFrom<SerializedBytes>,
+>(
+    input: I,
 ) -> ExternResult<T> {
-    match entry.as_app_entry() {
-        Some(app_entry) => {
-            match <SerializedBytes as TryInto<T>>::try_into(app_entry.clone().into_sb()) {
-                Ok(t) => Ok(t),
-                Err(_) => Err(wasm_error!(WasmErrorInner::Guest(format!(
-                    "Entry {:?} is not a {}",
-                    entry.hash,
-                    std::any::type_name::<T>()
-                )))),
-            }
-        }
-        None => Err(wasm_error!(WasmErrorInner::Guest(format!(
-            "Entry {:?} is not an app entry of type {}",
-            entry.hash,
+    let app_entry_bytes: AppTypeConvertible = input.try_into()?;
+    match <SerializedBytes as TryInto<T>>::try_into(app_entry_bytes.0.into_sb()) {
+        Ok(t) => Ok(t),
+        Err(_) => Err(wasm_error!(WasmErrorInner::Guest(format!(
+            "Input is not a {}",
             std::any::type_name::<T>()
         )))),
     }

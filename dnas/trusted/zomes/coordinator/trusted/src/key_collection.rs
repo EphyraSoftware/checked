@@ -2,6 +2,7 @@ use crate::{convert_to_app_entry_type, verification_key_dist::VfKeyResponse};
 use hdk::prelude::*;
 use nanoid::nanoid;
 use trusted_integrity::prelude::*;
+use crate::verification_key_dist::get_key_marks;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {
@@ -47,9 +48,9 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
         )?;
 
         for link in linked_vf_keys {
-            let key_dist_address: EntryHash = link.target.try_into().map_err(|_| {
+            let key_dist_address: ActionHash = link.target.try_into().map_err(|_| {
                 wasm_error!(WasmErrorInner::Guest(String::from(
-                    "Not an entry hash hash"
+                    "Not a valid verification key dist address"
                 )))
             })?;
 
@@ -63,13 +64,15 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 continue;
             };
 
+            // Must be latest because we are looking for marks on the key dist created by *other* agents.
+            let marks = get_key_marks(key_dist_address.clone(), GetOptions::latest())?;
             let reference_count = get_key_collections_reference_count(
                 key_dist_address.clone(),
                 // This is collective across the network, so prefer latest.
                 &GetOptions::latest(),
             )?;
             key_collection.verification_keys.push(VfKeyResponse {
-                verification_key_dist: vf_key_dist.into(),
+                verification_key_dist: (vf_key_dist, marks).into(),
                 key_dist_address,
                 reference_count,
                 created_at,
@@ -84,7 +87,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct LinkVfKeyDistToKeyCollectionRequest {
-    pub verification_key_dist_address: EntryHash,
+    pub verification_key_dist_address: ActionHash,
     pub key_collection_name: String,
 }
 
@@ -117,7 +120,7 @@ pub fn link_verification_key_to_key_collection(
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct UnlinkVfKeyFromKeyCollectionRequest {
-    pub verification_key_dist_address: EntryHash,
+    pub verification_key_dist_address: ActionHash,
     pub key_collection_name: String,
 }
 
@@ -259,11 +262,11 @@ fn find_key_collection(name: &str) -> ExternResult<Option<(ActionHash, KeyCollec
 /// Each author may put the same key in multiple collections, but that is only counted once.
 /// That means this is the number of unique agents who are referencing this key.
 pub fn get_key_collections_reference_count(
-    entry_hash: EntryHash,
+    key_dist_address: ActionHash,
     get_options: &GetOptions,
 ) -> ExternResult<usize> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(entry_hash, LinkTypes::VfKeyDistToKeyCollection)?
+        GetLinksInputBuilder::try_new(key_dist_address, LinkTypes::VfKeyDistToKeyCollection)?
             .get_options(get_options.strategy)
             .build(),
     )?;
