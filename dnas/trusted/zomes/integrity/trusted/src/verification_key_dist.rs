@@ -329,9 +329,9 @@ pub(crate) fn validate_create_vf_key_dist_mark(
     //
     let vf_key_dist_record = must_get_valid_record(mark.verification_key_dist_address.clone())?;
     if create_action.author() != vf_key_dist_record.signed_action.hashed.author() {
-        return Ok(ValidateCallbackResult::Invalid(format!(
-            "Only the author of the verification key distribution can mark it"
-        )));
+        return Ok(ValidateCallbackResult::Invalid(
+            "Only the author of the verification key distribution can mark it".to_string(),
+        ));
     }
 
     //
@@ -342,13 +342,18 @@ pub(crate) fn validate_create_vf_key_dist_mark(
     //
     // If the mark is 'rotated' then the new_verification_key_dist_address must point to a VerificationKeyDist, owned by the same author.
     //
-    if let MarkVfKeyDistOpt::Rotated { new_verification_key_dist_address} = &mark.mark {
-        let new_vf_key_dist_record = must_get_valid_record(new_verification_key_dist_address.clone())?;
+    if let MarkVfKeyDistOpt::Rotated {
+        new_verification_key_dist_address,
+    } = &mark.mark
+    {
+        let new_vf_key_dist_record =
+            must_get_valid_record(new_verification_key_dist_address.clone())?;
         try_extract_entry_to_app_type::<_, VerificationKeyDist>(new_vf_key_dist_record.clone())?;
 
         if vf_key_dist_record.action().author() != new_vf_key_dist_record.action().author() {
             return Ok(ValidateCallbackResult::Invalid(
-                "The new verification key distribution must be owned by the same author".to_string()
+                "The new verification key distribution must be owned by the same author"
+                    .to_string(),
             ));
         }
     }
@@ -382,7 +387,8 @@ pub(crate) fn validate_create_vf_key_dist_mark(
                     try_extract_entry_to_app_type(must_get_entry(entry_hash.clone())?)?;
 
                 // We only want the marks that apply to the same key
-                if existing_mark.verification_key_dist_address == mark.verification_key_dist_address {
+                if existing_mark.verification_key_dist_address == mark.verification_key_dist_address
+                {
                     other_marks_for_vf_key_dist.push(existing_mark);
                 }
             }
@@ -392,16 +398,22 @@ pub(crate) fn validate_create_vf_key_dist_mark(
 
     match mark.mark {
         MarkVfKeyDistOpt::Rotated { .. } => {
-            if other_marks_for_vf_key_dist.iter().any(|m| matches!(m.mark, MarkVfKeyDistOpt::Rotated { .. })) {
+            if other_marks_for_vf_key_dist
+                .iter()
+                .any(|m| matches!(m.mark, MarkVfKeyDistOpt::Rotated { .. }))
+            {
                 return Ok(ValidateCallbackResult::Invalid(
-                    "A key can only be rotated once".to_string()
+                    "A key can only be rotated once".to_string(),
                 ));
             }
         }
         MarkVfKeyDistOpt::Compromised { .. } => {
-            if other_marks_for_vf_key_dist.iter().any(|m| matches!(m.mark, MarkVfKeyDistOpt::Compromised { .. })) {
+            if other_marks_for_vf_key_dist
+                .iter()
+                .any(|m| matches!(m.mark, MarkVfKeyDistOpt::Compromised { .. }))
+            {
                 return Ok(ValidateCallbackResult::Invalid(
-                    "A key can only be marked as compromised once".to_string()
+                    "A key can only be marked as compromised once".to_string(),
                 ));
             }
         }

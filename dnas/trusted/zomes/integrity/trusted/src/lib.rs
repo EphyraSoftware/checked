@@ -5,8 +5,8 @@ pub(crate) mod key_collection;
 pub(crate) mod key_util;
 pub(crate) mod verification_key_dist;
 
-use hdi::prelude::*;
 use crate::verification_key_dist::VerificationKeyDistMark;
+use hdi::prelude::*;
 
 pub mod prelude {
     pub use crate::key_collection::*;
@@ -90,7 +90,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     )
                 }
                 EntryTypes::VerificationKeyDistMark(mark) => {
-                    verification_key_dist::validate_create_vf_key_dist_mark(EntryCreationAction::Create(action), mark)
+                    verification_key_dist::validate_create_vf_key_dist_mark(
+                        EntryCreationAction::Create(action),
+                        mark,
+                    )
                 }
             },
             OpEntry::UpdateEntry {
@@ -189,14 +192,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     tag,
                 )
             }
-            LinkTypes::VfKeyDistToMark => {
-                verification_key_dist::verify_vf_key_dist_to_mark_link(
-                    action,
-                    base_address,
-                    target_address,
-                    link_type,
-                )
-            }
+            LinkTypes::VfKeyDistToMark => verification_key_dist::verify_vf_key_dist_to_mark_link(
+                action,
+                base_address,
+                target_address,
+                link_type,
+            ),
         },
         FlatOp::RegisterDeleteLink {
             link_type,

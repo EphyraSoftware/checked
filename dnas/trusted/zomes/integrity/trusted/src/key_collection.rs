@@ -106,7 +106,8 @@ pub fn validate_key_collection_to_vf_key_dist_link(
 
     if maybe_vf_key_dist_entry.signed_action.hashed.author() == &action.author {
         return Ok(ValidateCallbackResult::Invalid(
-            "You cannot add your own verification key dist to one of your key collections".to_string(),
+            "You cannot add your own verification key dist to one of your key collections"
+                .to_string(),
         ));
     }
 
@@ -149,7 +150,8 @@ pub fn validate_vf_key_dist_to_key_collection_link(
 
     if maybe_vf_key_dist_entry.signed_action.hashed.author() == &action.author {
         return Ok(ValidateCallbackResult::Invalid(
-            "You cannot add your own verification key dist to one of your key collections".to_string(),
+            "You cannot add your own verification key dist to one of your key collections"
+                .to_string(),
         ));
     }
 

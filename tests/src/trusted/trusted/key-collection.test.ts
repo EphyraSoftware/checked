@@ -1,7 +1,7 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import { Create, HoloHashed, Record } from "@holochain/client";
+import { Record } from "@holochain/client";
 
 import {
   KeyCollectionWithKeys,
@@ -80,7 +80,10 @@ test("Link verification key distribution to collection", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([
+      appSource,
+      appSource,
+    ]);
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
@@ -91,7 +94,8 @@ test("Link verification key distribution to collection", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
+    const vf_key_dist_address =
+      verification_key_record.signed_action.hashed.hash;
 
     // Bob creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -126,7 +130,10 @@ test("Unlink verification key from collection", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([
+      appSource,
+      appSource,
+    ]);
 
     // Alice distributes a MiniSign verification key
     const verification_key_record: Record = await distributeVerificationKey(
@@ -137,7 +144,8 @@ test("Unlink verification key from collection", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
+    const vf_key_dist_address =
+      verification_key_record.signed_action.hashed.hash;
 
     // Bob creates a key collection
     const key_collection_record: Record = await createKeyCollection(
@@ -212,7 +220,8 @@ test("Remote validation", async () => {
     );
     assert.ok(verification_key_record);
 
-    const vf_key_dist_address = verification_key_record.signed_action.hashed.hash;
+    const vf_key_dist_address =
+      verification_key_record.signed_action.hashed.hash;
 
     // Bob links Alice's verification key to the key collection
     await bob.cells[0].callZome({

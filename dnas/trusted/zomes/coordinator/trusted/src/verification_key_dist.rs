@@ -59,7 +59,7 @@ impl From<(VerificationKeyDist, Vec<VerificationKeyDistMark>)> for VerificationK
             key_type: vf_key_dist.key_type,
             name: vf_key_dist.name,
             expires_at: vf_key_dist.expires_at,
-            marks: marks.into_iter().map(|m| m.mark).collect()
+            marks: marks.into_iter().map(|m| m.mark).collect(),
         }
     }
 }
@@ -158,11 +158,9 @@ fn search_keys_with_get_options(
 
             Ok(out)
         }
-        None => {
-            Err(wasm_error!(WasmErrorInner::Guest(
-                "No fields on the request to perform a search on".to_string()
-            )))
-        }
+        None => Err(wasm_error!(WasmErrorInner::Guest(
+            "No fields on the request to perform a search on".to_string()
+        ))),
     }
 }
 
@@ -170,39 +168,53 @@ fn search_keys_with_get_options(
 pub struct MarkVfKeyDistRequest {
     pub verification_key_dist_address: ActionHash,
     pub mark: MarkVfKeyDistOpt,
-
 }
 
 /// A mark is how the owner of a key can attach metadata to the key to describe its state.
 #[hdk_extern]
 pub fn mark_verification_key_dist(request: MarkVfKeyDistRequest) -> ExternResult<ActionHash> {
-    let record = get(request.verification_key_dist_address.clone(), GetOptions::content())?.ok_or_else(|| {
-        wasm_error!(WasmErrorInner::Guest(
-            format!("Could not find the VerificationKeyDist: {:?}", request.verification_key_dist_address)
-        ))
+    let record = get(
+        request.verification_key_dist_address.clone(),
+        GetOptions::content(),
+    )?
+    .ok_or_else(|| {
+        wasm_error!(WasmErrorInner::Guest(format!(
+            "Could not find the VerificationKeyDist: {:?}",
+            request.verification_key_dist_address
+        )))
     })?;
 
     // To check it really is a VerificationKeyDist
     let _: VerificationKeyDist = convert_to_app_entry_type(record)?;
 
-    let mark_action = create_entry(EntryTypes::VerificationKeyDistMark(VerificationKeyDistMark {
-        verification_key_dist_address: request.verification_key_dist_address.clone(),
-        mark: request.mark,
-    }))?;
+    let mark_action = create_entry(EntryTypes::VerificationKeyDistMark(
+        VerificationKeyDistMark {
+            verification_key_dist_address: request.verification_key_dist_address.clone(),
+            mark: request.mark,
+        },
+    ))?;
 
     let mark_entry = get(mark_action.clone(), GetOptions::content())?.ok_or_else(|| {
-        wasm_error!(WasmErrorInner::Guest(
-            format!("Could not find the VerificationKeyDistMark: {:?}", mark_action)
-        ))
+        wasm_error!(WasmErrorInner::Guest(format!(
+            "Could not find the VerificationKeyDistMark: {:?}",
+            mark_action
+        )))
     })?;
 
     create_link(
         request.verification_key_dist_address,
-        mark_entry.signed_action.hashed.content.entry_hash().ok_or_else(|| {
-            wasm_error!(WasmErrorInner::Guest(
-                format!("Could not find the entry hash for VerificationKeyDistMark: {:?}", mark_action)
-            ))
-        })?.clone(),
+        mark_entry
+            .signed_action
+            .hashed
+            .content
+            .entry_hash()
+            .ok_or_else(|| {
+                wasm_error!(WasmErrorInner::Guest(format!(
+                    "Could not find the entry hash for VerificationKeyDistMark: {:?}",
+                    mark_action
+                )))
+            })?
+            .clone(),
         LinkTypes::VfKeyDistToMark,
         (),
     )?;
@@ -283,9 +295,10 @@ pub fn get_key_marks(
     let mut out = Vec::with_capacity(links.len());
     for link in links {
         let target_addr: AnyDhtHash = link.target.clone().try_into().map_err(|_| {
-            wasm_error!(WasmErrorInner::Guest(
-                format!("Failed to convert link target to AnyDhtHash: {:?}", link.target)
-            ))
+            wasm_error!(WasmErrorInner::Guest(format!(
+                "Failed to convert link target to AnyDhtHash: {:?}",
+                link.target
+            )))
         })?;
         if let Some(r) = get(target_addr, get_options.clone())? {
             let mark: VerificationKeyDistMark = convert_to_app_entry_type(r)?;

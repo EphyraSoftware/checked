@@ -1,7 +1,7 @@
 import { assert, test } from "vitest";
 
 import { runScenario, dhtSync } from "@holochain/tryorama";
-import { Create, HoloHashed, Record } from "@holochain/client";
+import { Record } from "@holochain/client";
 
 import {
   VerificationKeyResponse,
