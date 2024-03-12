@@ -31,7 +31,7 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
             expires_at: None,
         }))?;
 
-    let record = get(vf_key_dist_action_hash.clone(), GetOptions::content())?.ok_or(
+    let record = get(vf_key_dist_action_hash.clone(), GetOptions::local())?.ok_or(
         wasm_error!(WasmErrorInner::Guest(
             "Could not find the newly created VerificationKeyDist".to_string()
         )),
@@ -89,9 +89,9 @@ pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyRes
         let created_at = r.action().timestamp();
         let key_dist_address = r.action_address().clone();
         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
-        let marks = get_key_marks(key_dist_address.clone(), GetOptions::content())?;
+        let marks = get_key_marks(key_dist_address.clone(), GetOptions::local())?;
         let reference_count =
-            get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::content())?;
+            get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::local())?;
         out.push(VfKeyResponse {
             verification_key_dist: (vf_key_dist, marks).into(),
             key_dist_address,
@@ -110,12 +110,12 @@ pub struct SearchKeysRequest {
 
 #[hdk_extern]
 pub fn search_keys(request: SearchKeysRequest) -> ExternResult<Vec<VfKeyResponse>> {
-    search_keys_with_get_options(request, GetOptions::latest())
+    search_keys_with_get_options(request, GetOptions::network())
 }
 
 #[hdk_extern]
 pub fn search_keys_local(request: SearchKeysRequest) -> ExternResult<Vec<VfKeyResponse>> {
-    search_keys_with_get_options(request, GetOptions::content())
+    search_keys_with_get_options(request, GetOptions::local())
 }
 
 fn search_keys_with_get_options(
@@ -138,7 +138,7 @@ fn search_keys_with_get_options(
                 let reference_count =
                     get_key_collections_reference_count(key_dist_address.clone(), &get_options)?;
 
-                match get(key_dist_address.clone(), GetOptions::latest())? {
+                match get(key_dist_address.clone(), GetOptions::network())? {
                     Some(r) => {
                         let created_at = r.action().timestamp();
                         let marks = get_key_marks(key_dist_address.clone(), get_options.clone())?;
@@ -175,7 +175,7 @@ pub struct MarkVfKeyDistRequest {
 pub fn mark_verification_key_dist(request: MarkVfKeyDistRequest) -> ExternResult<ActionHash> {
     let record = get(
         request.verification_key_dist_address.clone(),
-        GetOptions::content(),
+        GetOptions::local(),
     )?
     .ok_or_else(|| {
         wasm_error!(WasmErrorInner::Guest(format!(
@@ -194,7 +194,7 @@ pub fn mark_verification_key_dist(request: MarkVfKeyDistRequest) -> ExternResult
         },
     ))?;
 
-    let mark_entry = get(mark_action.clone(), GetOptions::content())?.ok_or_else(|| {
+    let mark_entry = get(mark_action.clone(), GetOptions::local())?.ok_or_else(|| {
         wasm_error!(WasmErrorInner::Guest(format!(
             "Could not find the VerificationKeyDistMark: {:?}",
             mark_action

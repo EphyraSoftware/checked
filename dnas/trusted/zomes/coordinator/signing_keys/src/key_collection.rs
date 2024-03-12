@@ -11,7 +11,7 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
     let entry = EntryTypes::KeyCollection(key_collection);
     let action_hash = create_entry(entry)?;
 
-    let record = get(action_hash.clone(), GetOptions::content())?.ok_or(wasm_error!(
+    let record = get(action_hash.clone(), GetOptions::local())?.ok_or(wasm_error!(
         WasmErrorInner::Guest(String::from(
             "Could not find the newly created KeyCollection"
         ))
@@ -43,7 +43,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 LinkTypes::KeyCollectionToVfKeyDist,
             )?
             // We created these links so only look locally.
-            .get_options(GetStrategy::Content)
+            .get_options(GetStrategy::Local)
             .build(),
         )?;
 
@@ -54,7 +54,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 )))
             })?;
 
-            let vf_key_dist_record = get(key_dist_address.clone(), GetOptions::content())?;
+            let vf_key_dist_record = get(key_dist_address.clone(), GetOptions::local())?;
 
             let (created_at, vf_key_dist) = if let Some(vf_key_dist_record) = vf_key_dist_record {
                 let vf_key_dist: VerificationKeyDist =
@@ -64,12 +64,12 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 continue;
             };
 
-            // Must be latest because we are looking for marks on the key dist created by *other* agents.
-            let marks = get_key_marks(key_dist_address.clone(), GetOptions::latest())?;
+            // Must be network because we are looking for marks on the key dist created by *other* agents.
+            let marks = get_key_marks(key_dist_address.clone(), GetOptions::network())?;
             let reference_count = get_key_collections_reference_count(
                 key_dist_address.clone(),
-                // This is collective across the network, so prefer latest.
-                &GetOptions::latest(),
+                // This is collective across the network, so prefer network.
+                &GetOptions::network(),
             )?;
             key_collection.verification_keys.push(VfKeyResponse {
                 verification_key_dist: (vf_key_dist, marks).into(),
@@ -140,7 +140,7 @@ pub fn unlink_verification_key_from_key_collection(
             LinkTypes::VfKeyDistToKeyCollection.try_into_filter()?,
         )?
         // Always created by the current agent so only look locally.
-        .get_options(GetStrategy::Content)
+        .get_options(GetStrategy::Local)
         .author(agent_info.agent_initial_pubkey.clone())
         .build(),
     )?;

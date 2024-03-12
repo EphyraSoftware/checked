@@ -17,7 +17,6 @@
     "@holochain/client": "^0.17.0-dev.3",
     "@msgpack/msgpack": "^2.8.0",
     "date-fns": "^3.3.1",
-    "openpgp": "^5.11.0",
     "pinia": "^2.1.7",
     "txtgen": "^3.0.7",
     "vue": "^3.2.25",
