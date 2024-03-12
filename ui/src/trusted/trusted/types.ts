@@ -38,7 +38,20 @@ export type TrustedSignal =
 export type EntryTypes = { type: "GpgKeyDist" } & GpgKeyDist;
 
 export interface DistributeGpgKeyRequest {
-  public_key: string;
+  name: string;
+  verification_key: string;
+  key_type: 'MiniSignEd25519',
+  proof: string;
+  proof_signature: string;
+}
+
+export interface VerificationKeyDist {
+  verification_key: string;
+  key_type: {'MiniSignEd25519': null};
+  proof: string;
+  proof_signature: number[];
+  name: string;
+  expires_at?: Date;
 }
 
 export interface GpgKeyDist {
