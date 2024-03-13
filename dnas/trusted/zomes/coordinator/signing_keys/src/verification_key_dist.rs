@@ -31,11 +31,9 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
             expires_at: None,
         }))?;
 
-    let record = get(vf_key_dist_action_hash.clone(), GetOptions::local())?.ok_or(
-        wasm_error!(WasmErrorInner::Guest(
-            "Could not find the newly created VerificationKeyDist".to_string()
-        )),
-    )?;
+    let record = get(vf_key_dist_action_hash.clone(), GetOptions::local())?.ok_or(wasm_error!(
+        WasmErrorInner::Guest("Could not find the newly created VerificationKeyDist".to_string())
+    ))?;
 
     create_vf_key_dist_discovery_links(&vf_key_dist_action_hash)?;
 

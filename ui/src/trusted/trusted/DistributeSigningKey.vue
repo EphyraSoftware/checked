@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {inject, ComputedRef, ref, computed} from "vue";
-import {AppAgentClient} from "@holochain/client";
-import {useNotificationsStore} from "../../store/notifications-store";
-import {sentence} from 'txtgen';
-import {VerificationKeyDist} from "./types";
+import { inject, ComputedRef, ref, computed } from "vue";
+import { AppAgentClient } from "@holochain/client";
+import { useNotificationsStore } from "../../store/notifications-store";
+import { sentence } from "txtgen";
+import { VerificationKeyDist } from "./types";
 
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
@@ -23,7 +23,9 @@ const fileInputField = ref<HTMLElement | null>(null);
 const textAreaInputField = ref<HTMLElement | null>(null);
 const downloadLink = ref<HTMLElement | null>(null);
 const proofFileInputField = ref<HTMLElement | null>(null);
-const formStage = ref<"uploadKey" | "downloadProof" | "uploadSigned">("uploadKey");
+const formStage = ref<"uploadKey" | "downloadProof" | "uploadSigned">(
+  "uploadKey",
+);
 
 const utf8Encode = new TextEncoder();
 
@@ -36,7 +38,7 @@ const handleNewKeyProvided = (key: string) => {
 
   const content = sentence();
   proof.value = content;
-  const data = new Blob([content], {type: "text/plain"});
+  const data = new Blob([content], { type: "text/plain" });
   downloadLink.value?.setAttribute("href", URL.createObjectURL(data));
 };
 
@@ -70,7 +72,7 @@ const onSigningVerificationKeySelect = async (event: Event) => {
 const onPublicKeyPaste = async (event: Event) => {
   if (event.type === "paste") {
     const value = (event as ClipboardEvent).clipboardData?.getData(
-        "text/plain",
+      "text/plain",
     );
     if (!value) return;
 
@@ -136,7 +138,7 @@ const distributeSigningVerificationKey = async () => {
   try {
     const dist: VerificationKeyDist = {
       verification_key: selected.value,
-      key_type: {"MiniSignEd25519": null},
+      key_type: { MiniSignEd25519: null },
       proof: proof.value,
       proof_signature: Array.from(signedProof.value),
       name: name.value,
@@ -164,106 +166,142 @@ const distributeSigningVerificationKey = async () => {
 
 <template>
   <div class="collapse bg-base-200">
-    <input type="radio" name="distribute-accordion" v-model="formStage" value="uploadKey" />
+    <input
+      type="radio"
+      name="distribute-accordion"
+      v-model="formStage"
+      value="uploadKey"
+    />
     <div class="collapse-title text-xl font-medium w-full">
       Provide your signing verification key
     </div>
     <div class="collapse-content">
       <div class="w-3/4 mx-auto">
-        <input type="text" placeholder="Friendly name for your key" class="input input-bordered w-full" v-model="name" minlength="3" />
+        <input
+          type="text"
+          placeholder="Friendly name for your key"
+          class="input input-bordered w-full"
+          v-model="name"
+          minlength="3"
+        />
 
         <div class="flex flex-col items-center my-5">
           <div role="tablist" class="tabs tabs-boxed w-full">
             <a
-                role="tab"
-                :class="{ tab: true, 'tab-active': inputType === 'file' }"
-                @click="inputType = 'file'"
-            >Select file</a
+              role="tab"
+              :class="{ tab: true, 'tab-active': inputType === 'file' }"
+              @click="inputType = 'file'"
+              >Select file</a
             >
             <a
-                role="tab"
-                :class="{ tab: true, 'tab-active': inputType === 'paste' }"
-                @click="inputType = 'paste'"
-            >Paste</a
+              role="tab"
+              :class="{ tab: true, 'tab-active': inputType === 'paste' }"
+              @click="inputType = 'paste'"
+              >Paste</a
             >
           </div>
 
           <div class="my-3 min-h-24">
             <input
-                v-if="inputType === 'file'"
-                type="file"
-                accept="text/*,.pub"
-                @change="onSigningVerificationKeySelect"
-                ref="fileInputField"
-                class="file-input file-input-bordered file-input-primary"
+              v-if="inputType === 'file'"
+              type="file"
+              accept="text/*,.pub"
+              @change="onSigningVerificationKeySelect"
+              ref="fileInputField"
+              class="file-input file-input-bordered file-input-primary"
             />
             <textarea
-                v-else
-                class="textarea textarea-ghost"
-                placeholder="Paste your signing verification key here"
-                @change="onPublicKeyPaste"
-                @paste="onPublicKeyPaste"
-                ref="textAreaInputField"
+              v-else
+              class="textarea textarea-ghost"
+              placeholder="Paste your signing verification key here"
+              @change="onPublicKeyPaste"
+              @paste="onPublicKeyPaste"
+              ref="textAreaInputField"
             ></textarea>
           </div>
         </div>
       </div>
       <div class="flex justify-end">
-        <button class="btn btn-primary" @click="formStage = 'downloadProof'">Next</button>
+        <button class="btn btn-primary" @click="formStage = 'downloadProof'">
+          Next
+        </button>
       </div>
     </div>
   </div>
   <div class="collapse bg-base-200">
-    <input type="radio" name="distribute-accordion" v-model="formStage" value="downloadProof" :disabled="!name || name.length <= 3 && !selected" />
-    <div class="collapse-title text-xl font-medium">
-      Download signing proof
-    </div>
+    <input
+      type="radio"
+      name="distribute-accordion"
+      v-model="formStage"
+      value="downloadProof"
+      :disabled="!name || (name.length <= 3 && !selected)"
+    />
+    <div class="collapse-title text-xl font-medium">Download signing proof</div>
     <div class="collapse-content">
-      <p>To prove that you have the signing key that goes with this verification key, please download this file and sign it:</p>
+      <p>
+        To prove that you have the signing key that goes with this verification
+        key, please download this file and sign it:
+      </p>
       <div class="flex justify-center">
-        <a download="proof.txt" type="text/plain" ref="downloadLink" class="link link-accent">proof.txt</a>
+        <a
+          download="proof.txt"
+          type="text/plain"
+          ref="downloadLink"
+          class="link link-accent"
+          >proof.txt</a
+        >
       </div>
 
       <div class="flex justify-end">
-        <button class="btn btn-primary" @click="formStage = 'uploadSigned'">Next</button>
+        <button class="btn btn-primary" @click="formStage = 'uploadSigned'">
+          Next
+        </button>
       </div>
     </div>
   </div>
   <div class="collapse bg-base-200">
-    <input type="radio" name="distribute-accordion" v-model="formStage" value="uploadSigned" /> <!-- :disabled="!name || name.length <= 3 && !selected" -->
-    <div class="collapse-title text-xl font-medium">
-      Upload signed proof
-    </div>
+    <input
+      type="radio"
+      name="distribute-accordion"
+      v-model="formStage"
+      value="uploadSigned"
+    />
+    <!-- :disabled="!name || name.length <= 3 && !selected" -->
+    <div class="collapse-title text-xl font-medium">Upload signed proof</div>
     <div class="collapse-content">
       <div class="flex justify-center">
         <input
-            v-if="inputType === 'file'"
-            type="file"
-            accept="text/*,*.txt.minisig"
-            @change="onSignedProofUploaded"
-            ref="proofFileInputField"
-            class="file-input file-input-bordered file-input-primary"
+          v-if="inputType === 'file'"
+          type="file"
+          accept="text/*,*.txt.minisig"
+          @change="onSignedProofUploaded"
+          ref="proofFileInputField"
+          class="file-input file-input-bordered file-input-primary"
         />
       </div>
 
-      <p v-if="signedProof" class="mx-3 my-5">You're all set, when you're ready to distribute your key as '{{ name }}', click the distribute button</p>
+      <p v-if="signedProof" class="mx-3 my-5">
+        You're all set, when you're ready to distribute your key as '{{
+          name
+        }}', click the distribute button
+      </p>
 
       <div class="flex justify-end my-3">
         <div class="join">
           <button
-              class="btn btn-primary join-item"
-              :disabled="!isGpgKeyValid || creating"
-              @click="distributeSigningVerificationKey"
+            class="btn btn-primary join-item"
+            :disabled="!isGpgKeyValid || creating"
+            @click="distributeSigningVerificationKey"
           >
             <span v-if="creating" class="loading loading-spinner"></span>
             <span v-else>{{
-                creating ? "Creating..." : "Distribute Key"
-              }}</span>
+              creating ? "Creating..." : "Distribute Key"
+            }}</span>
           </button>
           <button
-              class="btn btn-secondary join-item"
-              :disabled="!selected"
-              @click="resetForm"
+            class="btn btn-secondary join-item"
+            :disabled="!selected"
+            @click="resetForm"
           >
             Cancel
           </button>

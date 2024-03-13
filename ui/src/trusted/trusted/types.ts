@@ -5,6 +5,7 @@ import {
   Delete,
   CreateLink,
   DeleteLink,
+  ActionHash,
 } from "@holochain/client";
 
 export type TrustedSignal =
@@ -40,14 +41,14 @@ export type EntryTypes = { type: "GpgKeyDist" } & GpgKeyDist;
 export interface DistributeGpgKeyRequest {
   name: string;
   verification_key: string;
-  key_type: 'MiniSignEd25519',
+  key_type: "MiniSignEd25519";
   proof: string;
   proof_signature: string;
 }
 
 export interface VerificationKeyDist {
   verification_key: string;
-  key_type: {'MiniSignEd25519': null};
+  key_type: VfKeyType;
   proof: string;
   proof_signature: number[];
   name: string;
@@ -65,6 +66,36 @@ export interface GpgKeyDist {
 export interface GpgKeyWithMeta {
   gpg_key_dist: GpgKeyDist;
   reference_count: number;
+}
+
+export type VfKeyType = { MiniSignEd25519: null };
+
+export type MarkVfKeyDistOpt =
+  | {
+      Rotated: {
+        new_verification_key_dist_address: ActionHash;
+      };
+    }
+  | {
+      Compromised: {
+        note: string;
+        since: number;
+      };
+    };
+
+export interface VfKeyDistResponse {
+  verification_key: string;
+  key_type: VfKeyType;
+  name: string;
+  expires_at?: Date;
+  marks: MarkVfKeyDistOpt[];
+}
+
+export interface VfKeyResponse {
+  verification_key_dist: VfKeyDistResponse;
+  key_dist_address: ActionHash;
+  reference_count: number;
+  created_at: number;
 }
 
 export interface SearchKeysRequest {

@@ -1,12 +1,12 @@
 import { AppAgentClient } from "@holochain/client";
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { GpgKeyWithMeta } from "../trusted/trusted/types";
+import { VfKeyResponse } from "../trusted/trusted/types";
 import { registerSignalHandler } from "../signals";
 
 export interface KeyCollectionWithKeys {
   name: string;
-  gpg_keys: GpgKeyWithMeta[];
+  keys: VfKeyResponse[];
 }
 
 export const useKeyCollectionsStore = defineStore("key-collections", () => {
@@ -17,12 +17,12 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
     keyCollections.value.push(collection);
   };
 
-  const addKeyToCollection = (name: string, key: GpgKeyWithMeta) => {
+  const addKeyToCollection = (name: string, key: VfKeyResponse) => {
     const existingCollection = keyCollections.value.find(
       (c) => c.name === name,
     );
     if (existingCollection) {
-      existingCollection.gpg_keys.push(key);
+      existingCollection.keys.push(key);
     }
   };
 
@@ -30,7 +30,7 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
   const loadKeyCollections = async (client: AppAgentClient) => {
     try {
       const collections: KeyCollectionWithKeys[] = await client.callZome({
-        role_name: "signing_keys",
+        role_name: "trusted",
         zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,

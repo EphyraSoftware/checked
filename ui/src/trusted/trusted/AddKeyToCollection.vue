@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GpgKeyWithMeta } from "./types";
+import { VfKeyResponse } from "./types";
 import KeyList from "../../component/KeyList.vue";
 import { useKeyCollectionsStore } from "../../store/key-collections-store";
 import { ComputedRef, inject, ref, watch } from "vue";
@@ -8,7 +8,7 @@ import { useNotificationsStore } from "../../store/notifications-store";
 import { AppAgentClient } from "@holochain/client";
 
 const props = defineProps<{
-  selectedKey: GpgKeyWithMeta;
+  selectedKey: VfKeyResponse;
 }>();
 
 const emit = defineEmits<{
@@ -65,12 +65,11 @@ const addKeyToCollection = () => {
 
   try {
     client.value.callZome({
-      cap_secret: null,
       role_name: "trusted",
       zome_name: "signing_keys",
-      fn_name: "link_gpg_key_to_key_collection",
+      fn_name: "link_verification_key_to_key_collection",
       payload: {
-        gpg_key_fingerprint: props.selectedKey.gpg_key_dist.fingerprint,
+        verification_key_dist_address: props.selectedKey.key_dist_address,
         key_collection_name: selectedCollection.value,
       },
     });
@@ -100,7 +99,7 @@ const addKeyToCollection = () => {
 </script>
 
 <template>
-  <KeyList :keys-with-meta="[selectedKey]" :readonly="true"></KeyList>
+  <KeyList :key-dist-list="[selectedKey]" :readonly="true"></KeyList>
 
   <p class="mt-5">Pick a key collection</p>
   <div class="join w-full">

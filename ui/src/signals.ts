@@ -1,6 +1,10 @@
-import { AppAgentClient } from "@holochain/client";
+import {
+  ActionHash,
+  AppAgentClient,
+  SignedActionHashed,
+} from "@holochain/client";
 import { KeyCollectionWithKeys } from "./store/key-collections-store";
-import { GpgKeyDist } from "./trusted/trusted/types";
+import { VerificationKeyDist } from "./trusted/trusted/types";
 
 export const registerSignalHandler = (
   client: AppAgentClient,
@@ -9,7 +13,10 @@ export const registerSignalHandler = (
     keyCollectionsStore,
   }: Partial<{
     myKeysStore: {
-      pushGpgKeyDist: (key: GpgKeyDist) => void;
+      pushVfKeyDist: (
+        keyDist: VerificationKeyDist,
+        keyDistAddress: ActionHash,
+      ) => void;
     };
     keyCollectionsStore: {
       pushKeyCollection: (collection: KeyCollectionWithKeys) => void;
@@ -21,11 +28,12 @@ export const registerSignalHandler = (
     if (signal.zome_name === "signing_keys") {
       if ((signal.payload as any).type === "EntryCreated") {
         const app_entry = (signal.payload as any).app_entry;
-        if (app_entry.type === "GpgKeyDist") {
+        const action = (signal.payload as any).action as SignedActionHashed;
+        if (app_entry.type === "VerificationKeyDist") {
           if (myKeysStore) {
             const content = JSON.parse(JSON.stringify(app_entry));
             delete content.type;
-            myKeysStore.pushGpgKeyDist(content);
+            myKeysStore.pushVfKeyDist(content, action.hashed.hash);
           }
         } else if (app_entry.type === "KeyCollection") {
           if (keyCollectionsStore) {

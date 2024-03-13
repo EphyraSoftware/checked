@@ -28,7 +28,7 @@ const { loading, keyCollections } = storeToRefs(useKeyCollectionsStore());
         <template v-else>
           <div v-for="c in keyCollections" v-bind:key="c.name" class="mt-3">
             <p class="font-bold">{{ c.name }}</p>
-            <KeyList :keys-with-meta="c.gpg_keys" :readonly="true"></KeyList>
+            <KeyList :key-dist-list="c.keys" :readonly="true"></KeyList>
           </div>
         </template>
       </div>

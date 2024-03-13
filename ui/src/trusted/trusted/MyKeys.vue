@@ -25,12 +25,16 @@ watch(
 <template>
   <div>
     <div class="flex">
-      <h3 class="text-lg">My Signing Keys</h3>
+      <h3 class="text-lg">My Signing Verification Keys</h3>
 
       <div class="flex flex-grow justify-end">
         <button
           class="btn btn-circle btn-sm btn-primary"
-          :title="showDistribute ? 'Cancel' : 'Distribute your signing verification key'"
+          :title="
+            showDistribute
+              ? 'Cancel'
+              : 'Distribute your signing verification key'
+          "
           @click="showDistribute = !showDistribute"
         >
           <font-awesome-icon
@@ -53,7 +57,9 @@ watch(
             <div class="flex justify-center my-3" v-if="showDistribute">
               <div class="card w-3/4 bg-base-100 shadow-xl">
                 <div class="card-body">
-                  <h2 class="card-title">Distribute your signing verification key</h2>
+                  <h2 class="card-title">
+                    Distribute your signing verification key
+                  </h2>
                   <DistributeGpgKey
                     @distributed="showDistribute = false"
                   ></DistributeGpgKey>
@@ -63,7 +69,7 @@ watch(
           </Transition>
 
           <template v-if="myKeys.length">
-            <KeyList :keys-with-meta="myKeys" :readonly="true"></KeyList>
+            <KeyList :key-dist-list="myKeys" :readonly="true"></KeyList>
           </template>
         </div>
       </template>

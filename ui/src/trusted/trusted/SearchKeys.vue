@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { AppAgentClient } from "@holochain/client";
 import { ComputedRef, inject, ref } from "vue";
-import { GpgKeyWithMeta, SearchKeysRequest } from "./types";
+import { SearchKeysRequest, VfKeyResponse } from "./types";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
 import AddKeyToCollection from "./AddKeyToCollection.vue";
 
 const searchQuery = ref("");
 const searching = ref(false);
-const results = ref<GpgKeyWithMeta[]>([]);
-const selectedKeyForAdd = ref<GpgKeyWithMeta | null>(null);
+const results = ref<VfKeyResponse[]>([]);
+const selectedKeyForAdd = ref<VfKeyResponse | null>(null);
 
 const client = inject("client") as ComputedRef<AppAgentClient>;
 
@@ -45,11 +45,11 @@ const searchKeys = async () => {
   }
 };
 
-const onAddKey = (key: GpgKeyWithMeta) => {
+const onAddKey = (key: VfKeyResponse) => {
   selectedKeyForAdd.value = key;
 };
 
-const onKeyAddded = () => {
+const onKeyAdded = () => {
   selectedKeyForAdd.value = null;
 };
 </script>
@@ -86,7 +86,7 @@ const onKeyAddded = () => {
     <div class="mt-5">
       <p>Search results</p>
       <KeyList
-        :keys-with-meta="results"
+        :key-dist-list="results"
         :readonly="false"
         @add-key="onAddKey"
       ></KeyList>
@@ -107,7 +107,7 @@ const onKeyAddded = () => {
 
     <AddKeyToCollection
       :selected-key="selectedKeyForAdd"
-      @added="onKeyAddded"
+      @added="onKeyAdded"
     ></AddKeyToCollection>
   </template>
 </template>

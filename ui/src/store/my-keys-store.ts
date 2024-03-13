@@ -1,28 +1,38 @@
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { GpgKeyDist, GpgKeyWithMeta } from "../trusted/trusted/types";
-import { AppAgentClient } from "@holochain/client";
+import { VerificationKeyDist, VfKeyResponse } from "../trusted/trusted/types";
+import { ActionHash, AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 
 export const useMyKeysStore = defineStore("my-keys", () => {
   const loading = ref(true);
-  const myKeys = ref<GpgKeyWithMeta[]>([]);
+  const myKeys = ref<VfKeyResponse[]>([]);
 
-  const pushGpgKeyDist = (key: GpgKeyDist) => {
+  const pushVfKeyDist = (
+    keyDist: VerificationKeyDist,
+    keyDistAddress: ActionHash,
+  ) => {
     myKeys.value.push({
-      gpg_key_dist: key,
-      // Assume newly created keys have a 0 reference count
-      reference_count: 0,
+      verification_key_dist: {
+        verification_key: keyDist.verification_key,
+        key_type: keyDist.key_type,
+        name: keyDist.name,
+        expires_at: keyDist.expires_at,
+        marks: [], // Should have no marks initially
+      },
+      key_dist_address: keyDistAddress,
+      created_at: Date.now(), // Approximate creation time, will correct on next load
+      reference_count: 0, // Assume newly created keys have a 0 reference count
     });
   };
 
   const client = inject("client") as ComputedRef<AppAgentClient>;
   const loadKeys = async (client: AppAgentClient) => {
     try {
-      const r: GpgKeyWithMeta[] = await client.callZome({
-        role_name: "signing_keys",
+      const r: VfKeyResponse[] = await client.callZome({
+        role_name: "trusted",
         zome_name: "signing_keys",
-        fn_name: "get_my_gpg_key_dists",
+        fn_name: "get_my_verification_key_distributions",
         payload: null,
         cap_secret: null,
       });
@@ -40,10 +50,12 @@ export const useMyKeysStore = defineStore("my-keys", () => {
     client,
     (client) => {
       registerSignalHandler(client, {
-        myKeysStore: { pushGpgKeyDist },
+        myKeysStore: { pushVfKeyDist },
       });
 
-      loadKeys(client);
+      loadKeys(client).catch((e) => {
+        console.error("Error loading keys", e);
+      });
     },
     { immediate: true },
   );
@@ -51,6 +63,6 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   return {
     loading,
     myKeys,
-    pushGpgKeyDist,
+    pushVfKeyDist,
   };
 });
