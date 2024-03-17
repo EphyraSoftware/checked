@@ -5,7 +5,15 @@ opt-level = "z"
 opt-level = "z"
 
 [workspace]
-members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
+members = [
+    "dnas/*/zomes/coordinator/*",
+    "dnas/*/zomes/integrity/*"
+]
+
+exclude = ["checked_cli"]
+
+
+
 resolver = "2"
 
 [workspace.dependencies]
@@ -16,11 +24,8 @@ chrono = { version = "0.4.34", default-features = false, features = ["clock", "s
 hex = "0.4.3"
 regex = "1.10.3"
 nanoid = "0.4.0"
-anyhow = "1.0.40"
-
-minisign = { version = "0.7.6", path = "../rust-minisign" }
+anyhow = "1.0.81"
 minisign-verify = "0.2.1"
-getrandom = { version = "0.2", default-features = false }
 
 [workspace.dependencies.signing_keys]
 path = "dnas/trusted/zomes/coordinator/signing_keys"

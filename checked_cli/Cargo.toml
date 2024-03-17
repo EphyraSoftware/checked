@@ -1,0 +1,20 @@
+[package]
+name = "checked_cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "checked"
+
+[dependencies]
+holochain_client = { version = "=0.5.0-dev.30", default-features = false }
+anyhow = "1.0.81"
+clap = { version = "4.5.2", features = ["derive", "cargo"] }
+minisign = "0.7.6"
+
+[target.'cfg(any(windows, unix))'.dependencies]
+dirs = "5.0.1"
+rpassword = "7.3.1"
+
+[dev-dependencies]
+tempfile = "3.10.1"
