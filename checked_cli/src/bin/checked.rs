@@ -1,5 +1,4 @@
-use checked_cli::cli::{Cli, Commands};
-use checked_cli::generate::generate;
+use checked_cli::prelude::*;
 use clap::Parser;
 
 fn main() -> anyhow::Result<()> {
@@ -9,6 +8,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Generate(generate_args) => {
             generate(generate_args)?;
         }
+        Commands::Sign(sign_args) => sign(sign_args)?,
     }
 
     Ok(())
