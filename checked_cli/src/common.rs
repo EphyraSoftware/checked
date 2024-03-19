@@ -2,6 +2,7 @@ use anyhow::Context;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub(crate) fn open_file<P: AsRef<Path>>(path: P) -> anyhow::Result<BufWriter<File>> {
     let mut open_options = File::options();
@@ -46,6 +47,14 @@ pub(crate) fn get_signing_key_path<P: AsRef<Path>>(store_dir: P, name: &str) -> 
 
 pub(crate) fn get_verification_key_path<P: AsRef<Path>>(store_dir: P, name: &str) -> PathBuf {
     store_dir.as_ref().join(format!("{}.pub", name))
+}
+
+pub fn unix_timestamp() -> u64 {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock is incorrect");
+    since_the_epoch.as_secs()
 }
 
 #[cfg(test)]

@@ -9,6 +9,7 @@ fn main() -> anyhow::Result<()> {
             generate(generate_args)?;
         }
         Commands::Sign(sign_args) => sign(sign_args)?,
+        Commands::Verify(verify_args) => verify(verify_args)?,
     }
 
     Ok(())

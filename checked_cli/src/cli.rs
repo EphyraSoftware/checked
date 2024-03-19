@@ -15,6 +15,9 @@ pub enum Commands {
 
     /// Sign a file
     Sign(SignArgs),
+
+    /// Verify a file
+    Verify(VerifyArgs),
 }
 
 #[derive(clap::Args)]
@@ -62,7 +65,24 @@ pub struct SignArgs {
 
     /// The file to save the signature in.
     ///
-    /// Defaults to the file to sign, with `.sig` extension appended.
+    /// Defaults to the file to sign, with `.minisig` extension appended.
     #[arg(long, short)]
     pub output: Option<PathBuf>,
+}
+
+#[derive(clap::Args)]
+pub struct VerifyArgs {
+    /// The file to verify.
+    #[arg(long, short)]
+    pub file: PathBuf,
+
+    /// The file containing the verification key.
+    #[arg(long, short)]
+    pub verification_key: PathBuf,
+
+    /// The file containing the signature.
+    ///
+    /// Defaults to the `--file` path with `.minisig` appended.
+    #[arg(long, short)]
+    pub signature: Option<PathBuf>,
 }

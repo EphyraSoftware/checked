@@ -7,17 +7,20 @@ pub trait GetPassword {
 impl GetPassword for GenerateArgs {
     fn get_password(&self) -> anyhow::Result<String> {
         #[cfg(not(any(windows, unix)))]
-            return Ok(self.password);
+        return Ok(self.password);
         #[cfg(any(windows, unix))]
-            return Ok(rpassword::prompt_password("New password: ")?);
+        return Ok(rpassword::prompt_password("New password: ")?);
     }
 }
 
 impl GetPassword for SignArgs {
     fn get_password(&self) -> anyhow::Result<String> {
         #[cfg(not(any(windows, unix)))]
-            return Ok(self.password);
+        return Ok(self.password);
         #[cfg(any(windows, unix))]
-            return Ok(rpassword::prompt_password(format!("Password for '{}': ", self.name))?);
+        return Ok(rpassword::prompt_password(format!(
+            "Password for '{}': ",
+            self.name
+        ))?);
     }
 }
