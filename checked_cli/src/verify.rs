@@ -18,7 +18,7 @@ pub fn verify(verify_args: VerifyArgs) -> anyhow::Result<()> {
         ))
     });
 
-    let sig = SignatureBox::from_file(&sig_path)?;
+    let sig = SignatureBox::from_file(sig_path)?;
 
     let mut reader = BufReader::new(std::fs::File::open(&verify_args.file)?);
 
