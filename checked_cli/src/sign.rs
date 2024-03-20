@@ -18,7 +18,9 @@ pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
         );
     }
 
-    let output_path = sign_args.output.clone().unwrap_or_else(|| {
+    let mut data_reader = BufReader::new(std::fs::File::open(&sign_args.file)?);
+
+    let sig_path = sign_args.output.clone().unwrap_or_else(|| {
         let p = sign_args.file.clone();
         p.with_extension(format!(
             "{}.minisig",
@@ -30,6 +32,8 @@ pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
                 .unwrap_or_default()
         ))
     });
+
+    let mut sig_file = open_file(&sig_path)?;
 
     let store_dir = get_store_dir(sign_args.path.clone())?;
 
@@ -50,10 +54,12 @@ pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
     let trusted_comment = format!(
         "timestamp:{}\tfile:{}\tprehashed",
         unix_timestamp(),
-        sign_args.file.display()
+        sign_args
+            .file
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy()
     );
-
-    let mut data_reader = BufReader::new(std::fs::File::open(&sign_args.file)?);
 
     let sig = minisign::sign(
         vk.as_ref(),
@@ -63,11 +69,10 @@ pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
         None,
     )?;
 
-    let mut sig_file = open_file(&output_path)?;
     sig_file.write_all(&sig.to_bytes())?;
     sig_file.flush()?;
 
-    println!("Signature created and saved in: {}", output_path.display());
+    println!("Signature created and saved in: {}", sig_path.display());
 
     Ok(())
 }
