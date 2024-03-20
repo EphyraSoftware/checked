@@ -1,0 +1,18 @@
+[package]
+name = "signing_keys_integrity"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "signing_keys_integrity"
+
+[dependencies]
+hdi = { workspace = true }
+
+serde = { workspace = true }
+minisign-verify = { workspace = true }
+hex = { workspace = true }
+regex = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }

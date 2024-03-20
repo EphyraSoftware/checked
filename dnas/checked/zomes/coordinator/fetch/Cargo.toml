@@ -10,6 +10,7 @@ name = "fetch"
 [dependencies]
 hdk = { workspace = true }
 
+url = { workspace = true }
 serde = { workspace = true }
 
 fetch_integrity = { workspace = true }

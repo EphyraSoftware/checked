@@ -24,6 +24,7 @@ regex = "1.10.3"
 nanoid = "0.4.0"
 anyhow = "1.0.81"
 minisign-verify = "0.2.1"
+url = "2.5.0"
 
 signing_keys = { path = "dnas/checked/zomes/coordinator/signing_keys" }
 signing_keys_integrity = { path = "dnas/checked/zomes/integrity/signing_keys" }
