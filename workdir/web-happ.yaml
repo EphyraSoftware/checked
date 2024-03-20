@@ -4,4 +4,4 @@ name: hWOT
 ui:
   bundled: "../ui/dist.zip"
 happ_manifest:
-  bundled: "./hWOT.happ"
+  bundled: "./checked.happ"

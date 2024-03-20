@@ -1,14 +1,14 @@
 ---
 manifest_version: "1"
-name: hWOT
+name: checked
 description: ~
 roles:
-  - name: trusted
+  - name: checked
     provisioning:
       strategy: create
       deferred: false
     dna:
-      bundled: "../dnas/trusted/workdir/trusted.dna"
+      bundled: "../dnas/checked/workdir/checked.dna"
       modifiers:
         network_seed: ~
         properties: ~
