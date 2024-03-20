@@ -819,9 +819,9 @@ checksum = "290f1a1d9242c78d09ce40a5e87e7554ee637af1351968159f4952f028f75604"
 
 [[package]]
 name = "hdi"
-version = "0.4.0-beta-dev.30"
+version = "0.4.0-beta-dev.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9b10e28b62f081933f7c176ec16a2924afb05c74b56197882cff3b7ca24f84c"
+checksum = "ea34cd9ed5566b38e36933684887ca86662bbac8c3aae635116919a0bda4a125"
 dependencies = [
  "getrandom",
  "hdk_derive",
@@ -837,9 +837,9 @@ dependencies = [
 
 [[package]]
 name = "hdk"
-version = "0.3.0-beta-dev.34"
+version = "0.3.0-beta-dev.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dbd50ff3d475e269285f01e04ad1bd341a7ce8c0619d1985e7de25fbd125094"
+checksum = "d78ebe4c746e7e9afbeaad732b53cffd9e8cc45f1ff1a5bb5fc8aec216ee4743"
 dependencies = [
  "getrandom",
  "hdi",
@@ -857,9 +857,9 @@ dependencies = [
 
 [[package]]
 name = "hdk_derive"
-version = "0.3.0-beta-dev.28"
+version = "0.3.0-beta-dev.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0459e3e35a7b07477102c110d7d4fbe184b7ceb2e8212c43f04fcf58b268a1c0"
+checksum = "38a8ba16f38ed07da73c8988418ea273dafbe591c1e8338b1c1c2311a009d108"
 dependencies = [
  "darling 0.14.4",
  "heck",
