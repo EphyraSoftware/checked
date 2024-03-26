@@ -2,7 +2,7 @@ mod key_collection;
 mod verification_key_dist;
 
 use hdk::prelude::*;
-use signing_keys_integrity::*;
+use signing_keys_integrity::prelude::*;
 
 #[hdk_extern]
 pub fn init() -> ExternResult<InitCallbackResult> {

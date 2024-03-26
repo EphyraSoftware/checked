@@ -32,5 +32,6 @@ signing_keys_types = { path = "types/signing_keys" }
 signing_keys = { path = "dnas/checked/zomes/coordinator/signing_keys" }
 signing_keys_integrity = { path = "dnas/checked/zomes/integrity/signing_keys" }
 
+fetch_types = { path = "types/fetch" }
 fetch = { path = "dnas/checked/zomes/coordinator/fetch" }
 fetch_integrity = { path = "dnas/checked/zomes/integrity/fetch" }

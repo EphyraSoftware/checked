@@ -9,12 +9,12 @@ name = "signing_keys_integrity"
 
 [dependencies]
 hdi = { workspace = true }
-
-signing_keys_types = { workspace = true }
-
 serde = { workspace = true }
+
 minisign-verify = { workspace = true }
 hex = { workspace = true }
 regex = { workspace = true }
 chrono = { workspace = true }
 anyhow = { workspace = true }
+
+signing_keys_types = { workspace = true }

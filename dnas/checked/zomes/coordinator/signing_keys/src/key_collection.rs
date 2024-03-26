@@ -3,7 +3,6 @@ use crate::verification_key_dist::get_key_marks;
 use hdk::prelude::*;
 use nanoid::nanoid;
 use signing_keys_integrity::prelude::*;
-use signing_keys_types::*;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {

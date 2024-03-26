@@ -621,6 +621,7 @@ name = "fetch"
 version = "0.0.1"
 dependencies = [
  "fetch_integrity",
+ "fetch_types",
  "hdk",
  "serde",
  "signing_keys_types",
@@ -630,6 +631,15 @@ dependencies = [
 [[package]]
 name = "fetch_integrity"
 version = "0.0.1"
+dependencies = [
+ "fetch_types",
+ "hdi",
+ "serde",
+]
+
+[[package]]
+name = "fetch_types"
+version = "0.1.0"
 dependencies = [
  "hdi",
  "serde",
@@ -1842,7 +1852,6 @@ dependencies = [
  "nanoid",
  "serde",
  "signing_keys_integrity",
- "signing_keys_types",
 ]
 
 [[package]]

@@ -1,10 +1,8 @@
 [package]
-name = "signing_keys_types"
+name = "fetch_types"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hdk = { workspace = true }
+hdi = { workspace = true }
 serde = { workspace = true }
-
-chrono = { workspace = true }

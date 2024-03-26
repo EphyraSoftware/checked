@@ -1,7 +1,6 @@
 use crate::{convert_to_app_entry_type, key_collection::get_key_collections_reference_count};
 use hdk::prelude::*;
 use signing_keys_integrity::prelude::*;
-use signing_keys_types::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct DistributeVfKeyRequest {

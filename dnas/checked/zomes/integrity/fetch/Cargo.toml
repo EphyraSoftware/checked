@@ -9,5 +9,7 @@ name = "fetch_integrity"
 
 [dependencies]
 hdi = { workspace = true }
-
 serde = { workspace = true }
+
+fetch_types = { workspace = true }
+

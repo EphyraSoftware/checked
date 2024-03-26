@@ -1,9 +1,7 @@
-mod asset_signature;
-
 use hdi::prelude::*;
 
 pub mod prelude {
-    pub use crate::asset_signature::*;
+    pub use fetch_types::*;
     pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
 }
@@ -13,7 +11,7 @@ pub mod prelude {
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    AssetSignature(asset_signature::AssetSignature),
+    AssetSignature(fetch_types::AssetSignature),
 }
 
 #[hdk_link_types]
