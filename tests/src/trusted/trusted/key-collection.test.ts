@@ -189,7 +189,6 @@ test("Unlink verification key from collection", async () => {
 
 test("Remote validation", async () => {
   await runScenario(async (scenario) => {
-    const testAppPath = process.cwd() + "/../workdir/hWOT.happ";
     const appSource = { appBundleSource: { path: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
