@@ -5,8 +5,8 @@ pub(crate) mod key_collection;
 pub(crate) mod key_util;
 pub(crate) mod verification_key_dist;
 
-use crate::verification_key_dist::VerificationKeyDistMark;
 use hdi::prelude::*;
+use signing_keys_types::*;
 
 pub mod prelude {
     pub use crate::key_collection::*;
@@ -21,10 +21,10 @@ pub mod prelude {
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    VerificationKeyDist(verification_key_dist::VerificationKeyDist),
+    VerificationKeyDist(signing_keys_types::VerificationKeyDist),
     #[entry_type(visibility = "private")]
-    KeyCollection(key_collection::KeyCollection),
-    VerificationKeyDistMark(VerificationKeyDistMark),
+    KeyCollection(signing_keys_types::KeyCollection),
+    VerificationKeyDistMark(signing_keys_types::VerificationKeyDistMark),
 }
 
 #[hdk_link_types]
@@ -272,9 +272,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 gpg_key.clone(),
                             )?;
                             if let ValidateCallbackResult::Valid = result {
-                                let original_gpg_key: Option<
-                                    verification_key_dist::VerificationKeyDist,
-                                > = original_record
+                                let original_gpg_key: Option<VerificationKeyDist> = original_record
                                     .entry()
                                     .to_app_option()
                                     .map_err(|e| wasm_error!(e))?;

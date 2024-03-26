@@ -1,0 +1,9 @@
+[package]
+name = "signing_keys_types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hdk = { workspace = true }
+serde = { workspace = true }
+chrono = { workspace = true }

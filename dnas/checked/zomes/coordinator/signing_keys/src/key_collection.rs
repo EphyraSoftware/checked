@@ -1,8 +1,9 @@
+use crate::convert_to_app_entry_type;
 use crate::verification_key_dist::get_key_marks;
-use crate::{convert_to_app_entry_type, verification_key_dist::VfKeyResponse};
 use hdk::prelude::*;
 use nanoid::nanoid;
 use signing_keys_integrity::prelude::*;
+use signing_keys_types::*;
 
 #[hdk_extern]
 pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Record> {
@@ -20,14 +21,8 @@ pub fn create_key_collection(key_collection: KeyCollection) -> ExternResult<Reco
     Ok(record)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct KeyCollectionWithKeys {
-    pub name: String,
-    pub verification_keys: Vec<VfKeyResponse>,
-}
-
 #[hdk_extern]
-pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>> {
+pub fn get_my_key_collections() -> ExternResult<Vec<KeyCollectionWithKeys>> {
     let mut key_collections = Vec::new();
     for record in inner_get_my_key_collections()? {
         let collection_action_hash = record.action_hashed().as_hash().clone();
@@ -56,13 +51,18 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
 
             let vf_key_dist_record = get(key_dist_address.clone(), GetOptions::local())?;
 
-            let (created_at, vf_key_dist) = if let Some(vf_key_dist_record) = vf_key_dist_record {
-                let vf_key_dist: VerificationKeyDist =
-                    convert_to_app_entry_type(vf_key_dist_record.clone())?;
-                (vf_key_dist_record.action().timestamp(), vf_key_dist)
-            } else {
-                continue;
-            };
+            let (created_at, author, vf_key_dist) =
+                if let Some(vf_key_dist_record) = vf_key_dist_record {
+                    let vf_key_dist: VerificationKeyDist =
+                        convert_to_app_entry_type(vf_key_dist_record.clone())?;
+                    (
+                        vf_key_dist_record.action().timestamp(),
+                        vf_key_dist_record.action().author().clone(),
+                        vf_key_dist,
+                    )
+                } else {
+                    continue;
+                };
 
             // Must be network because we are looking for marks on the key dist created by *other* agents.
             let marks = get_key_marks(key_dist_address.clone(), GetOptions::network())?;
@@ -75,6 +75,7 @@ pub fn get_my_key_collections(_: ()) -> ExternResult<Vec<KeyCollectionWithKeys>>
                 verification_key_dist: (vf_key_dist, marks).into(),
                 key_dist_address,
                 reference_count,
+                author,
                 created_at,
             });
         }

@@ -13,4 +13,5 @@ hdk = { workspace = true }
 url = { workspace = true }
 serde = { workspace = true }
 
+signing_keys_types = { workspace = true }
 fetch_integrity = { workspace = true }

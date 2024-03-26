@@ -5,7 +5,7 @@ use hdk::prelude::*;
 use signing_keys_integrity::*;
 
 #[hdk_extern]
-pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
+pub fn init() -> ExternResult<InitCallbackResult> {
     Ok(InitCallbackResult::Pass)
 }
 

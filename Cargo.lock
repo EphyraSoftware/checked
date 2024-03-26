@@ -623,6 +623,7 @@ dependencies = [
  "fetch_integrity",
  "hdk",
  "serde",
+ "signing_keys_types",
  "url",
 ]
 
@@ -1841,6 +1842,7 @@ dependencies = [
  "nanoid",
  "serde",
  "signing_keys_integrity",
+ "signing_keys_types",
 ]
 
 [[package]]
@@ -1853,6 +1855,16 @@ dependencies = [
  "hex",
  "minisign-verify",
  "regex",
+ "serde",
+ "signing_keys_types",
+]
+
+[[package]]
+name = "signing_keys_types"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hdk",
  "serde",
 ]
 

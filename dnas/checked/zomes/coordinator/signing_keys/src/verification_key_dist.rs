@@ -1,7 +1,7 @@
 use crate::{convert_to_app_entry_type, key_collection::get_key_collections_reference_count};
-use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 use signing_keys_integrity::prelude::*;
+use signing_keys_types::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
 pub struct DistributeVfKeyRequest {
@@ -40,36 +40,6 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
     Ok(record)
 }
 
-/// Reduced form of [VerificationKeyDist] to avoid returning fields that shouldn't be needed by the caller.
-#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct VerificationKeyDistResponse {
-    pub verification_key: String,
-    pub key_type: VerificationKeyType,
-    pub name: String,
-    pub expires_at: Option<DateTime<Utc>>,
-    pub marks: Vec<MarkVfKeyDistOpt>,
-}
-
-impl From<(VerificationKeyDist, Vec<VerificationKeyDistMark>)> for VerificationKeyDistResponse {
-    fn from((vf_key_dist, marks): (VerificationKeyDist, Vec<VerificationKeyDistMark>)) -> Self {
-        Self {
-            verification_key: vf_key_dist.verification_key,
-            key_type: vf_key_dist.key_type,
-            name: vf_key_dist.name,
-            expires_at: vf_key_dist.expires_at,
-            marks: marks.into_iter().map(|m| m.mark).collect(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct VfKeyResponse {
-    pub verification_key_dist: VerificationKeyDistResponse,
-    pub key_dist_address: ActionHash,
-    pub reference_count: usize,
-    pub created_at: Timestamp,
-}
-
 #[hdk_extern]
 pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyResponse>> {
     let q = ChainQueryFilter::default()
@@ -84,6 +54,7 @@ pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyRes
 
     let mut out = Vec::with_capacity(vf_key_dist_entries.len());
     for r in vf_key_dist_entries.into_iter() {
+        let author = r.action().author().clone();
         let created_at = r.action().timestamp();
         let key_dist_address = r.action_address().clone();
         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
@@ -94,6 +65,7 @@ pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyRes
             verification_key_dist: (vf_key_dist, marks).into(),
             key_dist_address,
             reference_count,
+            author,
             created_at,
         });
     }
@@ -138,6 +110,7 @@ fn search_keys_with_get_options(
 
                 match get(key_dist_address.clone(), GetOptions::network())? {
                     Some(r) => {
+                        let author = r.action().author().clone();
                         let created_at = r.action().timestamp();
                         let marks = get_key_marks(key_dist_address.clone(), get_options.clone())?;
                         let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
@@ -145,6 +118,7 @@ fn search_keys_with_get_options(
                             verification_key_dist: (vf_key_dist, marks).into(),
                             key_dist_address,
                             reference_count,
+                            author,
                             created_at,
                         });
                     }

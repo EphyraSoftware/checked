@@ -1,17 +1,10 @@
 use crate::convert::try_extract_entry_to_app_type;
+use crate::prelude::*;
 use hdi::prelude::*;
-
-use crate::prelude::VerificationKeyDist;
-use crate::LinkTypes;
-use crate::UnitEntryTypes;
+use signing_keys_types::{KeyCollection, VerificationKeyDist};
 
 pub const KEY_COLLECTION_LIMIT: usize = 10;
 pub const KEY_COLLECTION_NAME_MIN_LENGTH: usize = 3;
-
-#[hdk_entry_helper]
-pub struct KeyCollection {
-    pub name: String,
-}
 
 pub fn validate_create_key_collection(
     create_action: EntryCreationAction,
