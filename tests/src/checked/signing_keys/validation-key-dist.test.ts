@@ -4,7 +4,6 @@ import { runScenario, dhtSync } from "@holochain/tryorama";
 import { Record } from "@holochain/client";
 
 import {
-  VerificationKeyResponse,
   distributeVerificationKey,
   sampleMiniSignKey,
   testAppPath,
@@ -12,7 +11,11 @@ import {
   sampleMiniSignProofSignature,
   sampleMiniSignProofSignature2,
   sampleMiniSignProof2,
-  sampleMiniSignKey2, getMyVerificationKeyDistributions, searchKeys, searchKeysLocal, markVerificationKeyRotated,
+  sampleMiniSignKey2,
+  getMyVerificationKeyDistributions,
+  searchKeys,
+  searchKeysLocal,
+  markVerificationKeyRotated,
 } from "./common.js";
 
 test("Distribute a key", async () => {
@@ -116,7 +119,10 @@ test("Search for a key", async () => {
 
     // Note: This is more of a PoC than anything at this point, but it's a start
     // Bob searches for Alice's key while offline
-    const offline_responses = await searchKeysLocal(bob.cells[0], alice.agentPubKey);
+    const offline_responses = await searchKeysLocal(
+      bob.cells[0],
+      alice.agentPubKey,
+    );
 
     assert.equal(offline_responses.length, 1);
     assert.equal(offline_responses[0].verification_key_dist.name, "test");
@@ -157,7 +163,12 @@ test("Mark a key as compromised", async () => {
 
     // Alice marks her own key as compromised
     const compromisedSince = new Date().getUTCMilliseconds() * 1000;
-    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, { Compromised: { note: "I think someone is using my private key!", since: compromisedSince } })
+    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, {
+      Compromised: {
+        note: "I think someone is using my private key!",
+        since: compromisedSince,
+      },
+    });
 
     // TODO should not need to DHT sync here. What I actually want is an 'Alice synced' to be serving up the links
     //      that Bob will need in the next step. For now, the test is flaky without this sync...
@@ -219,7 +230,9 @@ test("Mark a key as rotated", async () => {
     const new_vf_key_dist_address = new_record.signed_action.hashed.hash;
 
     // Alice marks her own key as compromised
-    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, { Rotated: { new_verification_key_dist_address: new_vf_key_dist_address } })
+    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, {
+      Rotated: { new_verification_key_dist_address: new_vf_key_dist_address },
+    });
 
     // TODO should not need to DHT sync here. What I actually want is an 'Alice synced' to be serving up the links
     //      that Bob will need in the next step. For now, the test is flaky without this sync...

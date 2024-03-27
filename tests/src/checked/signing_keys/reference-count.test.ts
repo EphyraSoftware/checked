@@ -4,7 +4,6 @@ import { runScenario, dhtSync } from "@holochain/tryorama";
 import { Record } from "@holochain/client";
 
 import {
-  KeyCollectionWithKeys,
   createKeyCollection,
   distributeVerificationKey,
   sampleMiniSignKey,
@@ -45,7 +44,11 @@ test("Get my keys for a key which is in another agent's collection", async () =>
     await createKeyCollection(bob.cells[0], "a test");
 
     // Bob links Alice's verification key to their key collection
-    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
+    await linkVerificationKeyToKeyCollection(
+      bob.cells[0],
+      vf_key_dist_address,
+      "a test",
+    );
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
@@ -84,7 +87,11 @@ test("Search for a key which is in another agent's collection", async () => {
     await createKeyCollection(bob.cells[0], "a test");
 
     // Bob links Alice's verification key to their key collection
-    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
+    await linkVerificationKeyToKeyCollection(
+      bob.cells[0],
+      vf_key_dist_address,
+      "a test",
+    );
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
@@ -126,13 +133,21 @@ test("Get my key collections for a key which is in another agent's collection", 
     await createKeyCollection(bob.cells[0], "bob test");
 
     // Bob links Alice's verification key to their key collection
-    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "bob test");
+    await linkVerificationKeyToKeyCollection(
+      bob.cells[0],
+      vf_key_dist_address,
+      "bob test",
+    );
 
     // Carol creates a collection
     await createKeyCollection(carol.cells[0], "carol test");
 
     // Carol links Alice's verification key to their key collection
-    await linkVerificationKeyToKeyCollection(carol.cells[0], vf_key_dist_address, "carol test");
+    await linkVerificationKeyToKeyCollection(
+      carol.cells[0],
+      vf_key_dist_address,
+      "carol test",
+    );
 
     await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);
 

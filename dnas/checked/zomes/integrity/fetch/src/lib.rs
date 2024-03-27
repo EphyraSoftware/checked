@@ -1,9 +1,9 @@
 use hdi::prelude::*;
 
 pub mod prelude {
-    pub use fetch_types::*;
     pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
+    pub use fetch_types::*;
 }
 
 #[derive(Serialize, Deserialize)]
