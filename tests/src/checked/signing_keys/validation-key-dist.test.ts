@@ -6,7 +6,6 @@ import { Record } from "@holochain/client";
 import {
   distributeVerificationKey,
   sampleMiniSignKey,
-  testAppPath,
   sampleMiniSignProof,
   sampleMiniSignProofSignature,
   sampleMiniSignProofSignature2,
@@ -17,6 +16,7 @@ import {
   searchKeysLocal,
   markVerificationKeyRotated,
 } from "./common.js";
+import {testAppPath} from "../common";
 
 test("Distribute a key", async () => {
   await runScenario(async (scenario) => {

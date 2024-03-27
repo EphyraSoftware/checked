@@ -4,8 +4,6 @@ import { decode } from "@msgpack/msgpack";
 
 const utf8Encode = new TextEncoder();
 
-export const testAppPath = process.cwd() + "/../workdir/checked.happ";
-
 export interface VerificationKeyDistMarkRotated {
   new_verification_key_dist_address: Uint8Array;
 }

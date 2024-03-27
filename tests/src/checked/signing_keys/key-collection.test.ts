@@ -7,13 +7,13 @@ import {
   createKeyCollection,
   distributeVerificationKey,
   sampleMiniSignKey,
-  testAppPath,
   sampleMiniSignProof,
   sampleMiniSignProofSignature,
   getMyKeyCollections,
   linkVerificationKeyToKeyCollection,
   unlinkVerificationKeyToKeyCollection,
 } from "./common.js";
+import {testAppPath} from "../common";
 
 test("Create key collection", async () => {
   await runScenario(async (scenario) => {

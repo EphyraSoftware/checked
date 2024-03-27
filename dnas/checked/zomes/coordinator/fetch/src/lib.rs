@@ -66,7 +66,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         "signing_keys".to_string(),
         "get_my_key_collections".into(),
         None,
-        ExternIO::encode(()).map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?,
+        (),
     )? {
         ZomeCallResponse::Ok(response) => response
             .decode()
@@ -78,12 +78,10 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         }
     };
 
-    pick_signatures(signatures, key_collections);
-
-    Ok(vec![])
+    Ok(pick_signatures(signatures, key_collections))
 }
 
-fn pick_signatures(possible_signatures: Vec<Record>, key_collections: Vec<KeyCollectionWithKeys>) {
+fn pick_signatures(possible_signatures: Vec<Record>, key_collections: Vec<KeyCollectionWithKeys>) -> Vec<FetchCheckSignature> {
     let possible_signatures: Vec<(Action, AssetSignature)> = possible_signatures
         .into_iter()
         .filter_map(|record| {
@@ -129,5 +127,5 @@ fn pick_signatures(possible_signatures: Vec<Record>, key_collections: Vec<KeyCol
         }
     }
 
-    todo!()
+    picked_signatures
 }
