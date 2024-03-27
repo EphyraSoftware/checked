@@ -67,8 +67,6 @@
               # To build openssl-sys
               perl
               pkg-config
-              # Because the holochain_client depends on Kitsune/tx5
-              go
             ];
           };
 
