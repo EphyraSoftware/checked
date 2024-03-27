@@ -11,6 +11,9 @@ import {
   testAppPath,
   sampleMiniSignProof,
   sampleMiniSignProofSignature,
+  getMyKeyCollections,
+  linkVerificationKeyToKeyCollection,
+  unlinkVerificationKeyToKeyCollection,
 } from "./common.js";
 
 test("Create key collection", async () => {
@@ -65,12 +68,7 @@ test("Get my key collections", async () => {
       assert.ok(record);
     }
 
-    const key_collections: KeyCollectionWithKeys[] =
-      await alice.cells[0].callZome({
-        zome_name: "signing_keys",
-        fn_name: "get_my_key_collections",
-        payload: null,
-      });
+    const key_collections = await getMyKeyCollections(alice.cells[0]);
 
     assert.equal(key_collections.length, 2);
   });
@@ -105,21 +103,9 @@ test("Link verification key distribution to collection", async () => {
     assert.ok(key_collection_record);
 
     // Bob links Alice's verification key to the key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
 
-    const key_collections: KeyCollectionWithKeys[] =
-      await bob.cells[0].callZome({
-        zome_name: "signing_keys",
-        fn_name: "get_my_key_collections",
-        payload: null,
-      });
+    const key_collections= await getMyKeyCollections(bob.cells[0]);
 
     assert.equal(key_collections.length, 1);
     assert.equal(key_collections[0].verification_keys.length, 1);
@@ -155,32 +141,13 @@ test("Unlink verification key from collection", async () => {
     assert.ok(key_collection_record);
 
     // Bob links Alice's verification key to the key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
 
     // Bob unlinks Alice's verification key from the key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "unlink_verification_key_from_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test",
-      },
-    });
+    await unlinkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
 
     // Now getting key collections should return a single, empty key collection
-    const key_collections: KeyCollectionWithKeys[] =
-      await bob.cells[0].callZome({
-        zome_name: "signing_keys",
-        fn_name: "get_my_key_collections",
-        payload: null,
-      });
+    const key_collections = await getMyKeyCollections(bob.cells[0]);
 
     assert.equal(key_collections.length, 1);
     assert.equal(key_collections[0].verification_keys.length, 0);
@@ -223,27 +190,13 @@ test("Remote validation", async () => {
       verification_key_record.signed_action.hashed.hash;
 
     // Bob links Alice's verification key to the key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test 1",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test 1");
 
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob unlinks Alice's verification key from the key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "unlink_verification_key_from_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test 1",
-      },
-    });
+    await unlinkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test 1");
 
     // The DHT shouldn't sync if the remote validation fails
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);

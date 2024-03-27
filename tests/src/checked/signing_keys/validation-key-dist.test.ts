@@ -12,7 +12,7 @@ import {
   sampleMiniSignProofSignature,
   sampleMiniSignProofSignature2,
   sampleMiniSignProof2,
-  sampleMiniSignKey2,
+  sampleMiniSignKey2, getMyVerificationKeyDistributions, searchKeys, searchKeysLocal, markVerificationKeyRotated,
 } from "./common.js";
 
 test("Distribute a key", async () => {
@@ -71,11 +71,8 @@ test("Get my keys", async () => {
     assert.ok(record);
 
     // Alice gets the created key in her list of keys
-    const keys: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "get_my_verification_key_distributions",
-      payload: null,
-    });
+    const keys = await getMyVerificationKeyDistributions(alice.cells[0]);
+
     assert.equal(keys.length, 1);
     assert.deepEqual(
       keys[0].verification_key_dist.verification_key,
@@ -108,13 +105,8 @@ test("Search for a key", async () => {
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob searches for Alice's key
-    const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "search_keys",
-      payload: {
-        agent_pub_key: alice.agentPubKey,
-      },
-    });
+    const responses = await searchKeys(bob.cells[0], alice.agentPubKey);
+
     assert.equal(responses.length, 1);
     assert.equal(responses[0].verification_key_dist.name, "test");
     assert.equal(
@@ -124,14 +116,8 @@ test("Search for a key", async () => {
 
     // Note: This is more of a PoC than anything at this point, but it's a start
     // Bob searches for Alice's key while offline
-    const offline_responses: VerificationKeyResponse[] =
-      await bob.cells[0].callZome({
-        zome_name: "signing_keys",
-        fn_name: "search_keys_local",
-        payload: {
-          agent_pub_key: alice.agentPubKey,
-        },
-      });
+    const offline_responses = await searchKeysLocal(bob.cells[0], alice.agentPubKey);
+
     assert.equal(offline_responses.length, 1);
     assert.equal(offline_responses[0].verification_key_dist.name, "test");
     assert.equal(
@@ -171,32 +157,14 @@ test("Mark a key as compromised", async () => {
 
     // Alice marks her own key as compromised
     const compromisedSince = new Date().getUTCMilliseconds() * 1000;
-    await alice.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "mark_verification_key_dist",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        mark: {
-          Compromised: {
-            note: "I think someone is using my private key!",
-            since: compromisedSince,
-          },
-        },
-      },
-    });
+    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, { Compromised: { note: "I think someone is using my private key!", since: compromisedSince } })
 
     // TODO should not need to DHT sync here. What I actually want is an 'Alice synced' to be serving up the links
     //      that Bob will need in the next step. For now, the test is flaky without this sync...
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // No DHT sync, but Bob does an online search for Alice's keys which *should* do a get_links to the network and see Alice's mark.
-    const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "search_keys",
-      payload: {
-        agent_pub_key: alice.agentPubKey,
-      },
-    });
+    const responses = await searchKeys(bob.cells[0], alice.agentPubKey);
 
     assert.equal(responses.length, 1);
     assert.equal(responses[0].verification_key_dist.marks.length, 1);
@@ -251,31 +219,14 @@ test("Mark a key as rotated", async () => {
     const new_vf_key_dist_address = new_record.signed_action.hashed.hash;
 
     // Alice marks her own key as compromised
-    await alice.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "mark_verification_key_dist",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        mark: {
-          Rotated: {
-            new_verification_key_dist_address: new_vf_key_dist_address,
-          },
-        },
-      },
-    });
+    await markVerificationKeyRotated(alice.cells[0], vf_key_dist_address, { Rotated: { new_verification_key_dist_address: new_vf_key_dist_address } })
 
     // TODO should not need to DHT sync here. What I actually want is an 'Alice synced' to be serving up the links
     //      that Bob will need in the next step. For now, the test is flaky without this sync...
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // No DHT sync, but Bob does an online search for Alice's keys which *should* do a get_links to the network and see Alice's mark.
-    const responses: VerificationKeyResponse[] = await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "search_keys",
-      payload: {
-        agent_pub_key: alice.agentPubKey,
-      },
-    });
+    const responses = await searchKeys(bob.cells[0], alice.agentPubKey);
 
     // Sort in place by created_at. The ordering is not guaranteed from the search!
     responses.sort((a, b) => a.created_at - b.created_at);

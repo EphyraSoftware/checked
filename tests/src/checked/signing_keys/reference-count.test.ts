@@ -4,7 +4,6 @@ import { runScenario, dhtSync } from "@holochain/tryorama";
 import { Record } from "@holochain/client";
 
 import {
-  VerificationKeyResponse,
   KeyCollectionWithKeys,
   createKeyCollection,
   distributeVerificationKey,
@@ -12,6 +11,10 @@ import {
   testAppPath,
   sampleMiniSignProof,
   sampleMiniSignProofSignature,
+  linkVerificationKeyToKeyCollection,
+  getMyVerificationKeyDistributions,
+  searchKeys,
+  getMyKeyCollections,
 } from "./common.js";
 
 test("Get my keys for a key which is in another agent's collection", async () => {
@@ -42,23 +45,12 @@ test("Get my keys for a key which is in another agent's collection", async () =>
     await createKeyCollection(bob.cells[0], "a test");
 
     // Bob links Alice's verification key to their key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Alice searches for their own key
-    const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "get_my_verification_key_distributions",
-      payload: null,
-    });
+    const responses = await getMyVerificationKeyDistributions(alice.cells[0]);
     assert.equal(responses.length, 1);
     assert.equal(responses[0].reference_count, 1);
   });
@@ -92,25 +84,13 @@ test("Search for a key which is in another agent's collection", async () => {
     await createKeyCollection(bob.cells[0], "a test");
 
     // Bob links Alice's verification key to their key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "a test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "a test");
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Alice searches for their own key
-    const responses: VerificationKeyResponse[] = await alice.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "search_keys",
-      payload: {
-        agent_pub_key: alice.agentPubKey,
-      },
-    });
+    const responses = await searchKeys(alice.cells[0], alice.agentPubKey);
+
     assert.equal(responses.length, 1);
     assert.equal(responses[0].reference_count, 1);
   });
@@ -146,36 +126,19 @@ test("Get my key collections for a key which is in another agent's collection", 
     await createKeyCollection(bob.cells[0], "bob test");
 
     // Bob links Alice's verification key to their key collection
-    await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "bob test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(bob.cells[0], vf_key_dist_address, "bob test");
 
     // Carol creates a collection
     await createKeyCollection(carol.cells[0], "carol test");
 
     // Carol links Alice's verification key to their key collection
-    await carol.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "link_verification_key_to_key_collection",
-      payload: {
-        verification_key_dist_address: vf_key_dist_address,
-        key_collection_name: "carol test",
-      },
-    });
+    await linkVerificationKeyToKeyCollection(carol.cells[0], vf_key_dist_address, "carol test");
 
     await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);
 
     // Bob checks their key collections
-    const responses: KeyCollectionWithKeys[] = await bob.cells[0].callZome({
-      zome_name: "signing_keys",
-      fn_name: "get_my_key_collections",
-      payload: null,
-    });
+    const responses = await getMyKeyCollections(bob.cells[0]);
+
     assert.equal(responses.length, 1);
     assert.equal(responses[0].name, "bob test");
     assert.equal(responses[0].verification_keys.length, 1);

@@ -1,5 +1,5 @@
 import { CallableCell } from "@holochain/tryorama";
-import { Record } from "@holochain/client";
+import {ActionHash, AgentPubKey, Record} from "@holochain/client";
 import { decode } from "@msgpack/msgpack";
 
 const utf8Encode = new TextEncoder();
@@ -7,7 +7,7 @@ const utf8Encode = new TextEncoder();
 export const testAppPath = process.cwd() + "/../workdir/checked.happ";
 
 export interface VerificationKeyDistMarkRotated {
-  new_verification_key_dist_address: number[];
+  new_verification_key_dist_address: Uint8Array;
 }
 
 export interface VerificationKeyDistMarkCompromised {
@@ -15,15 +15,16 @@ export interface VerificationKeyDistMarkCompromised {
   since: number;
 }
 
+export type VfKeyDistMark =
+    | { Rotated: VerificationKeyDistMarkRotated }
+    | { Compromised: VerificationKeyDistMarkCompromised };
+
 export interface VerificationKeyDist {
   verification_key: string;
   key_type: { MiniSignEd25519: null };
   name: string;
   expires_at: number;
-  marks: (
-    | { Rotated: VerificationKeyDistMarkRotated }
-    | { Compromised: VerificationKeyDistMarkCompromised }
-  )[];
+  marks: VfKeyDistMark[];
 }
 
 export interface VerificationKeyResponse {
@@ -118,3 +119,76 @@ export async function createKeyCollection(
     payload: { name },
   });
 }
+
+export const getMyKeyCollections = async (
+    cell: CallableCell,
+): Promise<KeyCollectionWithKeys[]> => {
+  return cell.callZome({
+    zome_name: "signing_keys",
+    fn_name: "get_my_key_collections",
+    payload: null,
+  });
+}
+
+export const linkVerificationKeyToKeyCollection = async (cell: CallableCell, verification_key_dist_address: ActionHash, key_collection_name: string): Promise<ActionHash> => {
+  return cell.callZome({
+    zome_name: "signing_keys",
+    fn_name: "link_verification_key_to_key_collection",
+    payload: {
+      verification_key_dist_address,
+      key_collection_name,
+    },
+  })
+}
+
+export const unlinkVerificationKeyToKeyCollection = async (cell: CallableCell, verification_key_dist_address: ActionHash, key_collection_name: string): Promise<ActionHash> => {
+  return cell.callZome({
+    zome_name: "signing_keys",
+    fn_name: "unlink_verification_key_from_key_collection",
+    payload: {
+      verification_key_dist_address,
+      key_collection_name,
+    },
+  })
+}
+
+export const getMyVerificationKeyDistributions = async (cell: CallableCell): Promise<VerificationKeyResponse[]> => {
+  return cell.callZome({
+      zome_name: "signing_keys",
+      fn_name: "get_my_verification_key_distributions",
+      payload: null,
+    });
+}
+
+export const searchKeys = async (cell: CallableCell, agent_pub_key: AgentPubKey): Promise<VerificationKeyResponse[]> => {
+  return cell.callZome({
+      zome_name: "signing_keys",
+      fn_name: "search_keys",
+      payload: {
+        agent_pub_key,
+      },
+    });
+}
+
+export const searchKeysLocal = async (cell: CallableCell, agent_pub_key: AgentPubKey): Promise<VerificationKeyResponse[]> => {
+  return cell.callZome({
+    zome_name: "signing_keys",
+    fn_name: "search_keys_local",
+    payload: {
+      agent_pub_key,
+    },
+  });
+}
+
+export const markVerificationKeyRotated = async (cell: CallableCell, verification_key_dist_address: ActionHash, mark: VfKeyDistMark): Promise<ActionHash> => {
+  return cell.callZome({
+      zome_name: "signing_keys",
+      fn_name: "mark_verification_key_dist",
+      payload: {
+        verification_key_dist_address,
+        mark,
+      },
+    })
+}
+
+
