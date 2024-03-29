@@ -12,7 +12,12 @@ hdk = { workspace = true }
 
 url = { workspace = true }
 serde = { workspace = true }
+minisign-verify = { workspace = true }
+rand = { workspace = true }
 
 signing_keys_types = { workspace = true }
 fetch_integrity = { workspace = true }
 fetch_types = { workspace = true }
+
+[dev-dependencies]
+chrono = { workspace = true }

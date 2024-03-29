@@ -40,7 +40,7 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
 }
 
 #[hdk_extern]
-pub fn get_my_verification_key_distributions(_: ()) -> ExternResult<Vec<VfKeyResponse>> {
+pub fn get_my_verification_key_distributions() -> ExternResult<Vec<VfKeyResponse>> {
     let q = ChainQueryFilter::default()
         .action_type(ActionType::Create)
         .entry_type(EntryType::App(

@@ -7,7 +7,7 @@
     "format": "prettier --write --cache ./src"
   },
   "dependencies": {
-    "@holochain/client": "^0.17.0-dev.3",
+    "@holochain/client": "^0.17.0-dev.7",
     "@holochain/tryorama": "^v0.16.0-dev.0",
     "@msgpack/msgpack": "^2.8.0",
     "eslint": "^8.57.0",

@@ -1,7 +1,11 @@
 use fetch_integrity::prelude::*;
 use hdk::prelude::hash_type::AnyLinkable;
 use hdk::prelude::*;
+use rand::prelude::IteratorRandom;
+use rand::thread_rng;
 use signing_keys_types::*;
+use std::ops::{Add, Deref, Sub};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PrepareFetchRequest {
@@ -30,11 +34,13 @@ pub struct FetchCheckSignature {
 
 #[hdk_extern]
 fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSignature>> {
-    url::Url::parse(&request.fetch_url)
-        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?;
+    let asset_base = make_asset_url_address(&request.fetch_url)?;
 
-    let inner: UnsafeBytes = request.fetch_url.as_bytes().to_vec().into();
-    let asset_base = hash_entry(Entry::App(AppEntryBytes(inner.into())))?;
+    tracing::info!(
+        "Fetching signatures for: {}, using as base: {:?}",
+        request.fetch_url,
+        asset_base
+    );
 
     // We're online anyway to do a download so go looking for new data.
     let links = get_links(
@@ -42,6 +48,8 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
             .get_options(GetStrategy::Network)
             .build(),
     )?;
+
+    info!("Got {} links", links.len());
 
     let mut signatures = Vec::new();
     for link in links {
@@ -55,6 +63,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         )?;
 
         if let Some(r) = get(signature_action, GetOptions::network())? {
+            info!("Got a signature record");
             signatures.push(r);
         }
     }
@@ -78,11 +87,99 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         }
     };
 
-    Ok(pick_signatures(signatures, key_collections))
+    info!("Got {} key collections", key_collections.len());
+
+    pick_signatures(signatures, key_collections)
 }
 
-fn pick_signatures(possible_signatures: Vec<Record>, key_collections: Vec<KeyCollectionWithKeys>) -> Vec<FetchCheckSignature> {
-    let possible_signatures: Vec<(Action, AssetSignature)> = possible_signatures
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CreateAssetSignature {
+    pub fetch_url: String,
+    pub signature: Vec<u8>,
+    pub key_type: VerificationKeyType,
+    pub verification_key: String,
+}
+
+#[hdk_extern]
+pub fn create_asset_signature(
+    create_asset_signature: CreateAssetSignature,
+) -> ExternResult<ActionHash> {
+    let my_keys: Vec<VfKeyResponse> = match call(
+        CallTargetCell::Local,
+        "signing_keys".to_string(),
+        "get_my_verification_key_distributions".into(),
+        None,
+        (),
+    )? {
+        ZomeCallResponse::Ok(response) => response
+            .decode()
+            .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?,
+        _ => {
+            return Err(wasm_error!(WasmErrorInner::Guest(
+                "Unexpected response from signing_keys".into()
+            )))
+        }
+    };
+
+    let key_dist_address = match create_asset_signature.key_type {
+        VerificationKeyType::MiniSignEd25519 => {
+            let verification_key =
+                minisign_verify::PublicKey::decode(create_asset_signature.verification_key.trim())
+                    .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?;
+            find_key_address(create_asset_signature.key_type, verification_key, &my_keys)
+        }
+    }
+    .ok_or_else(|| {
+        wasm_error!(WasmErrorInner::Guest(
+            "Key not found in your distributed keys".to_string()
+        ))
+    })?;
+
+    let asset_sig_address = create_entry(EntryTypes::AssetSignature(AssetSignature {
+        signature: create_asset_signature.signature,
+        key_dist_address,
+    }))?;
+
+    tracing::info!(
+        "Linking from {:?}",
+        make_asset_url_address(&create_asset_signature.fetch_url)?
+    );
+
+    create_link(
+        make_asset_url_address(&create_asset_signature.fetch_url)?,
+        asset_sig_address.clone(),
+        LinkTypes::AssetUrlToSignature,
+        (),
+    )?;
+
+    Ok(asset_sig_address)
+}
+
+fn find_key_address<'a, K>(
+    key_type: VerificationKeyType,
+    verification_key: K,
+    search_keys: &'a [VfKeyResponse],
+) -> Option<ActionHash>
+where
+    &'a str: Into<KeyConvertible<K>>,
+    K: PartialEq,
+{
+    let verification_key = Some(verification_key);
+
+    search_keys
+        .iter()
+        .find(|key| {
+            key.verification_key_dist.key_type == key_type
+                && *key.verification_key_dist.verification_key.as_str().into() == verification_key
+        })
+        .map(|key| key.key_dist_address.clone())
+}
+
+fn pick_signatures(
+    possible_signatures: Vec<Record>,
+    key_collections: Vec<KeyCollectionWithKeys>,
+) -> ExternResult<Vec<FetchCheckSignature>> {
+    let mut possible_signatures: Vec<(Action, AssetSignature)> = possible_signatures
         .into_iter()
         .filter_map(|record| {
             let action = record.signed_action.action().clone();
@@ -127,5 +224,341 @@ fn pick_signatures(possible_signatures: Vec<Record>, key_collections: Vec<KeyCol
         }
     }
 
-    picked_signatures
+    // Drop signatures that we've already picked from the possible set.
+    possible_signatures.retain(|(_, asset_signature)| {
+        !picked_signatures
+            .iter()
+            .any(|p| p.signature == asset_signature.signature)
+    });
+
+    possible_signatures.sort_by(|(a, _), (b, _)| a.timestamp().cmp(&b.timestamp()));
+
+    picked_signatures.extend(select_early_signatures(&possible_signatures));
+
+    // Drop signatures that we've already picked from the possible set.
+    possible_signatures.retain(|(_, asset_signature)| {
+        !picked_signatures
+            .iter()
+            .any(|p| p.signature == asset_signature.signature)
+    });
+
+    picked_signatures.extend(select_recent_signatures(sys_time()?, &possible_signatures)?);
+
+    Ok(picked_signatures)
+}
+
+/// Tries to select up to 5 random signatures from the first week of signatures.
+/// If there were fewer than 30 signatures in the first week it defaults to selecting from the first 30.
+///
+/// This function assumes that the input is sorted by the [Action] timestamp.
+///
+/// The reason on the [FetchCheckSignature] will be [FetchCheckSignatureReason::RandomHistorical].
+fn select_early_signatures(
+    possible_signatures: &[(Action, AssetSignature)],
+) -> Vec<FetchCheckSignature> {
+    let earliest = match possible_signatures.first().map(|(a, _)| a.timestamp()) {
+        Some(earliest) => earliest,
+        None => return Vec::with_capacity(0),
+    };
+
+    let take_before = earliest.add(Duration::from_secs(60 * 60 * 24 * 7)).unwrap(); // 1 week
+
+    let take_many = match possible_signatures
+        .iter()
+        .position(|(a, _)| a.timestamp() > take_before)
+    {
+        // None means all are within the time period, take all
+        None => possible_signatures.len(),
+        // Too few found, use default
+        Some(x) if x < 30 => 30,
+        Some(x) => x,
+    };
+
+    let mut rng = &mut thread_rng();
+    possible_signatures
+        .iter()
+        .take(take_many)
+        .choose_multiple(&mut rng, 5)
+        .iter()
+        .map(|(_, sig)| FetchCheckSignature {
+            signature: sig.signature.clone(),
+            reason: FetchCheckSignatureReason::RandomHistorical,
+        })
+        .collect()
+}
+
+/// Tries to select up to 5 random signatures from the last week of signatures.
+/// If there were fewer than 30 signatures in the last week it defaults to selecting from the last 30.
+///
+/// This function assumes that the input is sorted by the [Action] timestamp.
+///
+/// The reason on the [FetchCheckSignature] will be [FetchCheckSignatureReason::RandomRecent].
+fn select_recent_signatures(
+    current_time: Timestamp,
+    possible_signatures: &[(Action, AssetSignature)],
+) -> ExternResult<Vec<FetchCheckSignature>> {
+    let take_after = current_time
+        .sub(Duration::from_secs(60 * 60 * 24 * 7))
+        .unwrap();
+
+    let take_many = match possible_signatures
+        .iter()
+        .rev()
+        .position(|(a, _)| a.timestamp() < take_after)
+    {
+        // None or too few found, then default to 30
+        None => 30,
+        Some(x) if x < 30 => 30,
+        Some(x) => x,
+    };
+
+    let mut rng = &mut thread_rng();
+
+    Ok(possible_signatures
+        .iter()
+        .rev()
+        .take(take_many)
+        .choose_multiple(&mut rng, 5)
+        .iter()
+        .map(|(_, sig)| FetchCheckSignature {
+            signature: sig.signature.clone(),
+            reason: FetchCheckSignatureReason::RandomRecent,
+        })
+        .collect())
+}
+
+fn make_asset_url_address(asset_url: &str) -> ExternResult<ExternalHash> {
+    let mut url = url::Url::parse(asset_url)
+        .map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?;
+
+    url.set_password(None).ok();
+    url.set_username("").ok();
+
+    let mut hash = blake2b_256(url.as_str().as_bytes());
+    hash.extend_from_slice(&[0, 0, 0, 0]);
+    Ok(ExternalHash::from_raw_36(hash))
+}
+
+struct KeyConvertible<T>(Option<T>);
+
+impl<T> Deref for KeyConvertible<T> {
+    type Target = Option<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<&str> for KeyConvertible<minisign_verify::PublicKey> {
+    fn from(s: &str) -> Self {
+        KeyConvertible(minisign_verify::PublicKey::decode(s.trim()).ok())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{select_early_signatures, select_recent_signatures};
+    use fetch_types::AssetSignature;
+    use hdk::prelude::{
+        Action, ActionHash, AgentPubKey, AppEntryDef, Create, EntryHash, EntryRateWeight,
+        EntryType, EntryVisibility, Timestamp,
+    };
+    use std::ops::Sub;
+    use std::time::Duration;
+
+    #[test]
+    fn select_early_signatures_empty() {
+        let picked = select_early_signatures(&[]);
+        assert_eq!(0, picked.len());
+    }
+
+    #[test]
+    fn select_early_signatures_all_recent() {
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24))
+            .timestamp(); // 1 day ago
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 5; // +5 seconds
+            action_at_time(time)
+        })
+        .take(100)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    signature: vec![idx as u8],
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_early_signatures(&possible_signatures);
+
+        // Picked 5
+        assert_eq!(5, picked.len());
+
+        // No need to assert, can pick from anywhere because they're all close to the first signature in time.
+    }
+
+    #[test]
+    fn select_early_signatures_time_spread() {
+        println!("Time now {:?}", chrono::prelude::Utc::now());
+
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24 * 100))
+            .timestamp(); // 100 days ago
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 60 * 60 * 24; // +1 day
+            action_at_time(time)
+        })
+        .take(100)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    signature: vec![idx as u8],
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_early_signatures(&possible_signatures);
+
+        // Picked 5
+        assert_eq!(5, picked.len());
+
+        println!("Picked signatures: {:?}", picked);
+
+        // All from the first 30
+        assert!(picked.iter().all(|sig| { sig.signature[0] <= 30 }));
+    }
+
+    #[test]
+    fn select_recent_signatures_empty() {
+        let picked = select_recent_signatures(current_time(), &[]).unwrap();
+        assert_eq!(0, picked.len());
+    }
+
+    #[test]
+    fn select_recent_signatures_all_recent() {
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24))
+            .timestamp(); // 1 day ago
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 5; // +5 seconds
+            action_at_time(time)
+        })
+        .take(100)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    signature: vec![idx as u8],
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+
+        // Picked 5
+        assert_eq!(5, picked.len());
+
+        // No need to assert, can pick from anywhere because they're all recent.
+    }
+
+    #[test]
+    fn select_recent_signatures_time_spread() {
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24 * 100))
+            .timestamp(); // 100 days ago
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 60 * 60 * 24; // +1 day
+            action_at_time(time)
+        })
+        .take(100)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    signature: vec![idx as u8],
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+
+        // Picked 5
+        assert_eq!(5, picked.len());
+
+        // All from the last 30
+        assert!(picked.iter().all(|sig| { sig.signature[0] >= 70 }));
+    }
+
+    #[test]
+    fn select_recent_signatures_all_old() {
+        // Time in seconds
+        let time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24 * 100))
+            .timestamp(); // 100 days ago
+
+        let possible_signatures = std::iter::repeat_with(|| action_at_time(time))
+            .take(100)
+            .enumerate()
+            .map(|(idx, a)| {
+                (
+                    a,
+                    AssetSignature {
+                        signature: vec![idx as u8],
+                        key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                    },
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+
+        // Picked 5
+        assert_eq!(5, picked.len());
+
+        // All from the last 30
+        assert!(picked.iter().all(|sig| { sig.signature[0] >= 70 }));
+    }
+
+    fn current_time() -> Timestamp {
+        Timestamp(chrono::Utc::now().timestamp() * 1_000_000)
+    }
+
+    fn action_at_time(time: i64) -> Action {
+        Action::Create(Create {
+            author: AgentPubKey::from_raw_36(vec![0; 36]),
+            timestamp: Timestamp(time * 1_000_000), // Time in seconds to microseconds
+            action_seq: 1,
+            prev_action: ActionHash::from_raw_36(vec![0; 36]),
+            entry_type: EntryType::App(AppEntryDef {
+                entry_index: 0.into(),
+                zome_index: 0.into(),
+                visibility: EntryVisibility::Public,
+            }),
+            entry_hash: EntryHash::from_raw_36(vec![0; 36]),
+            weight: EntryRateWeight::default(),
+        })
+    }
 }

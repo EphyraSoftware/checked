@@ -2,6 +2,8 @@ use hdi::prelude::*;
 
 #[hdk_entry_helper]
 pub struct AssetSignature {
+    /// The signature of the asset. Detached from the asset itself since we don't want to store that
+    /// on the DHT.
     pub signature: Vec<u8>,
 
     /// The address of the public key that signed this asset.
