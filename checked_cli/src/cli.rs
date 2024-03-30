@@ -18,6 +18,9 @@ pub enum Commands {
 
     /// Verify a file
     Verify(VerifyArgs),
+
+    /// Fetch an asset from a URL and check signatures for it
+    Fetch(FetchArgs),
 }
 
 #[derive(clap::Args)]
@@ -85,4 +88,10 @@ pub struct VerifyArgs {
     /// Defaults to the `--file` path with `.minisig` appended.
     #[arg(long, short)]
     pub signature: Option<PathBuf>,
+}
+
+#[derive(clap::Args)]
+pub struct FetchArgs {
+    #[arg()]
+    pub url: String,
 }

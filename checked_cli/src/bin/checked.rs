@@ -1,7 +1,8 @@
 use checked_cli::prelude::*;
 use clap::Parser;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
@@ -10,6 +11,7 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::Sign(sign_args) => sign(sign_args)?,
         Commands::Verify(verify_args) => verify(verify_args)?,
+        Commands::Fetch(fetch_args) => fetch(fetch_args).await?,
     }
 
     Ok(())
