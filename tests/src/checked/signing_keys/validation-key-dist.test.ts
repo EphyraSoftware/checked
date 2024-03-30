@@ -16,7 +16,7 @@ import {
   searchKeysLocal,
   markVerificationKeyRotated,
 } from "./common.js";
-import {testAppPath} from "../common";
+import { testAppPath } from "../common";
 
 test("Distribute a key", async () => {
   await runScenario(async (scenario) => {

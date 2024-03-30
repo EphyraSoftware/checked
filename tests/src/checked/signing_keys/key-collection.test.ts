@@ -13,7 +13,7 @@ import {
   linkVerificationKeyToKeyCollection,
   unlinkVerificationKeyToKeyCollection,
 } from "./common.js";
-import {testAppPath} from "../common";
+import { testAppPath } from "../common";
 
 test("Create key collection", async () => {
   await runScenario(async (scenario) => {

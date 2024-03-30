@@ -14,7 +14,7 @@ import {
   searchKeys,
   getMyKeyCollections,
 } from "./common.js";
-import {testAppPath} from "../common";
+import { testAppPath } from "../common";
 
 test("Get my keys for a key which is in another agent's collection", async () => {
   await runScenario(async (scenario) => {
