@@ -1,5 +1,13 @@
+use std::io::{BufWriter, Write};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicI64, AtomicUsize};
 use crate::cli::FetchArgs;
 use anyhow::Context;
+
+struct FetchState {
+    asset_size: AtomicUsize,
+    downloaded_size: AtomicI64,
+}
 
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
     let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
@@ -28,8 +36,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     let mut res = reqwest::get(fetch_args.url).await?;
 
-    while let Some(c) = res.chunk()? {
-        tmp_file.as_file_mut().write_all(&c)?;
+    let mut writer = BufWriter::new(tmp_file.as_file());
+    while let Some(c) = res.chunk().await? {
+        writer.write_all(&c)?;
     }
 
     println!("Did initial request");
@@ -43,4 +52,8 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
     println!("Downloaded to {:?}", tmp_file.path());
 
     Ok(())
+}
+
+async fn run_download(fetch_url: String, state: Arc<FetchState>) {
+
 }
