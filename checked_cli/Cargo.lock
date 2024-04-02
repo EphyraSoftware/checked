@@ -445,16 +445,30 @@ name = "checked_cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "checked_fetch_types",
  "clap 4.5.4",
  "dirs",
+ "ed25519-dalek",
  "holochain_client",
+ "holochain_conductor_api",
+ "holochain_types",
  "indicatif",
  "minisign",
  "reqwest 0.12.2",
  "rpassword",
+ "serde",
+ "serde_json",
  "tempfile",
  "tokio",
  "url",
+]
+
+[[package]]
+name = "checked_fetch_types"
+version = "0.1.0"
+dependencies = [
+ "holochain_types",
+ "serde",
 ]
 
 [[package]]

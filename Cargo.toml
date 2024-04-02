@@ -18,6 +18,7 @@ resolver = "2"
 [workspace.dependencies]
 hdi = "=0.4.0-beta-dev.32"
 hdk = "=0.3.0-beta-dev.36"
+holochain_types = "0.3.0-beta-dev.38"
 serde = "1.0"
 chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
 hex = "0.4.3"
@@ -33,5 +34,6 @@ signing_keys = { path = "dnas/checked/zomes/coordinator/signing_keys" }
 signing_keys_integrity = { path = "dnas/checked/zomes/integrity/signing_keys" }
 
 fetch_types = { path = "types/fetch" }
+checked_fetch_types = { path = "types/checked_fetch" }
 fetch = { path = "dnas/checked/zomes/coordinator/fetch" }
 fetch_integrity = { path = "dnas/checked/zomes/integrity/fetch" }

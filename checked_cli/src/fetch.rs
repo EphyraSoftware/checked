@@ -4,6 +4,10 @@ use indicatif::{ProgressFinish, ProgressStyle};
 use std::io::{BufWriter, Write};
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+use holochain_client::ZomeCallTarget;
+use holochain_types::prelude::ExternIO;
+use checked_fetch_types::{FetchCheckSignature, PrepareFetchRequest};
+use crate::hc_client;
 
 struct FetchState {
     asset_size: AtomicUsize,
@@ -11,6 +15,16 @@ struct FetchState {
 }
 
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
+    let mut app_client = hc_client::get_authenticated_app_agent_client().await?;
+
+    let response = app_client.call_zome(ZomeCallTarget::RoleName("checked".to_string()), "fetch".into(), "prepare_fetch".into(), ExternIO::encode(PrepareFetchRequest {
+        fetch_url: fetch_args.url.clone(),
+    }).unwrap()).await.map_err(|e| anyhow::anyhow!("Error calling zome function: {:?}", e))?;
+
+    let response: Vec<FetchCheckSignature> = response.decode()?;
+
+    println!("Found {} signatures to check against", response.len());
+
     let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
     println!("Fetching from {}", fetch_url);
 

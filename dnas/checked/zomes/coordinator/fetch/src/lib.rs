@@ -1,4 +1,5 @@
 use fetch_integrity::prelude::*;
+use checked_fetch_types::*;
 use hdk::prelude::hash_type::AnyLinkable;
 use hdk::prelude::*;
 use rand::prelude::IteratorRandom;
@@ -6,31 +7,6 @@ use rand::thread_rng;
 use signing_keys_types::*;
 use std::ops::{Add, Deref, Sub};
 use std::time::Duration;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PrepareFetchRequest {
-    pub fetch_url: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FetchCheckSignaturePinned {
-    pub author: AgentPubKey,
-    pub key_collection: String,
-    pub key_name: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum FetchCheckSignatureReason {
-    RandomRecent,
-    RandomHistorical,
-    Pinned(FetchCheckSignaturePinned),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FetchCheckSignature {
-    signature: Vec<u8>,
-    reason: FetchCheckSignatureReason,
-}
 
 #[hdk_extern]
 fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSignature>> {
