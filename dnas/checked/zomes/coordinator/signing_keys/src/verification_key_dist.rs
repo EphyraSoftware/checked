@@ -1,4 +1,5 @@
 use crate::{convert_to_app_entry_type, key_collection::get_key_collections_reference_count};
+use checked_types::*;
 use hdk::prelude::*;
 use signing_keys_integrity::prelude::*;
 

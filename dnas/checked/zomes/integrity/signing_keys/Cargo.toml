@@ -17,4 +17,5 @@ regex = { workspace = true }
 chrono = { workspace = true }
 anyhow = { workspace = true }
 
+checked_types = { workspace = true }
 signing_keys_types = { workspace = true }

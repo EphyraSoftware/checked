@@ -112,7 +112,11 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     println!("Downloaded to {:?}", path);
 
-    let file = fetch_url.path_segments().ok_or_else(|| anyhow::anyhow!("Invalid URL"))?.last().ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
+    let file = fetch_url
+        .path_segments()
+        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?
+        .last()
+        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
     std::fs::rename(path.clone(), file)?;
 
     let decision = dialoguer::Confirm::new()
@@ -189,12 +193,13 @@ where
 }
 
 async fn report_progress(state: Arc<FetchState>) -> anyhow::Result<()> {
-    if let Err(_) = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+    if tokio::time::timeout(std::time::Duration::from_secs(5), async {
         while state.asset_size.load(std::sync::atomic::Ordering::Relaxed) == 0 {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
     })
     .await
+    .is_err()
     {
         return Ok(());
     }

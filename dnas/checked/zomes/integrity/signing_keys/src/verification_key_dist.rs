@@ -2,10 +2,9 @@
 
 use crate::convert::try_extract_entry_to_app_type;
 use crate::prelude::*;
+use checked_types::VerificationKeyType;
 use hdi::prelude::*;
-use signing_keys_types::{
-    MarkVfKeyDistOpt, VerificationKeyDist, VerificationKeyDistMark, VerificationKeyType,
-};
+use signing_keys_types::{MarkVfKeyDistOpt, VerificationKeyDist, VerificationKeyDistMark};
 
 pub const VERIFICATION_KEY_NAME_MIN_LENGTH: usize = 3;
 pub const MAX_VF_KEY_DIST_COMPROMISED_NOTE_LENGTH: usize = 120;

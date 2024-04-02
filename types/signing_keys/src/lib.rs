@@ -1,3 +1,4 @@
+use checked_types::VerificationKeyType;
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 

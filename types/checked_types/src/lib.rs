@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use holochain_zome_types::prelude::AgentPubKey;
+use serde::{Deserialize, Serialize};
 
 /// Supported key types for verification keys.
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
@@ -7,7 +7,6 @@ pub enum VerificationKeyType {
     /// MiniSign verification key, using the Ed25519 algorithm. See the [minisign](https://jedisct1.github.io/minisign/) documentation for more information.
     MiniSignEd25519,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PrepareFetchRequest {

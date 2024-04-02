@@ -15,4 +15,5 @@ minisign-verify = { workspace = true }
 chrono = { workspace = true }
 nanoid = { workspace = true }
 
+checked_types = { workspace = true }
 signing_keys_integrity = { workspace = true }

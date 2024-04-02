@@ -1,5 +1,5 @@
-use fetch_integrity::prelude::*;
 use checked_types::*;
+use fetch_integrity::prelude::*;
 use hdk::prelude::hash_type::AnyLinkable;
 use hdk::prelude::*;
 use rand::prelude::IteratorRandom;
