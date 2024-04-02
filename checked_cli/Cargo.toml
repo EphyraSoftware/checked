@@ -15,6 +15,7 @@ reqwest = "0.12.2"
 tempfile = "3.10.1"
 tokio = "1.37.0"
 url = "2.5.0"
+indicatif = "0.17.8"
 
 [target.'cfg(any(windows, unix))'.dependencies]
 dirs = "5.0.1"
