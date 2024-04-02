@@ -18,7 +18,7 @@ resolver = "2"
 [workspace.dependencies]
 hdi = "=0.4.0-beta-dev.32"
 hdk = "=0.3.0-beta-dev.36"
-holochain_types = "0.3.0-beta-dev.38"
+holochain_zome_types = "0.3.0-beta-dev.31"
 serde = "1.0"
 chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
 hex = "0.4.3"

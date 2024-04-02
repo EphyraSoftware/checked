@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use holochain_types::prelude::AgentPubKey;
+use holochain_zome_types::prelude::AgentPubKey;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PrepareFetchRequest {

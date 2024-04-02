@@ -467,7 +467,7 @@ dependencies = [
 name = "checked_fetch_types"
 version = "0.1.0"
 dependencies = [
- "holochain_types",
+ "holochain_zome_types",
  "serde",
 ]
 
