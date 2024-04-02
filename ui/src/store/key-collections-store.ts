@@ -30,7 +30,7 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
   const loadKeyCollections = async (client: AppAgentClient) => {
     try {
       const collections: KeyCollectionWithKeys[] = await client.callZome({
-        role_name: "trusted",
+        role_name: "checked",
         zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,

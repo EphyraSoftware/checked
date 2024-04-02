@@ -9,7 +9,9 @@ async fn main() -> anyhow::Result<()> {
         Commands::Generate(generate_args) => {
             generate(generate_args)?;
         }
-        Commands::Sign(sign_args) => sign(sign_args)?,
+        Commands::Sign(sign_args) => {
+            sign(sign_args)?;
+        }
         Commands::Verify(verify_args) => verify(verify_args)?,
         Commands::Fetch(fetch_args) => fetch(fetch_args).await?,
     }

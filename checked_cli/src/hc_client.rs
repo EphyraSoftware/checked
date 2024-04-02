@@ -10,7 +10,8 @@ use crate::common::get_store_dir;
 const DEFAULT_INSTALLED_APP_ID: &'static str = "checked";
 
 pub async fn get_authenticated_app_agent_client() -> anyhow::Result<AppAgentWebsocket> {
-    let mut admin_client = AdminWebsocket::connect("localhost:40589").await?;
+    // TODO connect timeout not configurable! Really slow if Holochain is not running.
+    let mut admin_client = AdminWebsocket::connect("localhost:45037").await?;
 
     let mut signer = ClientAgentSigner::new();
     load_or_create_signing_credentials(&mut admin_client, &mut signer).await?;

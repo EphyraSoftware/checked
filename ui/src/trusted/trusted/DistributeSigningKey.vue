@@ -145,7 +145,7 @@ const distributeSigningVerificationKey = async () => {
     };
 
     await client.value.callZome({
-      role_name: "trusted",
+      role_name: "checked",
       zome_name: "signing_keys",
       fn_name: "distribute_verification_key",
       payload: dist,
@@ -273,7 +273,6 @@ const distributeSigningVerificationKey = async () => {
         <input
           v-if="inputType === 'file'"
           type="file"
-          accept="text/*,*.txt.minisig"
           @change="onSignedProofUploaded"
           ref="proofFileInputField"
           class="file-input file-input-bordered file-input-primary"

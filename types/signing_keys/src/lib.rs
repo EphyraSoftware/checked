@@ -1,13 +1,6 @@
 use chrono::{DateTime, Utc};
 use hdk::prelude::*;
 
-/// Supported key types for verification keys.
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
-pub enum VerificationKeyType {
-    /// MiniSign verification key, using the Ed25519 algorithm. See the [minisign](https://jedisct1.github.io/minisign/) documentation for more information.
-    MiniSignEd25519,
-}
-
 #[hdk_entry_helper]
 #[derive(Clone, PartialEq)]
 pub struct VerificationKeyDist {

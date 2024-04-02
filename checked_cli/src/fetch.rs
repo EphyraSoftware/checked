@@ -1,13 +1,20 @@
 use crate::cli::FetchArgs;
+use crate::common::{get_store_dir, get_verification_key_path};
+use crate::hc_client;
+use crate::prelude::SignArgs;
+use crate::sign::sign;
 use anyhow::Context;
-use indicatif::{ProgressFinish, ProgressStyle};
-use std::io::{BufWriter, Write};
-use std::sync::atomic::AtomicUsize;
-use std::sync::Arc;
+use checked_types::{
+    CreateAssetSignature, FetchCheckSignature, PrepareFetchRequest, VerificationKeyType,
+};
 use holochain_client::ZomeCallTarget;
 use holochain_types::prelude::ExternIO;
-use checked_fetch_types::{FetchCheckSignature, PrepareFetchRequest};
-use crate::hc_client;
+use indicatif::{ProgressFinish, ProgressStyle};
+use std::io::{BufWriter, Write};
+use std::path::PathBuf;
+use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
+use tempfile::NamedTempFile;
 
 struct FetchState {
     asset_size: AtomicUsize,
@@ -17,11 +24,33 @@ struct FetchState {
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
     let mut app_client = hc_client::get_authenticated_app_agent_client().await?;
 
-    let response = app_client.call_zome(ZomeCallTarget::RoleName("checked".to_string()), "fetch".into(), "prepare_fetch".into(), ExternIO::encode(PrepareFetchRequest {
-        fetch_url: fetch_args.url.clone(),
-    }).unwrap()).await.map_err(|e| anyhow::anyhow!("Error calling zome function: {:?}", e))?;
+    // TODO if this fails because the credentials are no longer valid then we need a recovery mechanism that isn't `rm ~/.checked/credentials.json`
+    let response = app_client
+        .call_zome(
+            ZomeCallTarget::RoleName("checked".to_string()),
+            "fetch".into(),
+            "prepare_fetch".into(),
+            ExternIO::encode(PrepareFetchRequest {
+                fetch_url: fetch_args.url.clone(),
+            })
+            .unwrap(),
+        )
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e))?;
 
     let response: Vec<FetchCheckSignature> = response.decode()?;
+
+    if response.is_empty() {
+        println!("No signatures found for this asset. This is normal but please consider asking the author to create a signature!");
+
+        let decision = dialoguer::Confirm::new()
+            .with_prompt("Download anyway?")
+            .interact()?;
+
+        if !decision {
+            return Ok(());
+        }
+    }
 
     println!("Found {} signatures to check against", response.len());
 
@@ -43,13 +72,15 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     let progress_handle = tokio::task::spawn(report_progress(state.clone()));
 
-    let run_download_handle = tokio::task::spawn(async move {
-        let mut writer = BufWriter::new(tmp_file.as_file_mut());
-        run_download(
-            fetch_url,
-            &mut writer,
-            state,
-        ).await
+    let run_download_handle = tokio::task::spawn({
+        let fetch_url = fetch_url.clone();
+        async move {
+            {
+                let mut writer = BufWriter::new(tmp_file.as_file_mut());
+                run_download(fetch_url, &mut writer, state).await?;
+            }
+            anyhow::Result::<NamedTempFile>::Ok(tmp_file)
+        }
     });
 
     let handle_err = || {
@@ -59,7 +90,8 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
         progress_handle.abort();
     };
 
-    match run_download_handle.await {
+    // If the download succeeds then keep the reference to the tmp_file so it doesn't get deleted
+    let _tmp_file = match run_download_handle.await {
         Err(e) => {
             println!("Download failed: {:?}", e);
             handle_err();
@@ -70,14 +102,54 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
             handle_err();
             return Err(anyhow::anyhow!("Download failed"));
         }
-        _ => {
+        Ok(Ok(tmp_file)) => {
             // Download ok
+            tmp_file
         }
-    }
+    };
 
     progress_handle.await??;
 
     println!("Downloaded to {:?}", path);
+
+    let file = fetch_url.path_segments().ok_or_else(|| anyhow::anyhow!("Invalid URL"))?.last().ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
+    std::fs::rename(path.clone(), file)?;
+
+    let decision = dialoguer::Confirm::new()
+        .with_prompt("Sign this asset?")
+        .interact()?;
+
+    if !decision {
+        return Ok(());
+    }
+
+    let signature_path = sign(SignArgs {
+        name: fetch_args.name.clone(),
+        path: None,
+        file: PathBuf::from(file),
+        output: None,
+    })?;
+
+    // TODO dir as arg
+    let store_dir = get_store_dir(None)?;
+    let vk_path = get_verification_key_path(&store_dir, &fetch_args.name);
+    app_client
+        .call_zome(
+            ZomeCallTarget::RoleName("checked".to_string()),
+            "fetch".into(),
+            "create_asset_signature".into(),
+            ExternIO::encode(CreateAssetSignature {
+                fetch_url: fetch_args.url.clone(),
+                signature: std::fs::read(signature_path)?,
+                key_type: VerificationKeyType::MiniSignEd25519,
+                verification_key: std::fs::read_to_string(vk_path)?,
+            })
+            .unwrap(),
+        )
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to report signature to Holochain: {:?}", e))?;
+
+    println!("Created signature!");
 
     Ok(())
 }
@@ -118,11 +190,7 @@ where
 
 async fn report_progress(state: Arc<FetchState>) -> anyhow::Result<()> {
     if let Err(_) = tokio::time::timeout(std::time::Duration::from_secs(5), async {
-        while state
-            .asset_size
-            .load(std::sync::atomic::Ordering::Relaxed)
-            == 0
-        {
+        while state.asset_size.load(std::sync::atomic::Ordering::Relaxed) == 0 {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
     })
@@ -131,9 +199,7 @@ async fn report_progress(state: Arc<FetchState>) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let asset_size = state
-        .asset_size
-        .load(std::sync::atomic::Ordering::Acquire);
+    let asset_size = state.asset_size.load(std::sync::atomic::Ordering::Acquire);
 
     let progress_bar = indicatif::ProgressBar::new(asset_size as u64)
         .with_style(ProgressStyle::with_template("[{elapsed_precise}] {bar:40.white/magenta} {bytes}/{total_bytes} @ {bytes_per_sec} {msg}").context("Could not create progress bar style")?)

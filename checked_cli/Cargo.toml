@@ -10,7 +10,7 @@ name = "checked"
 holochain_client = { version = "=0.5.0-dev.31", default-features = false }
 holochain_conductor_api = "0.3.0-beta-dev.40"
 holochain_types = "0.3.0-beta-dev.38"
-checked_fetch_types = { path = "../types/checked_fetch" }
+checked_types = { path = "../types/checked_types" }
 anyhow = "1.0.81"
 clap = { version = "4.5.2", features = ["derive", "cargo"] }
 minisign = "0.7.6"
@@ -19,6 +19,7 @@ tempfile = "3.10.1"
 tokio = "1.37.0"
 url = "2.5.0"
 indicatif = "0.17.8"
+dialoguer = "0.11.0"
 ed25519-dalek = "2.1.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

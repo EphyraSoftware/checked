@@ -30,7 +30,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   const loadKeys = async (client: AppAgentClient) => {
     try {
       const r: VfKeyResponse[] = await client.callZome({
-        role_name: "trusted",
+        role_name: "checked",
         zome_name: "signing_keys",
         fn_name: "get_my_verification_key_distributions",
         payload: null,

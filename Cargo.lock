@@ -280,7 +280,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "checked_fetch_types"
+name = "checked_types"
 version = "0.1.0"
 dependencies = [
  "holochain_zome_types",
@@ -721,7 +721,7 @@ checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
 name = "fetch"
 version = "0.0.1"
 dependencies = [
- "checked_fetch_types",
+ "checked_types",
  "chrono",
  "fetch_integrity",
  "fetch_types",
@@ -2244,6 +2244,7 @@ dependencies = [
 name = "signing_keys_types"
 version = "0.1.0"
 dependencies = [
+ "checked_types",
  "chrono",
  "hdk",
  "serde",

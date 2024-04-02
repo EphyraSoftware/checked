@@ -1,5 +1,5 @@
 use fetch_integrity::prelude::*;
-use checked_fetch_types::*;
+use checked_types::*;
 use hdk::prelude::hash_type::AnyLinkable;
 use hdk::prelude::*;
 use rand::prelude::IteratorRandom;
@@ -66,14 +66,6 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
     info!("Got {} key collections", key_collections.len());
 
     pick_signatures(signatures, key_collections)
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CreateAssetSignature {
-    pub fetch_url: String,
-    pub signature: Vec<u8>,
-    pub key_type: VerificationKeyType,
-    pub verification_key: String,
 }
 
 #[hdk_extern]

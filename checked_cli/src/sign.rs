@@ -5,8 +5,9 @@ use crate::common::{
 use crate::password::GetPassword;
 use minisign::{PublicKey, SecretKey};
 use std::io::{BufReader, Write};
+use std::path::PathBuf;
 
-pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
+pub fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
     if !sign_args.file.exists() {
         anyhow::bail!("File to sign does not exist - {:?}", sign_args.file);
     }
@@ -74,5 +75,5 @@ pub fn sign(sign_args: SignArgs) -> anyhow::Result<()> {
 
     println!("Signature created and saved in: {}", sig_path.display());
 
-    Ok(())
+    Ok(sig_path)
 }

@@ -94,4 +94,10 @@ pub struct VerifyArgs {
 pub struct FetchArgs {
     #[arg()]
     pub url: String,
+
+    /// Name of the key to use for signing.
+    ///
+    /// Defaults to `default`.
+    #[arg(long, short, default_value_t = String::from("default"))]
+    pub name: String,
 }

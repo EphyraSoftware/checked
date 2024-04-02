@@ -7,4 +7,5 @@ edition = "2021"
 hdk = { workspace = true }
 serde = { workspace = true }
 
+checked_types = { workspace = true }
 chrono = { workspace = true }

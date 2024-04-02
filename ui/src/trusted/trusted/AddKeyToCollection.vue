@@ -65,7 +65,7 @@ const addKeyToCollection = () => {
 
   try {
     client.value.callZome({
-      role_name: "trusted",
+      role_name: "checked",
       zome_name: "signing_keys",
       fn_name: "link_verification_key_to_key_collection",
       payload: {
