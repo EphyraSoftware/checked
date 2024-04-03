@@ -108,7 +108,7 @@ pub fn create_asset_signature(
         key_dist_address,
     }))?;
 
-    tracing::info!(
+    info!(
         "Linking from {:?}",
         make_asset_url_address(&create_asset_signature.fetch_url)?
     );

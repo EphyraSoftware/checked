@@ -6,6 +6,8 @@ pub mod prelude {
     pub use fetch_types::*;
 }
 
+// TODO validation for asset signatures and links
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[hdk_entry_types]

@@ -112,6 +112,8 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     println!("Downloaded to {:?}", path);
 
+    // TODO validate the signatures here and report
+
     let file = fetch_url
         .path_segments()
         .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?
