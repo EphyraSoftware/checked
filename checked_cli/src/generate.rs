@@ -1,8 +1,8 @@
 use crate::cli::{DistributeArgs, GenerateArgs};
 use crate::common::{get_signing_key_path, get_store_dir, get_verification_key_path, open_file};
+use crate::distribute::distribute;
 use minisign::KeyPair;
 use std::io::Write;
-use crate::distribute::distribute;
 
 pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     let store_dir = get_store_dir(generate_args.path)?;
@@ -60,7 +60,8 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     distribute(DistributeArgs {
         port: admin_port,
         name: generate_args.name,
-    }).await?;
+    })
+    .await?;
 
     Ok(())
 }
