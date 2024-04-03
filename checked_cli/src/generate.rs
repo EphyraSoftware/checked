@@ -1,9 +1,10 @@
-use crate::cli::GenerateArgs;
+use crate::cli::{DistributeArgs, GenerateArgs};
 use crate::common::{get_signing_key_path, get_store_dir, get_verification_key_path, open_file};
 use minisign::KeyPair;
 use std::io::Write;
+use crate::distribute::distribute;
 
-pub fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
+pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     let store_dir = get_store_dir(generate_args.path)?;
 
     // Signing key
@@ -41,13 +42,25 @@ pub fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     // println!("Files signed using this key can be verified with the following command:\n");
     // println!("checked verify <file> -P {}", _pk.to_base64());
 
-    let distribute = dialoguer::Confirm::new()
+    let should_distribute = dialoguer::Confirm::new()
         .with_prompt("Would you like to distribute this key on Holochain?")
         .interact()?;
 
-    if !distribute {
+    if !should_distribute {
         return Ok(());
     }
+
+    let admin_port = match generate_args.port {
+        Some(port) => port,
+        None => dialoguer::Input::<u16>::new()
+            .with_prompt("Admin port for Holochain")
+            .interact()?,
+    };
+
+    distribute(DistributeArgs {
+        port: admin_port,
+        name: generate_args.name,
+    }).await?;
 
     Ok(())
 }

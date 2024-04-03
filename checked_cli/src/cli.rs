@@ -34,6 +34,10 @@ pub struct GenerateArgs {
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
 
+    /// The admin port for Holochain
+    #[arg(long, short)]
+    pub port: Option<u16>,
+
     /// Provide a password on the command line instead of prompting for it on platforms
     /// where a prompt isn't supported.
     #[cfg(not(any(windows, unix)))]
@@ -42,7 +46,7 @@ pub struct GenerateArgs {
     /// The directory to save the key in.
     ///
     /// Defaults to `.config/checked` in your home directory.
-    #[arg(long, short)]
+    #[arg(long)]
     pub path: Option<PathBuf>,
 }
 

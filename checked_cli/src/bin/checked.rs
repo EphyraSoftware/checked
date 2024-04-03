@@ -7,7 +7,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Generate(generate_args) => {
-            generate(generate_args)?;
+            generate(generate_args).await?;
         }
         Commands::Sign(sign_args) => {
             sign(sign_args)?;
