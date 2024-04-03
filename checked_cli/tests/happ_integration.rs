@@ -7,6 +7,7 @@ use holochain_types::websocket::AllowedOrigins;
 use signing_keys_types::VfKeyResponse;
 use std::collections::HashMap;
 
+// Generate a signing keypair, distribute it on Holochain
 #[tokio::test(flavor = "multi_thread")]
 async fn test_generate() -> anyhow::Result<()> {
     let conductor = SweetConductor::from_standard_config().await;

@@ -4,8 +4,14 @@ use crate::distribute::distribute;
 use crate::password::GetPassword;
 use minisign::KeyPair;
 use std::io::Write;
+use std::path::PathBuf;
 
-pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
+pub struct GenerateInfo {
+    pub sk_path: PathBuf,
+    pub vk_path: PathBuf,
+}
+
+pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<GenerateInfo> {
     let store_dir = get_store_dir(generate_args.path.clone())?;
 
     // Signing key
@@ -45,10 +51,14 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
             .interact()?,
     };
 
-    if !should_distribute {
-        return Ok(());
+    if should_distribute {
+        dispatch_distribute(generate_args, password).await?;
     }
 
+    Ok(GenerateInfo { sk_path, vk_path })
+}
+
+async fn dispatch_distribute(generate_args: GenerateArgs, password: String) -> anyhow::Result<()> {
     let admin_port = match generate_args.port {
         Some(port) => port,
         None => dialoguer::Input::<u16>::new()
