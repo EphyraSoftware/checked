@@ -9,17 +9,19 @@ use holochain_types::websocket::AllowedOrigins;
 use serde::{Deserialize, Serialize};
 use std::fs::{File, Permissions};
 use std::io::Write;
+use std::path::PathBuf;
 
 const DEFAULT_INSTALLED_APP_ID: &str = "checked";
 
 pub async fn get_authenticated_app_agent_client(
     admin_port: u16,
+    path: Option<PathBuf>,
 ) -> anyhow::Result<AppAgentWebsocket> {
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
     let mut admin_client = AdminWebsocket::connect(format!("localhost:{admin_port}")).await?;
 
     let mut signer = ClientAgentSigner::new();
-    load_or_create_signing_credentials(&mut admin_client, &mut signer).await?;
+    load_or_create_signing_credentials(&mut admin_client, &mut signer, path).await?;
 
     let app_port = find_or_create_app_interface(&mut admin_client).await?;
 
@@ -31,12 +33,15 @@ pub async fn get_authenticated_app_agent_client(
     .await
 }
 
-pub fn maybe_handle_holochain_error(conductor_api_error: &ConductorApiError) {
+pub fn maybe_handle_holochain_error(
+    conductor_api_error: &ConductorApiError,
+    path: Option<PathBuf>,
+) {
     match conductor_api_error {
         // TODO brittle, would be nice if the errors for some important failures were more specific.
         ConductorApiError::SignZomeCallError(e) if e == "Provenance not found" => {
             eprintln!("Saved credentials for Holochain appear invalid, removing them. Please re-run this command");
-            if let Ok(e) = get_credentials_path() {
+            if let Ok(e) = get_credentials_path(path) {
                 if std::fs::remove_file(e).is_ok() {
                     println!("Successfully removed credentials");
                     return;
@@ -71,14 +76,15 @@ async fn find_or_create_app_interface(admin_client: &mut AdminWebsocket) -> anyh
 async fn load_or_create_signing_credentials(
     admin_client: &mut AdminWebsocket,
     signer: &mut ClientAgentSigner,
+    path: Option<PathBuf>,
 ) -> anyhow::Result<()> {
-    match try_load_credentials()? {
+    match try_load_credentials(path.clone())? {
         Some((cell_id, credentials)) => {
             signer.add_credentials(cell_id, credentials);
         }
         None => {
             let (cell_id, credentials) = create_new_credentials(admin_client).await?;
-            dump_credentials(cell_id.clone(), &credentials)?;
+            dump_credentials(cell_id.clone(), &credentials, path)?;
             signer.add_credentials(cell_id, credentials);
         }
     }
@@ -136,6 +142,7 @@ struct SavedCredentials {
 fn dump_credentials(
     cell_id: CellId,
     signing_credentials: &SigningCredentials,
+    path: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let saved = SavedCredentials {
         cell_id: cell_id.clone(),
@@ -147,8 +154,7 @@ fn dump_credentials(
     let serialized = serde_json::to_string(&saved)
         .map_err(|e| anyhow::anyhow!("Error serializing credentials: {:?}", e))?;
 
-    // generate_args.path
-    let credentials_path = get_credentials_path()?;
+    let credentials_path = get_credentials_path(path)?;
 
     let mut f = File::options()
         .create(true)
@@ -171,8 +177,10 @@ fn dump_credentials(
     Ok(())
 }
 
-fn try_load_credentials() -> anyhow::Result<Option<(CellId, SigningCredentials)>> {
-    let credentials_path = get_credentials_path()?;
+fn try_load_credentials(
+    path: Option<PathBuf>,
+) -> anyhow::Result<Option<(CellId, SigningCredentials)>> {
+    let credentials_path = get_credentials_path(path)?;
 
     let f = match File::open(credentials_path) {
         Ok(f) => f,
@@ -212,6 +220,6 @@ fn try_load_credentials() -> anyhow::Result<Option<(CellId, SigningCredentials)>
     )))
 }
 
-fn get_credentials_path() -> anyhow::Result<std::path::PathBuf> {
-    Ok(get_store_dir(None)?.join("credentials.json"))
+fn get_credentials_path(path: Option<PathBuf>) -> anyhow::Result<std::path::PathBuf> {
+    Ok(get_store_dir(path)?.join("credentials.json"))
 }

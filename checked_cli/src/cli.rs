@@ -34,14 +34,24 @@ pub struct GenerateArgs {
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
 
-    /// The admin port for Holochain
+    /// The admin port for Holochain.
     #[arg(long, short)]
     pub port: Option<u16>,
 
-    /// Provide a password on the command line instead of prompting for it on platforms
-    /// where a prompt isn't supported.
-    #[cfg(not(any(windows, unix)))]
-    pub password: String,
+    /// Provide a password on the command line instead of prompting for it.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to get the password.
+    ///
+    /// This is not recommended when using as a CLI flag because the password may stay in your
+    /// shell history. Use the interactive prompt instead if possible!
+    #[arg(long)]
+    pub password: Option<String>,
+
+    /// Whether to distribute the key on Holochain after generating it.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to confirm.
+    #[arg(long, short)]
+    pub distribute: Option<bool>,
 
     /// The directory to save the key in.
     ///
@@ -58,12 +68,16 @@ pub struct SignArgs {
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
 
-    /// Provide a password on the command line instead of prompting for it on platforms
-    /// where a prompt isn't supported.
-    #[cfg(not(any(windows, unix)))]
-    pub password: String,
+    /// Provide a password on the command line instead of prompting for it.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to get the password.
+    ///
+    /// This is not recommended when using as a CLI flag because the password may stay in your
+    /// shell history. Use the interactive prompt instead if possible!
+    #[arg(long)]
+    pub password: Option<String>,
 
-    /// The directory to save the key in.
+    /// The directory to find the signing key in.
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
@@ -108,6 +122,21 @@ pub struct DistributeArgs {
     /// Defaults to `default`.
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
+
+    /// Provide a password on the command line instead of prompting for it.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to get the password.
+    ///
+    /// This is not recommended when using as a CLI flag because the password may stay in your
+    /// shell history. Use the interactive prompt instead if possible!
+    #[arg(long)]
+    pub password: Option<String>,
+
+    /// The directory to find the verification key in.
+    ///
+    /// Defaults to `.config/checked` in your home directory.
+    #[arg(long, short)]
+    pub path: Option<PathBuf>,
 }
 
 #[derive(clap::Args)]
@@ -124,4 +153,10 @@ pub struct FetchArgs {
     /// Defaults to `default`.
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
+
+    /// The directory to find the signing key in.
+    ///
+    /// Defaults to `.config/checked` in your home directory.
+    #[arg(long, short)]
+    pub path: Option<PathBuf>,
 }

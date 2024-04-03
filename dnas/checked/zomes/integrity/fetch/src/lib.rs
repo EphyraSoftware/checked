@@ -18,5 +18,6 @@ pub enum EntryTypes {
 
 #[hdk_link_types]
 pub enum LinkTypes {
+    // TODO create links to make my own signatures discoverable in the UI
     AssetUrlToSignature,
 }

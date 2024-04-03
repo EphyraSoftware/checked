@@ -8,6 +8,7 @@ use checked_types::{DistributeVfKeyRequest, VerificationKeyType};
 use crate::cli::DistributeArgs;
 use crate::common::{get_store_dir, get_verification_key_path};
 use crate::hc_client::{get_authenticated_app_agent_client, maybe_handle_holochain_error};
+use crate::password::GetPassword;
 use crate::prelude::SignArgs;
 use crate::sign::sign;
 
@@ -57,10 +58,11 @@ const PROOF_WORDS: [&str; 40] = [
 pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     println!("Distributing key: {}", distribute_args.name);
 
-    let mut app_client = get_authenticated_app_agent_client(distribute_args.port).await?;
+    let mut app_client =
+        get_authenticated_app_agent_client(distribute_args.port, distribute_args.path.clone())
+            .await?;
 
-    // TODO path arg
-    let store_dir = get_store_dir(None)?;
+    let store_dir = get_store_dir(distribute_args.path.clone())?;
     let vk_path = get_verification_key_path(&store_dir, &distribute_args.name);
 
     let proof = generate_proof();
@@ -76,7 +78,8 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
 
     let sig_path = sign(SignArgs {
         name: distribute_args.name.clone(),
-        path: None,
+        password: Some(distribute_args.get_password()?),
+        path: distribute_args.path.clone(),
         file: tmp_file.path().to_path_buf(),
         output: None,
     })?;
@@ -99,7 +102,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
         )
         .await
         .map_err(|e| {
-            maybe_handle_holochain_error(&e);
+            maybe_handle_holochain_error(&e, distribute_args.path);
             anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e)
         })?;
 

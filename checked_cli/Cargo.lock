@@ -839,6 +839,7 @@ dependencies = [
  "rpassword 7.3.1",
  "serde",
  "serde_json",
+ "signing_keys_types",
  "tempfile",
  "tokio",
  "url 2.5.0",
@@ -6624,6 +6625,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 dependencies = [
  "rand_core 0.6.4",
+]
+
+[[package]]
+name = "signing_keys_types"
+version = "0.1.0"
+dependencies = [
+ "checked_types",
+ "chrono",
+ "hdk",
+ "serde",
 ]
 
 [[package]]

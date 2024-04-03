@@ -1,11 +1,12 @@
 use crate::cli::{DistributeArgs, GenerateArgs};
 use crate::common::{get_signing_key_path, get_store_dir, get_verification_key_path, open_file};
 use crate::distribute::distribute;
+use crate::password::GetPassword;
 use minisign::KeyPair;
 use std::io::Write;
 
 pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
-    let store_dir = get_store_dir(generate_args.path)?;
+    let store_dir = get_store_dir(generate_args.path.clone())?;
 
     // Signing key
     let sk_path = get_signing_key_path(&store_dir, &generate_args.name);
@@ -15,16 +16,13 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     let vk_path = get_verification_key_path(&store_dir, &generate_args.name);
     let mut vk_file = open_file(&vk_path)?;
 
-    #[cfg(not(any(windows, unix)))]
-    let password = generate_args.password;
-    #[cfg(any(windows, unix))]
-    let password = rpassword::prompt_password("New password: ")?;
+    let password = generate_args.get_password()?;
 
     let _pk = KeyPair::generate_and_write_encrypted_keypair(
         &mut vk_file,
         &mut sk_file,
         None,
-        Some(password),
+        Some(password.clone()),
     )?
     .pk;
 
@@ -39,12 +37,13 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
         "The public key was saved as {} - That one can be public.\n",
         vk_path.display()
     );
-    // println!("Files signed using this key can be verified with the following command:\n");
-    // println!("checked verify <file> -P {}", _pk.to_base64());
 
-    let should_distribute = dialoguer::Confirm::new()
-        .with_prompt("Would you like to distribute this key on Holochain?")
-        .interact()?;
+    let should_distribute = match generate_args.distribute {
+        Some(distribute) => distribute,
+        None => dialoguer::Confirm::new()
+            .with_prompt("Would you like to distribute this key on Holochain?")
+            .interact()?,
+    };
 
     if !should_distribute {
         return Ok(());
@@ -60,6 +59,8 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     distribute(DistributeArgs {
         port: admin_port,
         name: generate_args.name,
+        password: Some(password),
+        path: generate_args.path,
     })
     .await?;
 
