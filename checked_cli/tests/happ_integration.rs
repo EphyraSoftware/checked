@@ -57,9 +57,8 @@ async fn test_generate() -> anyhow::Result<()> {
         .call_fallible(&zome, "get_my_verification_key_distributions", ())
         .await?;
 
-    assert_eq!(keys.len(), 1);
-
-    println!("Keys: {:?}", keys);
+    assert_eq!(1, keys.len());
+    assert_eq!("test_generate", keys[0].verification_key_dist.name);
 
     Ok(())
 }
