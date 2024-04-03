@@ -13,6 +13,7 @@ async fn main() -> anyhow::Result<()> {
             sign(sign_args)?;
         }
         Commands::Verify(verify_args) => verify(verify_args)?,
+        Commands::Distribute(distribute_args) => distribute(distribute_args).await?,
         Commands::Fetch(fetch_args) => fetch(fetch_args).await?,
     }
 

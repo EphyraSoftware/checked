@@ -1,7 +1,7 @@
 use crate::common::get_store_dir;
 use holochain_client::{
     AdminWebsocket, AppAgentWebsocket, AppStatusFilter, AuthorizeSigningCredentialsPayload,
-    ClientAgentSigner, SigningCredentials,
+    ClientAgentSigner, ConductorApiError, SigningCredentials,
 };
 use holochain_conductor_api::CellInfo;
 use holochain_types::prelude::{AgentPubKey, CapSecret, CellId};
@@ -12,9 +12,11 @@ use std::io::Write;
 
 const DEFAULT_INSTALLED_APP_ID: &str = "checked";
 
-pub async fn get_authenticated_app_agent_client() -> anyhow::Result<AppAgentWebsocket> {
+pub async fn get_authenticated_app_agent_client(
+    admin_port: u16,
+) -> anyhow::Result<AppAgentWebsocket> {
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
-    let mut admin_client = AdminWebsocket::connect("localhost:45037").await?;
+    let mut admin_client = AdminWebsocket::connect(format!("localhost:{admin_port}")).await?;
 
     let mut signer = ClientAgentSigner::new();
     load_or_create_signing_credentials(&mut admin_client, &mut signer).await?;
@@ -27,6 +29,26 @@ pub async fn get_authenticated_app_agent_client() -> anyhow::Result<AppAgentWebs
         signer.into(),
     )
     .await
+}
+
+pub fn maybe_handle_holochain_error(conductor_api_error: &ConductorApiError) {
+    match conductor_api_error {
+        // TODO brittle, would be nice if the errors for some important failures were more specific.
+        ConductorApiError::SignZomeCallError(e) if e == "Provenance not found" => {
+            eprintln!("Saved credentials for Holochain appear invalid, removing them. Please re-run this command");
+            if let Ok(e) = get_credentials_path() {
+                if std::fs::remove_file(e).is_ok() {
+                    println!("Successfully removed credentials");
+                    return;
+                }
+            }
+
+            eprintln!("Failed to remove");
+        }
+        _ => {
+            // No special handling required
+        }
+    }
 }
 
 async fn find_or_create_app_interface(admin_client: &mut AdminWebsocket) -> anyhow::Result<u16> {

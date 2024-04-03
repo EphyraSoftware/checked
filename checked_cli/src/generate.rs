@@ -41,5 +41,13 @@ pub fn generate(generate_args: GenerateArgs) -> anyhow::Result<()> {
     // println!("Files signed using this key can be verified with the following command:\n");
     // println!("checked verify <file> -P {}", _pk.to_base64());
 
+    let distribute = dialoguer::Confirm::new()
+        .with_prompt("Would you like to distribute this key on Holochain?")
+        .interact()?;
+
+    if !distribute {
+        return Ok(());
+    }
+
     Ok(())
 }

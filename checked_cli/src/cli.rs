@@ -19,6 +19,9 @@ pub enum Commands {
     /// Verify a file
     Verify(VerifyArgs),
 
+    /// Distribute a verification key on Holochain
+    Distribute(DistributeArgs),
+
     /// Fetch an asset from a URL and check signatures for it
     Fetch(FetchArgs),
 }
@@ -91,9 +94,26 @@ pub struct VerifyArgs {
 }
 
 #[derive(clap::Args)]
+pub struct DistributeArgs {
+    /// The admin port for Holochain
+    #[arg(long, short)]
+    pub port: u16,
+
+    /// Name of the key to distribute.
+    ///
+    /// Defaults to `default`.
+    #[arg(long, short, default_value_t = String::from("default"))]
+    pub name: String,
+}
+
+#[derive(clap::Args)]
 pub struct FetchArgs {
-    #[arg()]
+    /// URL to fetch the asset from.
     pub url: String,
+
+    /// The admin port for Holochain
+    #[arg(long, short)]
+    pub port: u16,
 
     /// Name of the key to use for signing.
     ///

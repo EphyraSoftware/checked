@@ -8,6 +8,15 @@ pub enum VerificationKeyType {
     MiniSignEd25519,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct DistributeVfKeyRequest {
+    pub name: String,
+    pub verification_key: String,
+    pub key_type: VerificationKeyType,
+    pub proof: String,
+    pub proof_signature: Vec<u8>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PrepareFetchRequest {
     pub fetch_url: String,

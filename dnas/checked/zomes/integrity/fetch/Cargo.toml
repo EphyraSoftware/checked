@@ -12,4 +12,3 @@ hdi = { workspace = true }
 serde = { workspace = true }
 
 fetch_types = { workspace = true }
-

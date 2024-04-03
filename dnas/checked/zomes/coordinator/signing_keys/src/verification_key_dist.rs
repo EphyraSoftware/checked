@@ -3,15 +3,6 @@ use checked_types::*;
 use hdk::prelude::*;
 use signing_keys_integrity::prelude::*;
 
-#[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]
-pub struct DistributeVfKeyRequest {
-    pub name: String,
-    pub verification_key: String,
-    pub key_type: VerificationKeyType,
-    pub proof: String,
-    pub proof_signature: Vec<u8>,
-}
-
 #[hdk_extern]
 pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternResult<Record> {
     // The key will be checked by validation but we need to hash it here so we can link it, so ensure that is

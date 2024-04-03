@@ -455,6 +455,7 @@ dependencies = [
  "holochain_types",
  "indicatif",
  "minisign",
+ "rand 0.8.5",
  "reqwest 0.12.2",
  "rpassword",
  "serde",

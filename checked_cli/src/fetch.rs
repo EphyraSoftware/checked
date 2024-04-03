@@ -22,7 +22,7 @@ struct FetchState {
 }
 
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
-    let mut app_client = hc_client::get_authenticated_app_agent_client().await?;
+    let mut app_client = hc_client::get_authenticated_app_agent_client(fetch_args.port).await?;
 
     // TODO if this fails because the credentials are no longer valid then we need a recovery mechanism that isn't `rm ~/.checked/credentials.json`
     let response = app_client
