@@ -10,6 +10,7 @@ use signing_keys_types::VfKeyResponse;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use tokio::task::AbortHandle;
+use checked_types::AssetSignatureResponse;
 
 // Generate a signing keypair, distribute it on Holochain
 #[tokio::test(flavor = "multi_thread")]
@@ -108,8 +109,8 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
     let (addr, _fs_abort_handle) = start_sample_file_server().await;
     let url = format!("http://{}:{}/test.txt", addr.ip(), addr.port());
 
-    fetch(FetchArgs {
-        url,
+    let fetch_info = fetch(FetchArgs {
+        url: url.clone(),
         port: admin_port,
         name,
         output: Some(dir.as_ref().to_path_buf()),
@@ -120,7 +121,17 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
     })
     .await?;
 
-    // let zome = get_zome_handle(&conductor, "signing_keys");
+    assert!(fetch_info.signature_path.is_some());
+
+    let zome = get_zome_handle(&conductor, "fetch");
+
+    let signatures: Vec<AssetSignatureResponse> = conductor
+        .call_fallible(&zome, "get_my_asset_signatures", ())
+        .await?;
+
+    assert_eq!(1, signatures.len());
+    assert_eq!(url, signatures[0].fetch_url);
+    assert_eq!(std::fs::read(fetch_info.signature_path.unwrap())?, signatures[0].signature);
 
     Ok(())
 }

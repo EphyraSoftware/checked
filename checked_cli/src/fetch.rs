@@ -19,12 +19,16 @@ use tempfile::NamedTempFile;
 use url::Url;
 use crate::hc_client::maybe_handle_holochain_error;
 
+pub struct FetchInfo {
+    pub signature_path: Option<PathBuf>,
+}
+
 struct FetchState {
     asset_size: AtomicUsize,
     downloaded_size: AtomicUsize,
 }
 
-pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
+pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
     println!("Fetching from {}", fetch_url);
 
@@ -58,7 +62,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
         let allow = fetch_args.allow_no_signatures()?;
         if !allow {
-            return Ok(());
+            return Ok(FetchInfo { signature_path: None });
         }
     }
 
@@ -125,7 +129,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     let should_sign = fetch_args.sign_asset()?;
     if !should_sign {
-        return Ok(());
+        return Ok(FetchInfo { signature_path: None });
     }
 
     let signature_path = sign(SignArgs {
@@ -145,7 +149,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
             "create_asset_signature".into(),
             ExternIO::encode(CreateAssetSignature {
                 fetch_url: fetch_args.url.clone(),
-                signature: std::fs::read(signature_path)?,
+                signature: std::fs::read(&signature_path)?,
                 key_type: VerificationKeyType::MiniSignEd25519,
                 verification_key: std::fs::read_to_string(vk_path)?,
             })
@@ -156,7 +160,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     println!("Created signature!");
 
-    Ok(())
+    Ok(FetchInfo {
+        signature_path: Some(signature_path),
+    })
 }
 
 fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<PathBuf> {

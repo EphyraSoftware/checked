@@ -1,4 +1,4 @@
-use holochain_zome_types::prelude::AgentPubKey;
+use holochain_zome_types::prelude::{AgentPubKey, Timestamp, ActionHash};
 use serde::{Deserialize, Serialize};
 
 /// Supported key types for verification keys.
@@ -48,4 +48,19 @@ pub struct CreateAssetSignature {
     pub signature: Vec<u8>,
     pub key_type: VerificationKeyType,
     pub verification_key: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AssetSignatureResponse {
+    /// The URL that the asset was fetched from.
+    pub fetch_url: String,
+
+    /// The signature of the asset.
+    pub signature: Vec<u8>,
+
+    /// The address of the public key that signed this asset.
+    pub key_dist_address: ActionHash,
+
+    /// When the signature was published on Holochain.
+    pub created_at: Timestamp,
 }
