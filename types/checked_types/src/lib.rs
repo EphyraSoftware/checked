@@ -1,4 +1,4 @@
-use holochain_zome_types::prelude::{AgentPubKey, Timestamp, ActionHash};
+use holochain_zome_types::prelude::{ActionHash, AgentPubKey, Timestamp};
 use serde::{Deserialize, Serialize};
 
 /// Supported key types for verification keys.

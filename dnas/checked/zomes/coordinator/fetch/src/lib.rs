@@ -14,8 +14,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
 
     info!(
         "Fetching signatures for: {}, using as base: {:?}",
-        request.fetch_url,
-        asset_base
+        request.fetch_url, asset_base
     );
 
     // We're online anyway to do a download so go looking for new data.
@@ -126,26 +125,36 @@ pub fn create_asset_signature(
 
 #[hdk_extern]
 pub fn get_my_asset_signatures() -> ExternResult<Vec<AssetSignatureResponse>> {
-    let signatures = query(ChainQueryFilter::new().entry_type(UnitEntryTypes::AssetSignature.try_into()?).include_entries(true).ascending())?;
+    let signatures = query(
+        ChainQueryFilter::new()
+            .entry_type(UnitEntryTypes::AssetSignature.try_into()?)
+            .include_entries(true)
+            .ascending(),
+    )?;
 
-    signatures.into_iter().map(|sig| {
-        let (action, entry) = sig.into_inner();
+    signatures
+        .into_iter()
+        .map(|sig| {
+            let (action, entry) = sig.into_inner();
 
-        let entry = entry.into_option().ok_or_else(|| {
-            wasm_error!(WasmErrorInner::Guest("No entry found".to_string()))
-        })?;
+            let entry = entry
+                .into_option()
+                .ok_or_else(|| wasm_error!(WasmErrorInner::Guest("No entry found".to_string())))?;
 
-        let signature = AssetSignature::try_from(entry).map_err(|_| {
-            wasm_error!(WasmErrorInner::Guest("Failed to deserialize AssetSignature".to_string()))
-        })?;
+            let signature = AssetSignature::try_from(entry).map_err(|_| {
+                wasm_error!(WasmErrorInner::Guest(
+                    "Failed to deserialize AssetSignature".to_string()
+                ))
+            })?;
 
-        Ok(AssetSignatureResponse {
-            fetch_url: signature.fetch_url,
-            signature: signature.signature,
-            key_dist_address: signature.key_dist_address,
-            created_at: action.action().timestamp(),
+            Ok(AssetSignatureResponse {
+                fetch_url: signature.fetch_url,
+                signature: signature.signature,
+                key_dist_address: signature.key_dist_address,
+                created_at: action.action().timestamp(),
+            })
         })
-    }).collect::<ExternResult<_>>()
+        .collect::<ExternResult<_>>()
 }
 
 fn find_key_address<'a, K>(

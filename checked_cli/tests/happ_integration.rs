@@ -1,5 +1,6 @@
 use checked_cli::cli::{DistributeArgs, FetchArgs};
 use checked_cli::prelude::{distribute, fetch, generate, GenerateArgs};
+use checked_types::AssetSignatureResponse;
 use holochain::core::AgentPubKey;
 use holochain::sweettest::{SweetAgents, SweetConductor, SweetConductorHandle, SweetZome};
 use holochain_conductor_api::{AdminInterfaceConfig, InterfaceDriver};
@@ -10,7 +11,6 @@ use signing_keys_types::VfKeyResponse;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use tokio::task::AbortHandle;
-use checked_types::AssetSignatureResponse;
 
 // Generate a signing keypair, distribute it on Holochain
 #[tokio::test(flavor = "multi_thread")]
@@ -131,7 +131,10 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
 
     assert_eq!(1, signatures.len());
     assert_eq!(url, signatures[0].fetch_url);
-    assert_eq!(std::fs::read(fetch_info.signature_path.unwrap())?, signatures[0].signature);
+    assert_eq!(
+        std::fs::read(fetch_info.signature_path.unwrap())?,
+        signatures[0].signature
+    );
 
     Ok(())
 }

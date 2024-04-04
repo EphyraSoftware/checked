@@ -1,6 +1,7 @@
 use crate::cli::FetchArgs;
 use crate::common::{get_store_dir, get_verification_key_path};
 use crate::hc_client;
+use crate::hc_client::maybe_handle_holochain_error;
 use crate::interactive::GetPassword;
 use crate::prelude::SignArgs;
 use crate::sign::sign;
@@ -17,7 +18,6 @@ use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use url::Url;
-use crate::hc_client::maybe_handle_holochain_error;
 
 pub struct FetchInfo {
     pub signature_path: Option<PathBuf>,
@@ -62,7 +62,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
         let allow = fetch_args.allow_no_signatures()?;
         if !allow {
-            return Ok(FetchInfo { signature_path: None });
+            return Ok(FetchInfo {
+                signature_path: None,
+            });
         }
     }
 
@@ -129,7 +131,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let should_sign = fetch_args.sign_asset()?;
     if !should_sign {
-        return Ok(FetchInfo { signature_path: None });
+        return Ok(FetchInfo {
+            signature_path: None,
+        });
     }
 
     let signature_path = sign(SignArgs {
