@@ -2,7 +2,7 @@ use crate::cli::SignArgs;
 use crate::common::{
     get_signing_key_path, get_store_dir, get_verification_key_path, open_file, unix_timestamp,
 };
-use crate::password::GetPassword;
+use crate::interactive::GetPassword;
 use minisign::{PublicKey, SecretKey};
 use std::io::{BufReader, Write};
 use std::path::PathBuf;

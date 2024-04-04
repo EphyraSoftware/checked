@@ -1,6 +1,7 @@
 use crate::cli::FetchArgs;
 use crate::common::{get_store_dir, get_verification_key_path};
 use crate::hc_client;
+use crate::interactive::GetPassword;
 use crate::prelude::SignArgs;
 use crate::sign::sign;
 use anyhow::Context;
@@ -15,6 +16,8 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
+use url::Url;
+use crate::hc_client::maybe_handle_holochain_error;
 
 struct FetchState {
     asset_size: AtomicUsize,
@@ -22,8 +25,14 @@ struct FetchState {
 }
 
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
+    let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
+    println!("Fetching from {}", fetch_url);
+
+    let output_path = get_output_path(&fetch_args, &fetch_url)?;
+
     let mut app_client =
-        hc_client::get_authenticated_app_agent_client(fetch_args.port, fetch_args.path).await?;
+        hc_client::get_authenticated_app_agent_client(fetch_args.port, fetch_args.path.clone())
+            .await?;
 
     // TODO if this fails because the credentials are no longer valid then we need a recovery mechanism that isn't `rm ~/.checked/credentials.json`
     let response = app_client
@@ -37,26 +46,23 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
             .unwrap(),
         )
         .await
-        .map_err(|e| anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e))?;
+        .map_err(|e| {
+            maybe_handle_holochain_error(&e, fetch_args.path.clone());
+            anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e)
+        })?;
 
     let response: Vec<FetchCheckSignature> = response.decode()?;
 
     if response.is_empty() {
         println!("No signatures found for this asset. This is normal but please consider asking the author to create a signature!");
 
-        let decision = dialoguer::Confirm::new()
-            .with_prompt("Download anyway?")
-            .interact()?;
-
-        if !decision {
+        let allow = fetch_args.allow_no_signatures()?;
+        if !allow {
             return Ok(());
         }
     }
 
     println!("Found {} signatures to check against", response.len());
-
-    let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
-    println!("Fetching from {}", fetch_url);
 
     let mut tmp_file = tempfile::Builder::new()
         .prefix("checked-")
@@ -115,31 +121,22 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
 
     // TODO validate the signatures here and report
 
-    let file = fetch_url
-        .path_segments()
-        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?
-        .last()
-        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
-    std::fs::rename(path.clone(), file)?;
+    std::fs::rename(path.clone(), &output_path)?;
 
-    let decision = dialoguer::Confirm::new()
-        .with_prompt("Sign this asset?")
-        .interact()?;
-
-    if !decision {
+    let should_sign = fetch_args.sign_asset()?;
+    if !should_sign {
         return Ok(());
     }
 
     let signature_path = sign(SignArgs {
         name: fetch_args.name.clone(),
-        password: None,
-        path: None,
-        file: PathBuf::from(file),
+        password: Some(fetch_args.get_password()?),
+        path: fetch_args.path.clone(),
+        file: output_path,
         output: None,
     })?;
 
-    // TODO dir as arg
-    let store_dir = get_store_dir(None)?;
+    let store_dir = get_store_dir(fetch_args.path)?;
     let vk_path = get_verification_key_path(&store_dir, &fetch_args.name);
     app_client
         .call_zome(
@@ -160,6 +157,35 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<()> {
     println!("Created signature!");
 
     Ok(())
+}
+
+fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<PathBuf> {
+    let guessed_file_name = fetch_url
+        .path_segments()
+        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?
+        .last()
+        .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
+
+    let output_path = match &fetch_args.output {
+        Some(output) => {
+            if output.is_dir() {
+                output.join(guessed_file_name)
+            } else {
+                let mut out = output.clone();
+                out.pop();
+                std::fs::create_dir_all(&out)?;
+
+                output.clone()
+            }
+        }
+        None => {
+            let mut out = std::env::current_dir()?;
+            out.push(guessed_file_name);
+            out
+        }
+    };
+
+    Ok(output_path)
 }
 
 /// Download from `fetch_url` into `writer` and update `state` with the download progress.

@@ -843,6 +843,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "url 2.5.0",
+ "warp",
 ]
 
 [[package]]

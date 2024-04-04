@@ -1,9 +1,9 @@
-use std::fs::File;
-use std::io::Write;
 use checked_cli::cli::VerifyArgs;
 use checked_cli::prelude::{generate, GenerateArgs, SignArgs};
 use checked_cli::sign::sign;
 use checked_cli::verify::verify;
+use std::fs::File;
+use std::io::Write;
 
 // Generate a signing keypair, do not distribute
 #[tokio::test(flavor = "multi_thread")]
@@ -40,7 +40,11 @@ async fn sign_file() -> anyhow::Result<()> {
     .await?;
 
     let test_file = dir.path().join("test.txt");
-    File::options().write(true).create_new(true).open(&test_file)?.write_all(b"test")?;
+    File::options()
+        .write(true)
+        .create_new(true)
+        .open(&test_file)?
+        .write_all(b"test")?;
 
     let sig_path = sign(SignArgs {
         name: name.clone(),
@@ -51,7 +55,10 @@ async fn sign_file() -> anyhow::Result<()> {
     })?;
 
     assert!(sig_path.exists());
-    assert_eq!(test_file.to_str().unwrap().to_string() + ".minisig", sig_path.to_str().unwrap());
+    assert_eq!(
+        test_file.to_str().unwrap().to_string() + ".minisig",
+        sig_path.to_str().unwrap()
+    );
 
     Ok(())
 }
@@ -68,10 +75,14 @@ async fn verify_signed_file() -> anyhow::Result<()> {
         distribute: Some(false),
         path: Some(dir.as_ref().to_path_buf()),
     })
-        .await?;
+    .await?;
 
     let test_file = dir.path().join("test.txt");
-    File::options().write(true).create_new(true).open(&test_file)?.write_all(b"test")?;
+    File::options()
+        .write(true)
+        .create_new(true)
+        .open(&test_file)?
+        .write_all(b"test")?;
 
     sign(SignArgs {
         name: name.clone(),

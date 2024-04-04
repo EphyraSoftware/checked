@@ -154,9 +154,43 @@ pub struct FetchArgs {
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
 
+    /// The directory or file to save the fetched asset to.
+    ///
+    /// When a directory is provided:
+    /// - The directory must exist
+    /// - The filename is taken from the last component in the fetch URL's path.
+    ///
+    /// When a file is provided:
+    /// - The directory containing the file, and any required parent directories, will be created.
+    ///
+    /// Defaults to the directory that the CLI is running in.
+    #[arg(long, short)]
+    pub output: Option<PathBuf>,
+
+    /// Provide a password on the command line instead of prompting for it.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to get the password.
+    ///
+    /// This is not recommended when using as a CLI flag because the password may stay in your
+    /// shell history. Use the interactive prompt instead if possible!
+    #[arg(long)]
+    pub password: Option<String>,
+
     /// The directory to find the signing key in.
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
     pub path: Option<PathBuf>,
+
+    /// Continue if no existing signatures are found.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to confirm.
+    #[arg(long, short)]
+    pub allow_no_signatures: Option<bool>,
+
+    /// Sign the asset after downloading and publish the signature on Holochain.
+    ///
+    /// If this flag is not provided, then an interactive prompt is used to confirm.
+    #[arg(long, short)]
+    pub sign: Option<bool>,
 }

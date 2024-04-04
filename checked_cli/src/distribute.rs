@@ -8,7 +8,7 @@ use checked_types::{DistributeVfKeyRequest, VerificationKeyType};
 use crate::cli::DistributeArgs;
 use crate::common::{get_store_dir, get_verification_key_path};
 use crate::hc_client::{get_authenticated_app_agent_client, maybe_handle_holochain_error};
-use crate::password::GetPassword;
+use crate::interactive::GetPassword;
 use crate::prelude::SignArgs;
 use crate::sign::sign;
 

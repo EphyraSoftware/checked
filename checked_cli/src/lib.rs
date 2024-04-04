@@ -5,7 +5,7 @@ mod distribute;
 mod fetch;
 pub mod generate;
 pub(crate) mod hc_client;
-mod password;
+mod interactive;
 pub mod sign;
 pub mod verify;
 

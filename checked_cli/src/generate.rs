@@ -1,7 +1,7 @@
 use crate::cli::{DistributeArgs, GenerateArgs};
 use crate::common::{get_signing_key_path, get_store_dir, get_verification_key_path, open_file};
 use crate::distribute::distribute;
-use crate::password::GetPassword;
+use crate::interactive::GetPassword;
 use minisign::KeyPair;
 use std::io::Write;
 use std::path::PathBuf;
