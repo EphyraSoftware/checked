@@ -24,7 +24,19 @@ jobs:
         with:
           name: holochain-ci
 
-      - name: Install and test
+      - name: Install NPM dependencies
         run: |
-          nix develop --command bash -c "npm i && npm t"
+          nix develop --command npm i
 
+      - name: Run Rust tests
+        run: |
+          nix develop --command cargo test
+
+      - name: Run Tryorama tests
+        run: |
+          nix develop --command npm test
+
+      - name: Run CLI tests
+        run: |
+          nix develop --command npm run test:cli
+      
