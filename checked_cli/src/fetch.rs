@@ -7,12 +7,16 @@ use crate::prelude::SignArgs;
 use crate::sign::sign;
 use anyhow::Context;
 use checked_types::{
-    CreateAssetSignature, FetchCheckSignature, PrepareFetchRequest, VerificationKeyType,
+    CreateAssetSignature, FetchCheckSignature, FetchCheckSignatureReason, PrepareFetchRequest,
+    VerificationKeyType,
 };
 use holochain_client::ZomeCallTarget;
-use holochain_types::prelude::ExternIO;
+use holochain_types::prelude::{ActionHash, AgentPubKey, ExternIO};
 use indicatif::{ProgressFinish, ProgressStyle};
-use std::io::{BufWriter, Write};
+use itertools::Itertools;
+use minisign::PublicKeyBox;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
@@ -125,7 +129,8 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     println!("Downloaded to {:?}", path);
 
-    // TODO validate the signatures here and report
+    let reports = check_signatures(path.clone(), response)?;
+    show_report(&reports);
 
     std::fs::rename(path.clone(), &output_path)?;
 
@@ -153,7 +158,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
             "create_asset_signature".into(),
             ExternIO::encode(CreateAssetSignature {
                 fetch_url: fetch_args.url.clone(),
-                signature: std::fs::read(&signature_path)?,
+                signature: std::fs::read_to_string(&signature_path)?,
                 key_type: VerificationKeyType::MiniSignEd25519,
                 verification_key: std::fs::read_to_string(vk_path)?,
             })
@@ -167,6 +172,148 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     Ok(FetchInfo {
         signature_path: Some(signature_path),
     })
+}
+
+pub struct CheckedSignature {
+    pub key_dist_address: ActionHash,
+    pub author: AgentPubKey,
+}
+
+pub struct SignatureCheckReport {
+    reason: FetchCheckSignatureReason,
+    passed_signatures: Vec<CheckedSignature>,
+    failed_signatures: Vec<CheckedSignature>,
+}
+
+pub fn check_signatures(
+    check_file: PathBuf,
+    signatures: Vec<FetchCheckSignature>,
+) -> anyhow::Result<Vec<SignatureCheckReport>> {
+    let check_file = File::options().read(true).open(check_file)?;
+    let mut check_file_reader = BufReader::new(check_file);
+
+    let mut signature_reports = Vec::new();
+    for (reason, sigs) in signatures.iter().group_by(|s| s.reason.clone()).into_iter() {
+        let mut group_report = SignatureCheckReport {
+            reason,
+            passed_signatures: vec![],
+            failed_signatures: vec![],
+        };
+        for sig in sigs {
+            println!("Checking signature from {:?}... ", sig.author);
+            match check_one_signature(&mut check_file_reader, sig) {
+                Ok(true) => group_report.passed_signatures.push(CheckedSignature {
+                    key_dist_address: sig.key_dist_address.clone(),
+                    author: sig.author.clone(),
+                }),
+                Ok(false) => group_report.failed_signatures.push(CheckedSignature {
+                    key_dist_address: sig.key_dist_address.clone(),
+                    author: sig.author.clone(),
+                }),
+                Err(e) => {
+                    println!("Error during verification: {:?}", e);
+                    group_report.failed_signatures.push(CheckedSignature {
+                        key_dist_address: sig.key_dist_address.clone(),
+                        author: sig.author.clone(),
+                    })
+                }
+            }
+            check_file_reader.seek(SeekFrom::Start(0))?;
+        }
+        signature_reports.push(group_report);
+    }
+
+    Ok(signature_reports)
+}
+
+fn check_one_signature(
+    check_file_reader: &mut BufReader<File>,
+    sig: &FetchCheckSignature,
+) -> anyhow::Result<bool> {
+    match sig.key_type {
+        VerificationKeyType::MiniSignEd25519 => {
+            let vf_key = PublicKeyBox::from_string(&sig.verification_key)?;
+            let sig = minisign::SignatureBox::from_string(&sig.signature)?;
+
+            match minisign::verify(&vf_key.into(), &sig, check_file_reader, true, false, false) {
+                Ok(()) => Ok(true),
+                Err(_) => Ok(false),
+            }
+        }
+    }
+}
+
+pub fn show_report(report: &[SignatureCheckReport]) {
+    println!("Looking for historical signatures:");
+    let maybe_historical_report = report
+        .iter()
+        .find(|r| r.reason == FetchCheckSignatureReason::RandomHistorical);
+    if let Some(historical_report) = maybe_historical_report {
+        if !historical_report.passed_signatures.is_empty()
+            && historical_report.failed_signatures.is_empty()
+        {
+            println!("{} historical signature{} passed verification. This means that you are likely to have the same asset that was originally published.", historical_report.passed_signatures.len(), if historical_report.passed_signatures.len() == 1 { "" } else { "s" });
+        } else if historical_report.passed_signatures.is_empty()
+            && !historical_report.failed_signatures.is_empty()
+        {
+            println!("{} historical signature{} failed verification. This means that you may not have the same asset that was originally published.", historical_report.failed_signatures.len(), if historical_report.failed_signatures.len() == 1 { "" } else { "s" });
+        } else {
+            println!("{}/{} historical signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.", historical_report.passed_signatures.len(), historical_report.passed_signatures.len() + historical_report.failed_signatures.len());
+        }
+    } else {
+        println!("No historical signatures were found.");
+    }
+
+    println!("\nLooking for signatures from pinned keys:");
+    let maybe_pinned_report = report
+        .iter()
+        .find(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_)));
+    if let Some(pinned_report) = maybe_pinned_report {
+        for checked_sig in &pinned_report.passed_signatures {
+            println!(
+                "Signature from author {:?} with key {:?}: ✅",
+                checked_sig.author, checked_sig.key_dist_address
+            );
+        }
+        for checked_sig in &pinned_report.failed_signatures {
+            println!(
+                "Signature from author {:?} with key {:?}: ❌",
+                checked_sig.author, checked_sig.key_dist_address
+            );
+        }
+
+        if !pinned_report.passed_signatures.is_empty() && pinned_report.failed_signatures.is_empty()
+        {
+            println!("{} pinned signature{} passed verification. This means that the asset you have fetched is likely to be the same as other pinned signatories are seeing.", pinned_report.passed_signatures.len(), if pinned_report.passed_signatures.len() == 1 { "" } else { "s" });
+        } else if pinned_report.passed_signatures.is_empty()
+            && !pinned_report.failed_signatures.is_empty()
+        {
+            println!("{} pinned signature{} failed verification. This means that the asset you have fetched is likely not the same as other pinned signatories are seeing.", pinned_report.failed_signatures.len(), if pinned_report.failed_signatures.len() == 1 { "" } else { "s" });
+        } else {
+            println!("{}/{} pinned signatures failed verification. Please ensure that your key collections only contain keys from signatories you trust. If you are happy with your pinned keys then consider contacting the author to see if you have received different assets.", pinned_report.passed_signatures.len(), pinned_report.passed_signatures.len() + pinned_report.failed_signatures.len());
+        }
+    } else {
+        println!("No pinned signatures were found.");
+    }
+
+    println!("\nLooking for recent signatures:");
+    let maybe_recent_report = report
+        .iter()
+        .find(|r| r.reason == FetchCheckSignatureReason::RandomRecent);
+    if let Some(recent_report) = maybe_recent_report {
+        if !recent_report.passed_signatures.is_empty() && recent_report.failed_signatures.is_empty()
+        {
+            println!("{} recent signature{} passed verification. This means that the asset you have fetched is likely to be the same as the one that others have been getting recently.", recent_report.passed_signatures.len(), if recent_report.passed_signatures.len() == 1 { "" } else { "s" });
+        } else if recent_report.passed_signatures.is_empty()
+            && !recent_report.failed_signatures.is_empty()
+        {
+            println!("{} recent signature{} failed verification. This means that the asset you have fetched is likely not the same as the one that others have been getting recently.", recent_report.failed_signatures.len(), if recent_report.failed_signatures.len() == 1 { "" } else { "s" });
+        } else {
+            println!("{}/{} recent signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.", recent_report.passed_signatures.len(), recent_report.passed_signatures.len() + recent_report.failed_signatures.len());
+        }
+    } else {
+        println!("No recent signatures were found.");
+    }
 }
 
 fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<PathBuf> {

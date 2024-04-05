@@ -24,6 +24,7 @@ ed25519-dalek = "2.1.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8.5"
+itertools = "0.12.1"
 
 [target.'cfg(any(windows, unix))'.dependencies]
 dirs = "5.0.1"

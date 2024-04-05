@@ -22,14 +22,13 @@ pub struct PrepareFetchRequest {
     pub fetch_url: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct FetchCheckSignaturePinned {
-    pub author: AgentPubKey,
     pub key_collection: String,
     pub key_name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum FetchCheckSignatureReason {
     RandomRecent,
     RandomHistorical,
@@ -38,14 +37,18 @@ pub enum FetchCheckSignatureReason {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FetchCheckSignature {
-    pub signature: Vec<u8>,
+    pub signature: String,
+    pub key_type: VerificationKeyType,
+    pub verification_key: String,
+    pub author: AgentPubKey,
+    pub key_dist_address: ActionHash,
     pub reason: FetchCheckSignatureReason,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateAssetSignature {
     pub fetch_url: String,
-    pub signature: Vec<u8>,
+    pub signature: String,
     pub key_type: VerificationKeyType,
     pub verification_key: String,
 }
@@ -56,7 +59,7 @@ pub struct AssetSignatureResponse {
     pub fetch_url: String,
 
     /// The signature of the asset.
-    pub signature: Vec<u8>,
+    pub signature: String,
 
     /// The address of the public key that signed this asset.
     pub key_dist_address: ActionHash,

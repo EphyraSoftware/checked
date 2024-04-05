@@ -1,5 +1,5 @@
 import { CallableCell } from "@holochain/tryorama";
-import { AgentPubKey } from "@holochain/client";
+import { ActionHash, AgentPubKey } from "@holochain/client";
 
 const utf8Encode = new TextEncoder();
 
@@ -8,7 +8,6 @@ export interface PrepareFetchRequest {
 }
 
 export interface FetchCheckSignaturePinned {
-  author: AgentPubKey;
   key_collection: string;
   key_name: string;
 }
@@ -20,12 +19,16 @@ export type FetchCheckSignatureReason =
 
 export interface FetchCheckSignature {
   signature: Uint8Array;
+  key_type: { MiniSignEd25519: null };
+  verification_key: string;
+  author: AgentPubKey;
+  key_dist_address: ActionHash;
   reason: FetchCheckSignatureReason;
 }
 
 export interface CreateAssetSignature {
   fetch_url: string;
-  signature: number[];
+  signature: string;
   key_type: { MiniSignEd25519: null };
   verification_key: string;
 }
@@ -97,23 +100,19 @@ zvqpLC4ZziJ5Z8DRtugyjkDn/oHtKu6o71acc0H9dnCmpJVdYsyXxVcvKCCUSNTe7dQDm3Dc7LGvsgYX
 // Primary signature for `sampleFetchAsset`
 export const sampleFetchAssetSignature = () => {
   // Similar with the signature, this must be EXACT. Removing whitespace is permitted but extra whitespace is not.
-  return Array.from(
-    utf8Encode.encode(`untrusted comment: signature from rsign secret key
+  return `untrusted comment: signature from rsign secret key
 RUTxWagDsFvtt7zP24HuGOxNlWk93OYpP9dJJ3k6y+ZEQ7Ym56Loy5/KusNLnWHi0PCOB5ore+kK+wfImf+ZwFewvLuBPE3tYAU=
 trusted comment: timestamp:1711592494\tfile:sample-asset.txt\tprehashed
 TlTxfjqY85HlrHFPjOgCmhFIKfH5Jz2MoE+zJMju9iLJ150Zdidzm3ucRsk4wU3B/OEifaL6clxmJGSWZ3bcAg==
-`),
-  );
+`;
 };
 
 // Alternate signature that will match `sampleFetchAsset`
 export const sampleFetchOtherAssetSignature = () => {
   // Similar with the signature, this must be EXACT. Removing whitespace is permitted but extra whitespace is not.
-  return Array.from(
-    utf8Encode.encode(`untrusted comment: signature from rsign secret key
+  return `untrusted comment: signature from rsign secret key
 RUQWJLAztSy29pIrQ81/cjlDxoU4docg3ox7hU241qV4G4IApnBMBLuk6mkrWWk4eQPF1IdVkL78y0yLepHpXerf4aJzuWIPPg0=
 trusted comment: timestamp:1711757915\tfile:sample-asset.txt\tprehashed
 nmLg2TZIzWELS+DY87/dd/SFzhqrE6LCww5+prCeoa4aNJVKeNLAwNcj3NBF9PmRcXMWb6Adw1UL2MUvL+NzBw==
-`),
-  );
+`;
 };

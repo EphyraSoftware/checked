@@ -181,6 +181,11 @@ fn pick_signatures(
     possible_signatures: Vec<Record>,
     key_collections: Vec<KeyCollectionWithKeys>,
 ) -> ExternResult<Vec<FetchCheckSignature>> {
+    info!(
+        "Selecting from {} possible signatures",
+        possible_signatures.len()
+    );
+
     let mut possible_signatures: Vec<(Action, AssetSignature)> = possible_signatures
         .into_iter()
         .filter_map(|record| {
@@ -216,8 +221,11 @@ fn pick_signatures(
             if let Some((action, sig)) = matched_signature {
                 picked_signatures.push(FetchCheckSignature {
                     signature: sig.signature.clone(),
+                    key_type: key.verification_key_dist.key_type,
+                    verification_key: key.verification_key_dist.verification_key,
+                    author: action.author().clone(),
+                    key_dist_address: sig.key_dist_address.clone(),
                     reason: FetchCheckSignatureReason::Pinned(FetchCheckSignaturePinned {
-                        author: action.author().clone(),
                         key_collection: key_collection.name.clone(),
                         key_name: key.verification_key_dist.name.clone(),
                     }),
@@ -235,7 +243,10 @@ fn pick_signatures(
 
     possible_signatures.sort_by(|(a, _), (b, _)| a.timestamp().cmp(&b.timestamp()));
 
-    picked_signatures.extend(select_early_signatures(&possible_signatures));
+    picked_signatures.extend(select_historical_signatures(
+        &possible_signatures,
+        get_vf_key_dist,
+    ));
 
     // Drop signatures that we've already picked from the possible set.
     possible_signatures.retain(|(_, asset_signature)| {
@@ -244,7 +255,11 @@ fn pick_signatures(
             .any(|p| p.signature == asset_signature.signature)
     });
 
-    picked_signatures.extend(select_recent_signatures(sys_time()?, &possible_signatures)?);
+    picked_signatures.extend(select_recent_signatures(
+        sys_time()?,
+        &possible_signatures,
+        get_vf_key_dist,
+    )?);
 
     Ok(picked_signatures)
 }
@@ -255,8 +270,9 @@ fn pick_signatures(
 /// This function assumes that the input is sorted by the [Action] timestamp.
 ///
 /// The reason on the [FetchCheckSignature] will be [FetchCheckSignatureReason::RandomHistorical].
-fn select_early_signatures(
+fn select_historical_signatures(
     possible_signatures: &[(Action, AssetSignature)],
+    fetcher: VfKeyDistFetcher,
 ) -> Vec<FetchCheckSignature> {
     let earliest = match possible_signatures.first().map(|(a, _)| a.timestamp()) {
         Some(earliest) => earliest,
@@ -276,15 +292,34 @@ fn select_early_signatures(
         Some(x) => x,
     };
 
+    info!(
+        "Selecting up to 5 signatures randomly from {} possible historical signatures",
+        take_many
+    );
+
     let mut rng = &mut thread_rng();
     possible_signatures
         .iter()
         .take(take_many)
         .choose_multiple(&mut rng, 5)
         .iter()
-        .map(|(_, sig)| FetchCheckSignature {
-            signature: sig.signature.clone(),
-            reason: FetchCheckSignatureReason::RandomHistorical,
+        .filter_map(|(action, sig)| {
+            match fetcher(&sig.key_dist_address) {
+                Ok(Some(vf_key_dist)) => {
+                    Some(FetchCheckSignature {
+                        signature: sig.signature.clone(),
+                        key_type: vf_key_dist.verification_key_dist.key_type,
+                        verification_key: vf_key_dist.verification_key_dist.verification_key,
+                        author: action.author().clone(),
+                        key_dist_address: sig.key_dist_address.clone(),
+                        reason: FetchCheckSignatureReason::RandomHistorical,
+                    })
+                },
+                _ => {
+                    warn!("Discarding possible signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+                    None
+                },
+            }
         })
         .collect()
 }
@@ -298,6 +333,7 @@ fn select_early_signatures(
 fn select_recent_signatures(
     current_time: Timestamp,
     possible_signatures: &[(Action, AssetSignature)],
+    fetcher: VfKeyDistFetcher,
 ) -> ExternResult<Vec<FetchCheckSignature>> {
     let take_after = current_time
         .sub(Duration::from_secs(60 * 60 * 24 * 7))
@@ -316,15 +352,30 @@ fn select_recent_signatures(
 
     let mut rng = &mut thread_rng();
 
+    info!(
+        "Selecting up to 5 signatures randomly from {} possible recent signatures",
+        take_many
+    );
+
     Ok(possible_signatures
         .iter()
         .rev()
         .take(take_many)
         .choose_multiple(&mut rng, 5)
         .iter()
-        .map(|(_, sig)| FetchCheckSignature {
-            signature: sig.signature.clone(),
-            reason: FetchCheckSignatureReason::RandomRecent,
+        .filter_map(|(action, sig)| match fetcher(&sig.key_dist_address) {
+            Ok(Some(vf_key_dist)) => Some(FetchCheckSignature {
+                signature: sig.signature.clone(),
+                key_type: vf_key_dist.verification_key_dist.key_type,
+                verification_key: vf_key_dist.verification_key_dist.verification_key,
+                author: action.author().clone(),
+                key_dist_address: sig.key_dist_address.clone(),
+                reason: FetchCheckSignatureReason::RandomRecent,
+            }),
+            _ => {
+                warn!("Discarding possible signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+                None
+            },
         })
         .collect())
 }
@@ -339,6 +390,33 @@ fn make_asset_url_address(asset_url: &str) -> ExternResult<ExternalHash> {
     let mut hash = blake2b_256(url.as_str().as_bytes());
     hash.extend_from_slice(&[0, 0, 0, 0]);
     Ok(ExternalHash::from_raw_36(hash))
+}
+
+type VfKeyDistFetcher = fn(&ActionHash) -> ExternResult<Option<VfKeyResponse>>;
+
+fn get_vf_key_dist(vf_key_dist_address: &ActionHash) -> ExternResult<Option<VfKeyResponse>> {
+    let response = call(
+        CallTargetCell::Local,
+        "signing_keys".to_string(),
+        "get_verification_key_dist".into(),
+        None,
+        vf_key_dist_address.clone(),
+    )?;
+
+    match response {
+        ZomeCallResponse::Ok(response) => {
+            let response: Option<VfKeyResponse> = response.decode().map_err(|e| {
+                wasm_error!(WasmErrorInner::Guest(format!(
+                    "Failed to decode get_verification_key_dist response: {:?}",
+                    e
+                )))
+            })?;
+            Ok(response)
+        }
+        _ => Err(wasm_error!(WasmErrorInner::Guest(
+            "Unexpected response from get_verification_key_dist".to_string()
+        ))),
+    }
 }
 
 struct KeyConvertible<T>(Option<T>);
@@ -359,18 +437,20 @@ impl From<&str> for KeyConvertible<minisign_verify::PublicKey> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{select_early_signatures, select_recent_signatures};
+    use crate::{select_historical_signatures, select_recent_signatures};
+    use checked_types::VerificationKeyType;
     use fetch_types::AssetSignature;
     use hdk::prelude::{
         Action, ActionHash, AgentPubKey, AppEntryDef, Create, EntryHash, EntryRateWeight,
         EntryType, EntryVisibility, Timestamp,
     };
+    use signing_keys_types::{VerificationKeyDistResponse, VfKeyResponse};
     use std::ops::Sub;
     use std::time::Duration;
 
     #[test]
     fn select_early_signatures_empty() {
-        let picked = select_early_signatures(&[]);
+        let picked = select_historical_signatures(&[], test_fetcher);
         assert_eq!(0, picked.len());
     }
 
@@ -391,14 +471,15 @@ mod tests {
             (
                 a,
                 AssetSignature {
-                    signature: vec![idx as u8],
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
                     key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
                 },
             )
         })
         .collect::<Vec<_>>();
 
-        let picked = select_early_signatures(&possible_signatures);
+        let picked = select_historical_signatures(&possible_signatures, test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -425,14 +506,15 @@ mod tests {
             (
                 a,
                 AssetSignature {
-                    signature: vec![idx as u8],
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
                     key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
                 },
             )
         })
         .collect::<Vec<_>>();
 
-        let picked = select_early_signatures(&possible_signatures);
+        let picked = select_historical_signatures(&possible_signatures, test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -445,7 +527,7 @@ mod tests {
 
     #[test]
     fn select_recent_signatures_empty() {
-        let picked = select_recent_signatures(current_time(), &[]).unwrap();
+        let picked = select_recent_signatures(current_time(), &[], test_fetcher).unwrap();
         assert_eq!(0, picked.len());
     }
 
@@ -466,14 +548,16 @@ mod tests {
             (
                 a,
                 AssetSignature {
-                    signature: vec![idx as u8],
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
                     key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
                 },
             )
         })
         .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+        let picked =
+            select_recent_signatures(current_time(), &possible_signatures, test_fetcher).unwrap();
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -498,14 +582,16 @@ mod tests {
             (
                 a,
                 AssetSignature {
-                    signature: vec![idx as u8],
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
                     key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
                 },
             )
         })
         .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+        let picked =
+            select_recent_signatures(current_time(), &possible_signatures, test_fetcher).unwrap();
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -528,14 +614,16 @@ mod tests {
                 (
                     a,
                     AssetSignature {
-                        signature: vec![idx as u8],
+                        fetch_url: "http://example.com".to_string(),
+                        signature: String::from_utf8(vec![idx as u8]).unwrap(),
                         key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
                     },
                 )
             })
             .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(current_time(), &possible_signatures).unwrap();
+        let picked =
+            select_recent_signatures(current_time(), &possible_signatures, test_fetcher).unwrap();
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -562,5 +650,21 @@ mod tests {
             entry_hash: EntryHash::from_raw_36(vec![0; 36]),
             weight: EntryRateWeight::default(),
         })
+    }
+
+    fn test_fetcher(_: &ActionHash) -> crate::ExternResult<Option<crate::VfKeyResponse>> {
+        Ok(Some(VfKeyResponse {
+            verification_key_dist: VerificationKeyDistResponse {
+                verification_key: "test key".to_string(),
+                key_type: VerificationKeyType::MiniSignEd25519,
+                name: "test".to_string(),
+                expires_at: None,
+                marks: vec![],
+            },
+            key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+            reference_count: 0,
+            author: AgentPubKey::from_raw_36(vec![0; 36]),
+            created_at: Timestamp(0),
+        }))
     }
 }

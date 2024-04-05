@@ -32,6 +32,21 @@ pub fn distribute_verification_key(request: DistributeVfKeyRequest) -> ExternRes
 }
 
 #[hdk_extern]
+pub fn get_verification_key_dist(
+    vf_key_dist_address: ActionHash,
+) -> ExternResult<Option<VfKeyResponse>> {
+    let record = get(vf_key_dist_address, GetOptions::network())?;
+    match record {
+        None => Ok(None),
+        Some(r) => {
+            let r = Ok(Some(build_vf_key_dist_response(r)?));
+            info!("Returning VerificationKeyDist: {:?}", r);
+            r
+        }
+    }
+}
+
+#[hdk_extern]
 pub fn get_my_verification_key_distributions() -> ExternResult<Vec<VfKeyResponse>> {
     let q = ChainQueryFilter::default()
         .action_type(ActionType::Create)
@@ -45,23 +60,28 @@ pub fn get_my_verification_key_distributions() -> ExternResult<Vec<VfKeyResponse
 
     let mut out = Vec::with_capacity(vf_key_dist_entries.len());
     for r in vf_key_dist_entries.into_iter() {
-        let author = r.action().author().clone();
-        let created_at = r.action().timestamp();
-        let key_dist_address = r.action_address().clone();
-        let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(r)?;
-        let marks = get_key_marks(key_dist_address.clone(), GetOptions::local())?;
-        let reference_count =
-            get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::local())?;
-        out.push(VfKeyResponse {
-            verification_key_dist: (vf_key_dist, marks).into(),
-            key_dist_address,
-            reference_count,
-            author,
-            created_at,
-        });
+        out.push(build_vf_key_dist_response(r)?);
     }
 
     Ok(out)
+}
+
+fn build_vf_key_dist_response(record: Record) -> ExternResult<VfKeyResponse> {
+    let author = record.action().author().clone();
+    let created_at = record.action().timestamp();
+    let key_dist_address = record.action_address().clone();
+    let vf_key_dist: VerificationKeyDist = convert_to_app_entry_type(record)?;
+    let marks = get_key_marks(key_dist_address.clone(), GetOptions::local())?;
+    let reference_count =
+        get_key_collections_reference_count(key_dist_address.clone(), &GetOptions::local())?;
+
+    Ok(VfKeyResponse {
+        verification_key_dist: (vf_key_dist, marks).into(),
+        key_dist_address,
+        reference_count,
+        author,
+        created_at,
+    })
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, SerializedBytes)]

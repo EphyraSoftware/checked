@@ -132,13 +132,15 @@ test("Signatures from multiple selection strategies", async () => {
     });
 
     assert.equal(check_signatures_bob.length, 2);
+    assert.deepEqual(check_signatures_bob[0].author, alice.agentPubKey);
     assert.deepEqual(check_signatures_bob[0].reason, {
       Pinned: {
-        author: alice.agentPubKey,
         key_name: "test",
         key_collection: "bob collection",
       },
     });
+    // TODO should self signatures be returned? Probably yes but with its own reason
+    assert.deepEqual(check_signatures_bob[1].author, bob.agentPubKey);
     assert.deepEqual(check_signatures_bob[1].reason, {
       RandomHistorical: null,
     });

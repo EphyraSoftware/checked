@@ -132,7 +132,7 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
     assert_eq!(1, signatures.len());
     assert_eq!(url, signatures[0].fetch_url);
     assert_eq!(
-        std::fs::read(fetch_info.signature_path.unwrap())?,
+        std::fs::read_to_string(fetch_info.signature_path.unwrap())?,
         signatures[0].signature
     );
 
