@@ -8,7 +8,10 @@
   "scripts": {
     "start": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) npm run network",
     "network": "hc s clean && npm run build:happ && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:happ\" \"echo 'Not running holochain-playground'\"",
-    "test": "npm run build:zomes && hc app pack workdir --recursive && RUST_LOG=warn WASM_LOG=info npm t -w tests",
+    "test:unit": "cargo test",
+    "test:integration": "npm run build:zomes && hc app pack workdir --recursive && RUST_LOG=warn WASM_LOG=info npm t -w tests",
+    "test:cli": "npm run build:happ && cargo test --manifest-path ./checked_cli/Cargo.toml",
+    "test": "npm run test:unit && npm run test:integration && npm run test:cli",
     "launch:happ": "hc-spin -n $AGENTS --ui-port $UI_PORT workdir/checked.happ",
     "start:tauri": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) npm run network:tauri",
     "network:tauri": "hc s clean && npm run build:happ && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:tauri\" \"echo 'Not running holochain-playground'\"",
@@ -16,7 +19,6 @@
     "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
     "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
     "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "test:cli": "npm run build:happ && cargo test --manifest-path ./checked_cli/Cargo.toml",
     "lint": "npm run -w ui lint && npm run -w tests lint && cargo clippy && cargo clippy --manifest-path ./checked_cli/Cargo.toml",
     "format": "npm run -w ui format && npm run -w tests format && cargo fmt && cargo fmt --manifest-path ./checked_cli/Cargo.toml"
   },

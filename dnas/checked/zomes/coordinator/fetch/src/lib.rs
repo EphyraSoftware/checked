@@ -522,7 +522,7 @@ mod tests {
         println!("Picked signatures: {:?}", picked);
 
         // All from the first 30
-        assert!(picked.iter().all(|sig| { sig.signature[0] <= 30 }));
+        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] <= 30 }));
     }
 
     #[test]
@@ -597,7 +597,7 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked.iter().all(|sig| { sig.signature[0] >= 70 }));
+        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
     }
 
     #[test]
@@ -629,7 +629,7 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked.iter().all(|sig| { sig.signature[0] >= 70 }));
+        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
     }
 
     fn current_time() -> Timestamp {

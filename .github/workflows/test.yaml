@@ -30,11 +30,11 @@ jobs:
 
       - name: Run Rust tests
         run: |
-          nix develop --command cargo test
+          nix develop --command npm run test:unit
 
       - name: Run Tryorama tests
         run: |
-          nix develop --command npm test
+          nix develop --command npm run test:integration
 
       - name: Run CLI tests
         run: |
