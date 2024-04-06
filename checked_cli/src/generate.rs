@@ -71,6 +71,7 @@ async fn dispatch_distribute(generate_args: GenerateArgs, password: String) -> a
         name: generate_args.name,
         password: Some(password),
         path: generate_args.path,
+        app_id: generate_args.app_id,
     })
     .await?;
 

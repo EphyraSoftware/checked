@@ -16,6 +16,7 @@ async fn generate_signing_keypair() -> anyhow::Result<()> {
         password: Some("test".to_string()),
         distribute: Some(false),
         path: Some(dir.as_ref().to_path_buf()),
+        app_id: None,
     })
     .await?;
 
@@ -36,6 +37,7 @@ async fn sign_file() -> anyhow::Result<()> {
         password: Some("test".to_string()),
         distribute: Some(false),
         path: Some(dir.as_ref().to_path_buf()),
+        app_id: None,
     })
     .await?;
 
@@ -47,12 +49,17 @@ async fn sign_file() -> anyhow::Result<()> {
         .write_all(b"test")?;
 
     let sig_path = sign(SignArgs {
+        url: None,
         name: name.clone(),
+        port: None,
         password: Some("test".to_string()),
         path: Some(dir.as_ref().to_path_buf()),
         file: test_file.clone(),
         output: None,
-    })?;
+        distribute: false,
+        app_id: None,
+    })
+    .await?;
 
     assert!(sig_path.exists());
     assert_eq!(
@@ -74,6 +81,7 @@ async fn verify_signed_file() -> anyhow::Result<()> {
         password: Some("test".to_string()),
         distribute: Some(false),
         path: Some(dir.as_ref().to_path_buf()),
+        app_id: None,
     })
     .await?;
 
@@ -85,12 +93,17 @@ async fn verify_signed_file() -> anyhow::Result<()> {
         .write_all(b"test")?;
 
     sign(SignArgs {
+        url: None,
         name: name.clone(),
+        port: None,
         password: Some("test".to_string()),
         path: Some(dir.as_ref().to_path_buf()),
         file: test_file.clone(),
         output: None,
-    })?;
+        distribute: false,
+        app_id: None,
+    })
+    .await?;
 
     verify(VerifyArgs {
         file: test_file,

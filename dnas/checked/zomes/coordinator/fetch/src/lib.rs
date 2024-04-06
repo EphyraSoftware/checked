@@ -5,6 +5,7 @@ use hdk::prelude::*;
 use rand::prelude::IteratorRandom;
 use rand::thread_rng;
 use signing_keys_types::*;
+use std::cmp::min;
 use std::ops::{Add, Deref, Sub};
 use std::time::Duration;
 
@@ -264,6 +265,8 @@ fn pick_signatures(
     Ok(picked_signatures)
 }
 
+const MIN_SIGNATURES: usize = 30;
+
 /// Tries to select up to 5 random signatures from the first week of signatures.
 /// If there were fewer than 30 signatures in the first week it defaults to selecting from the first 30.
 ///
@@ -288,7 +291,7 @@ fn select_historical_signatures(
         // None means all are within the time period, take all
         None => possible_signatures.len(),
         // Too few found, use default
-        Some(x) if x < 30 => 30,
+        Some(x) if x < MIN_SIGNATURES => min(MIN_SIGNATURES, possible_signatures.len()),
         Some(x) => x,
     };
 
@@ -345,8 +348,8 @@ fn select_recent_signatures(
         .position(|(a, _)| a.timestamp() < take_after)
     {
         // None or too few found, then default to 30
-        None => 30,
-        Some(x) if x < 30 => 30,
+        None => min(MIN_SIGNATURES, possible_signatures.len()),
+        Some(x) if x < MIN_SIGNATURES => min(MIN_SIGNATURES, possible_signatures.len()),
         Some(x) => x,
     };
 
@@ -522,7 +525,9 @@ mod tests {
         println!("Picked signatures: {:?}", picked);
 
         // All from the first 30
-        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] <= 30 }));
+        assert!(picked
+            .iter()
+            .all(|sig| { sig.signature.as_bytes()[0] <= 30 }));
     }
 
     #[test]
@@ -597,7 +602,9 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(picked
+            .iter()
+            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
     }
 
     #[test]
@@ -629,7 +636,9 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked.iter().all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(picked
+            .iter()
+            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
     }
 
     fn current_time() -> Timestamp {

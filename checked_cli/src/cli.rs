@@ -58,15 +58,26 @@ pub struct GenerateArgs {
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long)]
     pub path: Option<PathBuf>,
+
+    /// Override the app id that `checked` has been installed with on Holochain.
+    #[arg(long)]
+    pub app_id: Option<String>,
 }
 
 #[derive(clap::Args)]
 pub struct SignArgs {
+    /// The URL that this asset belongs at.
+    pub url: Option<String>,
+
     /// Name of the key to use for signing.
     ///
     /// Defaults to `default`.
     #[arg(long, short, default_value_t = String::from("default"))]
     pub name: String,
+
+    /// The admin port for Holochain.
+    #[arg(long, short)]
+    pub port: Option<u16>,
 
     /// Provide a password on the command line instead of prompting for it.
     ///
@@ -92,6 +103,14 @@ pub struct SignArgs {
     /// Defaults to the file to sign, with `.minisig` extension appended.
     #[arg(long, short)]
     pub output: Option<PathBuf>,
+
+    /// Whether to distribute the asset signature
+    #[arg(long, short, default_value_t = true)]
+    pub distribute: bool,
+
+    /// Override the app id that `checked` has been installed with on Holochain.
+    #[arg(long)]
+    pub app_id: Option<String>,
 }
 
 #[derive(clap::Args)]
@@ -137,6 +156,10 @@ pub struct DistributeArgs {
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
     pub path: Option<PathBuf>,
+
+    /// Override the app id that `checked` has been installed with on Holochain.
+    #[arg(long)]
+    pub app_id: Option<String>,
 }
 
 #[derive(clap::Args)]
@@ -193,4 +216,8 @@ pub struct FetchArgs {
     /// If this flag is not provided, then an interactive prompt is used to confirm.
     #[arg(long, short)]
     pub sign: Option<bool>,
+
+    /// Override the app id that `checked` has been installed with on Holochain.
+    #[arg(long)]
+    pub app_id: Option<String>,
 }

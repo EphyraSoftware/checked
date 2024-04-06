@@ -1,4 +1,5 @@
 use crate::common::get_store_dir;
+use anyhow::Context;
 use holochain_client::{
     AdminWebsocket, AppAgentWebsocket, AppStatusFilter, AuthorizeSigningCredentialsPayload,
     ClientAgentSigner, ConductorApiError, SigningCredentials,
@@ -16,21 +17,40 @@ const DEFAULT_INSTALLED_APP_ID: &str = "checked";
 pub async fn get_authenticated_app_agent_client(
     admin_port: u16,
     path: Option<PathBuf>,
+    installed_app_id: Option<String>,
 ) -> anyhow::Result<AppAgentWebsocket> {
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
-    let mut admin_client = AdminWebsocket::connect(format!("localhost:{admin_port}")).await?;
+    let mut admin_client = AdminWebsocket::connect(format!("localhost:{admin_port}"))
+        .await
+        .with_context(|| {
+            format!("Failed to connect to Holochain admin interface at {admin_port}")
+        })?;
 
     let mut signer = ClientAgentSigner::new();
-    load_or_create_signing_credentials(&mut admin_client, &mut signer, path).await?;
-
-    let app_port = find_or_create_app_interface(&mut admin_client).await?;
-
-    AppAgentWebsocket::connect(
-        format!("localhost:{app_port}"),
-        DEFAULT_INSTALLED_APP_ID.to_string(),
-        signer.into(),
+    load_or_create_signing_credentials(
+        &mut admin_client,
+        &mut signer,
+        path,
+        installed_app_id.clone(),
     )
     .await
+    .context("Failed to load Holochain call credentials")?;
+
+    let app_port = find_or_create_app_interface(&mut admin_client)
+        .await
+        .context("Failed to find or create an app port on Holochain")?;
+
+    let app_id = installed_app_id.unwrap_or_else(|| DEFAULT_INSTALLED_APP_ID.to_string());
+    AppAgentWebsocket::connect(
+        format!("localhost:{app_port}"),
+        app_id.clone(),
+        signer.into(),
+    )
+    .await.with_context(|| {
+        format!(
+            "Failed to connect to Holochain app interface at `localhost:{app_port}` with app_id {app_id}"
+        )
+    })
 }
 
 pub fn maybe_handle_holochain_error(
@@ -77,13 +97,15 @@ async fn load_or_create_signing_credentials(
     admin_client: &mut AdminWebsocket,
     signer: &mut ClientAgentSigner,
     path: Option<PathBuf>,
+    installed_app_id: Option<String>,
 ) -> anyhow::Result<()> {
     match try_load_credentials(path.clone())? {
         Some((cell_id, credentials)) => {
             signer.add_credentials(cell_id, credentials);
         }
         None => {
-            let (cell_id, credentials) = create_new_credentials(admin_client).await?;
+            let (cell_id, credentials) =
+                create_new_credentials(admin_client, installed_app_id).await?;
             dump_credentials(cell_id.clone(), &credentials, path)?;
             signer.add_credentials(cell_id, credentials);
         }
@@ -93,18 +115,17 @@ async fn load_or_create_signing_credentials(
 
 async fn create_new_credentials(
     client: &mut AdminWebsocket,
+    installed_app_id: Option<String>,
 ) -> anyhow::Result<(CellId, SigningCredentials)> {
     let apps = client
         .list_apps(Some(AppStatusFilter::Running))
         .await
         .map_err(|e| anyhow::anyhow!("Error listing apps: {:?}", e))?;
 
+    let app_id = installed_app_id.unwrap_or_else(|| DEFAULT_INSTALLED_APP_ID.to_string());
     let app = apps
         .iter()
-        .find(|app| {
-            // TODO allow this to be overridden on the CLI.
-            app.installed_app_id == DEFAULT_INSTALLED_APP_ID
-        })
+        .find(|app| app.installed_app_id == app_id)
         .ok_or_else(|| anyhow::anyhow!("App `checked` not found"))?;
 
     let cells = app

@@ -1,30 +1,33 @@
-use crate::cli::FetchArgs;
-use crate::common::{get_store_dir, get_verification_key_path};
-use crate::hc_client;
-use crate::hc_client::maybe_handle_holochain_error;
-use crate::interactive::GetPassword;
-use crate::prelude::SignArgs;
-use crate::sign::sign;
-use anyhow::Context;
-use checked_types::{
-    CreateAssetSignature, FetchCheckSignature, FetchCheckSignatureReason, PrepareFetchRequest,
-    VerificationKeyType,
-};
-use holochain_client::ZomeCallTarget;
-use holochain_types::prelude::{ActionHash, AgentPubKey, ExternIO};
-use indicatif::{ProgressFinish, ProgressStyle};
-use itertools::Itertools;
-use minisign::PublicKeyBox;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+
+use anyhow::Context;
+use holochain_client::ZomeCallTarget;
+use holochain_types::prelude::{ActionHash, AgentPubKey, ExternIO};
+use indicatif::{ProgressFinish, ProgressStyle};
+use itertools::Itertools;
+use minisign::PublicKeyBox;
 use tempfile::NamedTempFile;
 use url::Url;
 
+use checked_types::{
+    FetchCheckSignature, FetchCheckSignatureReason, PrepareFetchRequest, VerificationKeyType,
+};
+
+use crate::cli::FetchArgs;
+use crate::hc_client;
+use crate::hc_client::maybe_handle_holochain_error;
+use crate::interactive::GetPassword;
+use crate::prelude::SignArgs;
+use crate::sign::sign;
+
 pub struct FetchInfo {
     pub signature_path: Option<PathBuf>,
+    pub reports: Vec<SignatureCheckReport>,
+    pub output_path: Option<PathBuf>,
 }
 
 struct FetchState {
@@ -38,9 +41,12 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let output_path = get_output_path(&fetch_args, &fetch_url)?;
 
-    let mut app_client =
-        hc_client::get_authenticated_app_agent_client(fetch_args.port, fetch_args.path.clone())
-            .await?;
+    let mut app_client = hc_client::get_authenticated_app_agent_client(
+        fetch_args.port,
+        fetch_args.path.clone(),
+        fetch_args.app_id.clone(),
+    )
+    .await?;
 
     // TODO if this fails because the credentials are no longer valid then we need a recovery mechanism that isn't `rm ~/.checked/credentials.json`
     let response = app_client
@@ -67,12 +73,14 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
         let allow = fetch_args.allow_no_signatures()?;
         if !allow {
             return Ok(FetchInfo {
+                output_path: None,
                 signature_path: None,
+                reports: vec![],
             });
         }
+    } else {
+        println!("Found {} signatures to check against", response.len());
     }
-
-    println!("Found {} signatures to check against", response.len());
 
     let mut tmp_file = tempfile::Builder::new()
         .prefix("checked-")
@@ -132,45 +140,38 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let reports = check_signatures(path.clone(), response)?;
     show_report(&reports);
 
+    // TODO prompt for continue or discard
+
     std::fs::rename(path.clone(), &output_path)?;
 
     let should_sign = fetch_args.sign_asset()?;
     if !should_sign {
         return Ok(FetchInfo {
+            output_path: Some(output_path),
             signature_path: None,
+            reports,
         });
     }
 
     let signature_path = sign(SignArgs {
+        url: Some(fetch_args.url.clone()),
         name: fetch_args.name.clone(),
+        port: Some(fetch_args.port),
         password: Some(fetch_args.get_password()?),
         path: fetch_args.path.clone(),
-        file: output_path,
+        file: output_path.clone(),
         output: None,
-    })?;
-
-    let store_dir = get_store_dir(fetch_args.path)?;
-    let vk_path = get_verification_key_path(&store_dir, &fetch_args.name);
-    app_client
-        .call_zome(
-            ZomeCallTarget::RoleName("checked".to_string()),
-            "fetch".into(),
-            "create_asset_signature".into(),
-            ExternIO::encode(CreateAssetSignature {
-                fetch_url: fetch_args.url.clone(),
-                signature: std::fs::read_to_string(&signature_path)?,
-                key_type: VerificationKeyType::MiniSignEd25519,
-                verification_key: std::fs::read_to_string(vk_path)?,
-            })
-            .unwrap(),
-        )
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to report signature to Holochain: {:?}", e))?;
+        distribute: true,
+        app_id: fetch_args.app_id,
+    })
+    .await?;
 
     println!("Created signature!");
 
     Ok(FetchInfo {
+        output_path: Some(output_path),
         signature_path: Some(signature_path),
+        reports,
     })
 }
 
@@ -180,9 +181,9 @@ pub struct CheckedSignature {
 }
 
 pub struct SignatureCheckReport {
-    reason: FetchCheckSignatureReason,
-    passed_signatures: Vec<CheckedSignature>,
-    failed_signatures: Vec<CheckedSignature>,
+    pub reason: FetchCheckSignatureReason,
+    pub passed_signatures: Vec<CheckedSignature>,
+    pub failed_signatures: Vec<CheckedSignature>,
 }
 
 pub fn check_signatures(

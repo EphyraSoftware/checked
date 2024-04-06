@@ -58,9 +58,12 @@ const PROOF_WORDS: [&str; 40] = [
 pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     println!("Distributing key: {}", distribute_args.name);
 
-    let mut app_client =
-        get_authenticated_app_agent_client(distribute_args.port, distribute_args.path.clone())
-            .await?;
+    let mut app_client = get_authenticated_app_agent_client(
+        distribute_args.port,
+        distribute_args.path.clone(),
+        distribute_args.app_id.clone(),
+    )
+    .await?;
 
     let store_dir = get_store_dir(distribute_args.path.clone())?;
     let vk_path = get_verification_key_path(&store_dir, &distribute_args.name);
@@ -77,12 +80,18 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
         .context("Could not write proof to temporary file")?;
 
     let sig_path = sign(SignArgs {
+        url: None,
         name: distribute_args.name.clone(),
+        port: Some(distribute_args.port),
         password: Some(distribute_args.get_password()?),
         path: distribute_args.path.clone(),
         file: tmp_file.path().to_path_buf(),
         output: None,
-    })?;
+        // This is a temporary file for demonstrating private key access, should not be distributed as an asset signature
+        distribute: false,
+        app_id: distribute_args.app_id,
+    })
+    .await?;
 
     app_client
         .call_zome(
