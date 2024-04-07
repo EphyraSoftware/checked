@@ -49,4 +49,8 @@ jobs:
       - name: Run CLI tests
         working-directory: ./checked_cli
         run: |
-          cargo test
+          npm i
+          npm run build:happ
+          
+          # Tests are independent but sweettest is so resource hungry that they run slower in parallel.
+          cargo test -- --test-threads=1
