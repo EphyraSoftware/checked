@@ -49,6 +49,8 @@ jobs:
       - name: Run CLI tests
         working-directory: ./checked_cli
         run: |
+          rustup target add wasm32-unknown-unknown
+          
           npm i
           npm run build:happ
           
