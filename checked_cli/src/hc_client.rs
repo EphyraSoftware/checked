@@ -20,7 +20,7 @@ pub async fn get_authenticated_app_agent_client(
     installed_app_id: Option<String>,
 ) -> anyhow::Result<AppAgentWebsocket> {
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
-    let mut admin_client = AdminWebsocket::connect(format!("localhost:{admin_port}"))
+    let mut admin_client = AdminWebsocket::connect(format!("127.0.0.1:{admin_port}"))
         .await
         .with_context(|| {
             format!("Failed to connect to Holochain admin interface at {admin_port}")
@@ -42,13 +42,13 @@ pub async fn get_authenticated_app_agent_client(
 
     let app_id = installed_app_id.unwrap_or_else(|| DEFAULT_INSTALLED_APP_ID.to_string());
     AppAgentWebsocket::connect(
-        format!("localhost:{app_port}"),
+        format!("127.0.0.1:{app_port}"),
         app_id.clone(),
         signer.into(),
     )
     .await.with_context(|| {
         format!(
-            "Failed to connect to Holochain app interface at `localhost:{app_port}` with app_id {app_id}"
+            "Failed to connect to Holochain app interface at `127.0.0.1:{app_port}` with app_id {app_id}"
         )
     })
 }
