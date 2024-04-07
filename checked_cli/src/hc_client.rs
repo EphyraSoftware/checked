@@ -184,7 +184,8 @@ fn dump_credentials(
         .open(credentials_path)
         .map_err(|e| anyhow::anyhow!("Error opening credentials file: {:?}", e))?;
 
-    if cfg!(unix) {
+    #[cfg(target_family = "unix")]
+    {
         use std::os::unix::fs::PermissionsExt;
         f.set_permissions(Permissions::from_mode(0o660))
             .map_err(|e| {

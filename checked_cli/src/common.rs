@@ -7,7 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub(crate) fn open_file<P: AsRef<Path>>(path: P) -> anyhow::Result<BufWriter<File>> {
     let mut open_options = File::options();
     let open = open_options.create_new(true).write(true);
-    if cfg!(unix) {
+    #[cfg(target_family = "unix")]
+    {
         use std::os::unix::prelude::OpenOptionsExt;
         open.mode(0o644);
     }
