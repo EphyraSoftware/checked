@@ -128,6 +128,7 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
         allow_no_signatures: Some(true),
         sign: Some(true),
         app_id: None,
+        approve: Some(true),
     })
     .await?;
 
@@ -195,6 +196,7 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
         allow_no_signatures: Some(false),
         sign: Some(true),
         app_id: None,
+        approve: Some(true),
     })
     .await?;
 
@@ -282,6 +284,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
         allow_no_signatures: Some(false),
         sign: Some(true),
         app_id: None,
+        approve: Some(true),
     })
         .await?;
 
@@ -450,6 +453,7 @@ async fn publish_asset_signature(
         allow_no_signatures: Some(true),
         sign: Some(!bad_signature),
         app_id: Some(app_id.clone()),
+        approve: Some(true),
     })
     .await
     .context("Fetch failed")?;

@@ -140,6 +140,17 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let reports = check_signatures(path.clone(), response)?;
     show_report(&reports);
 
+    if !fetch_args.approve_signature()? {
+        println!("Discarding temporary asset...");
+        std::fs::remove_file(path.clone())?;
+
+        println!("Done");
+        return Ok(FetchInfo {
+            output_path: None,
+            signature_path: None,
+            reports,
+        });
+    }
     // TODO prompt for continue or discard
 
     std::fs::rename(path.clone(), &output_path)?;

@@ -220,4 +220,12 @@ pub struct FetchArgs {
     /// Override the app id that `checked` has been installed with on Holochain.
     #[arg(long)]
     pub app_id: Option<String>,
+
+    /// Automatically approve the fetched asset, ignoring the results of the signature report.
+    ///
+    /// Using this flag is NOT recommended for interactive use. It is provided to allow automation
+    /// of this library or for scripts calling the CLI. If you choose to skip the interactive
+    /// confirmation then you are responsible for checking the signature report some other way.
+    #[arg(long)]
+    pub approve: Option<bool>,
 }

@@ -57,6 +57,15 @@ impl FetchArgs {
         }
     }
 
+    pub fn approve_signature(&self) -> anyhow::Result<bool> {
+        match self.approve {
+            Some(approve_signature) => Ok(approve_signature),
+            None => Ok(dialoguer::Confirm::new()
+                .with_prompt("Approve this signature?")
+                .interact()?),
+        }
+    }
+
     pub fn sign_asset(&self) -> anyhow::Result<bool> {
         match self.sign {
             Some(sign) => Ok(sign),
