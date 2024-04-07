@@ -221,13 +221,11 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
     assert_eq!(5, recent_signatures.passed_signatures.len());
     assert!(recent_signatures.failed_signatures.is_empty());
 
-    let historical_signatures = fetch_info
+    assert!(fetch_info
         .reports
         .iter()
         .find(|r| r.reason == FetchCheckSignatureReason::RandomHistorical)
-        .unwrap();
-    assert_eq!(5, historical_signatures.passed_signatures.len());
-    assert!(historical_signatures.failed_signatures.is_empty());
+        .is_none());
 
     assert!(fetch_info
         .reports
