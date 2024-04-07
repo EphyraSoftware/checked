@@ -81,7 +81,12 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         })
         .collect();
 
-    Ok(pick_signatures(signatures, key_collections, get_vf_key_dist, sys_time()?))
+    Ok(pick_signatures(
+        signatures,
+        key_collections,
+        get_vf_key_dist,
+        sys_time()?,
+    ))
 }
 
 #[hdk_extern]
@@ -224,7 +229,10 @@ fn pick_signatures(
             .any(|p| p.signature == asset_signature.signature)
     });
 
-    debug!("Have {} signatures to search for recent and historical signatures", possible_signatures.len());
+    debug!(
+        "Have {} signatures to search for recent and historical signatures",
+        possible_signatures.len()
+    );
 
     possible_signatures.sort_by(|(a, _), (b, _)| a.timestamp().cmp(&b.timestamp()));
 
@@ -234,7 +242,10 @@ fn pick_signatures(
         fetcher,
     ));
 
-    debug!("After adding historical, have {} signatures", picked_signatures.len());
+    debug!(
+        "After adding historical, have {} signatures",
+        picked_signatures.len()
+    );
 
     // Drop signatures that we've already picked from the possible set.
     possible_signatures.retain(|(_, asset_signature)| {
@@ -243,7 +254,10 @@ fn pick_signatures(
             .any(|p| p.signature == asset_signature.signature)
     });
 
-    debug!("Have {} signatures to search for recent signatures", possible_signatures.len());
+    debug!(
+        "Have {} signatures to search for recent signatures",
+        possible_signatures.len()
+    );
 
     picked_signatures.extend(select_recent_signatures(
         &possible_signatures,
@@ -251,7 +265,10 @@ fn pick_signatures(
         fetcher,
     ));
 
-    debug!("After adding recent, have {} signatures", picked_signatures.len());
+    debug!(
+        "After adding recent, have {} signatures",
+        picked_signatures.len()
+    );
 
     picked_signatures
 }
@@ -348,8 +365,7 @@ fn select_historical_signatures(
 
     info!(
         "Selecting up to {} signatures randomly from {} possible historical signatures",
-        MAX_SIGNATURES_FROM_CATEGORY,
-        take_many
+        MAX_SIGNATURES_FROM_CATEGORY, take_many
     );
 
     // Would be recent signatures, don't want to overlap with them
@@ -418,8 +434,7 @@ fn select_recent_signatures(
 
     info!(
         "Selecting up to {} signatures randomly from {} possible recent signatures",
-        MAX_SIGNATURES_FROM_CATEGORY,
-        take_many
+        MAX_SIGNATURES_FROM_CATEGORY, take_many
     );
 
     possible_signatures
@@ -513,9 +528,14 @@ mod tests {
 
     use checked_types::VerificationKeyType;
     use fetch_types::AssetSignature;
-    use signing_keys_types::{KeyCollectionWithKeys, MarkVfKeyDistOpt, VerificationKeyDistResponse, VfKeyResponse};
+    use signing_keys_types::{
+        KeyCollectionWithKeys, MarkVfKeyDistOpt, VerificationKeyDistResponse, VfKeyResponse,
+    };
 
-    use crate::{MAX_SIGNATURES_FROM_CATEGORY, pick_signatures, select_historical_signatures, select_pinned_signatures, select_recent_signatures};
+    use crate::{
+        pick_signatures, select_historical_signatures, select_pinned_signatures,
+        select_recent_signatures, MAX_SIGNATURES_FROM_CATEGORY,
+    };
 
     #[test]
     fn select_pinned_empty() {
@@ -561,7 +581,10 @@ mod tests {
 
         assert_eq!(2, selected.len());
 
-        let picked = selected.iter().map(|s| s.signature.as_str()).collect::<HashSet<_>>();
+        let picked = selected
+            .iter()
+            .map(|s| s.signature.as_str())
+            .collect::<HashSet<_>>();
         assert!(picked.contains("1"));
         assert!(picked.contains("3"));
     }
@@ -597,14 +620,21 @@ mod tests {
 
         let key_collections = vec![KeyCollectionWithKeys {
             name: "test".to_string(),
-            verification_keys: vec![test_vf_key_response(0), vf_key_response_add_compromised_mark(test_vf_key_response(1)), test_vf_key_response(2)],
+            verification_keys: vec![
+                test_vf_key_response(0),
+                vf_key_response_add_compromised_mark(test_vf_key_response(1)),
+                test_vf_key_response(2),
+            ],
         }];
 
         let selected = select_pinned_signatures(&possible_signatures, key_collections);
 
         assert_eq!(2, selected.len());
 
-        let picked = selected.iter().map(|s| s.signature.as_str()).collect::<HashSet<_>>();
+        let picked = selected
+            .iter()
+            .map(|s| s.signature.as_str())
+            .collect::<HashSet<_>>();
         assert!(picked.contains("1"));
         assert!(picked.contains("3"));
     }
@@ -710,7 +740,8 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked = select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
+        let picked =
+            select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
 
         // Should not return anything, leave these for recent selection
         assert_eq!(0, picked.len());
@@ -741,7 +772,8 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked = select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
+        let picked =
+            select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -783,8 +815,7 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked =
-            select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -817,8 +848,7 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked =
-            select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -851,8 +881,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        let picked =
-            select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -866,8 +895,7 @@ mod tests {
     #[test]
     fn no_duplicates_between_categories() {
         // Time in seconds
-        let mut time = chrono::prelude::Utc::now()
-            .timestamp();
+        let mut time = chrono::prelude::Utc::now().timestamp();
 
         let possible_signatures = std::iter::repeat_with(|| {
             let t = time;
@@ -875,32 +903,44 @@ mod tests {
 
             t
         })
-            .take(12)
+        .take(12)
+        .enumerate()
+        .map(|(idx, time)| {
+            (
+                action_at_time(time, idx as u8),
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: format!("{idx}"),
+                    key_dist_address: ActionHash::from_raw_36(vec![idx as u8; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let key_responses = std::iter::repeat(3)
+            .take(6)
             .enumerate()
-            .map(|(idx, time)| {
-                (
-                    action_at_time(time, idx as u8),
-                    AssetSignature {
-                        fetch_url: "http://example.com".to_string(),
-                        signature: format!("{idx}"),
-                        key_dist_address: ActionHash::from_raw_36(vec![idx as u8; 36]),
-                    },
-                )
-            })
-            .collect::<Vec<_>>();
+            .map(|(idx, offset)| test_vf_key_response((idx + offset) as u8))
+            .collect();
 
-        let key_responses = std::iter::repeat(3).take(6).enumerate().map(|(idx, offset)| {
-            test_vf_key_response((idx + offset) as u8)
-        }).collect();
-
-        let selected = pick_signatures(possible_signatures, vec![KeyCollectionWithKeys {
-            name: "test".to_string(),
-            verification_keys: key_responses,
-        }], test_fetcher, Timestamp::now().add(Duration::from_secs(60 * 60 * 24 * 15)).unwrap());
+        let selected = pick_signatures(
+            possible_signatures,
+            vec![KeyCollectionWithKeys {
+                name: "test".to_string(),
+                verification_keys: key_responses,
+            }],
+            test_fetcher,
+            Timestamp::now()
+                .add(Duration::from_secs(60 * 60 * 24 * 15))
+                .unwrap(),
+        );
 
         assert_eq!(12, selected.len());
 
-        let selected_sigs_unique = selected.iter().map(|s| s.signature.as_str()).collect::<HashSet<_>>();
+        let selected_sigs_unique = selected
+            .iter()
+            .map(|s| s.signature.as_str())
+            .collect::<HashSet<_>>();
         assert_eq!(12, selected_sigs_unique.len());
     }
 
@@ -957,10 +997,13 @@ mod tests {
     }
 
     fn vf_key_response_add_compromised_mark(mut response: VfKeyResponse) -> VfKeyResponse {
-        response.verification_key_dist.marks.push(MarkVfKeyDistOpt::Compromised {
-            note: "Compromised".to_string(),
-            since: Timestamp(0),
-        });
+        response
+            .verification_key_dist
+            .marks
+            .push(MarkVfKeyDistOpt::Compromised {
+                note: "Compromised".to_string(),
+                since: Timestamp(0),
+            });
 
         response
     }
