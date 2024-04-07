@@ -59,7 +59,7 @@ test("Create asset signature", async () => {
     });
 
     assert.equal(check_signatures.length, 1);
-    assert.deepEqual(check_signatures[0].reason, { RandomHistorical: null });
+    assert.deepEqual(check_signatures[0].reason, { RandomRecent: null });
   });
 });
 
@@ -121,10 +121,10 @@ test("Signatures from multiple selection strategies", async () => {
 
     assert.equal(check_signatures_alice.length, 2);
     assert.deepEqual(check_signatures_alice[0].reason, {
-      RandomHistorical: null,
+      RandomRecent: null,
     });
     assert.deepEqual(check_signatures_alice[1].reason, {
-      RandomHistorical: null,
+      RandomRecent: null,
     });
 
     const check_signatures_bob = await prepareFetch(bob.cells[0], {
@@ -142,7 +142,7 @@ test("Signatures from multiple selection strategies", async () => {
     // TODO should self signatures be returned? Probably yes but with its own reason
     assert.deepEqual(check_signatures_bob[1].author, bob.agentPubKey);
     assert.deepEqual(check_signatures_bob[1].reason, {
-      RandomHistorical: null,
+      RandomRecent: null,
     });
   });
 });
