@@ -9,6 +9,8 @@ name = "fetch_integrity"
 
 [dependencies]
 hdi = { workspace = true }
+holo_hash = { workspace = true, features = ["encoding"] }
 serde = { workspace = true }
 
 fetch_types = { workspace = true }
+url = { workspace = true }

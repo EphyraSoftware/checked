@@ -10,7 +10,6 @@ name = "fetch"
 [dependencies]
 hdk = { workspace = true }
 
-url = { workspace = true }
 serde = { workspace = true }
 minisign-verify = { workspace = true }
 rand = { workspace = true }
