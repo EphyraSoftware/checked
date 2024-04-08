@@ -35,6 +35,9 @@ struct FetchState {
     downloaded_size: AtomicUsize,
 }
 
+// TODO handle fetching an asset for the second time. We aren't allowed to re-sign it so that part
+//      should be automatically skipped?
+
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
     println!("Fetching from {}", fetch_url);
