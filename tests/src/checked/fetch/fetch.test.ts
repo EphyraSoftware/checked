@@ -4,7 +4,9 @@ import { dhtSync, runScenario } from "@holochain/tryorama";
 
 import { testAppPath } from "../common";
 import {
-  createAssetSignature, deleteAssetSignature, getMyAssetSignatures,
+  createAssetSignature,
+  deleteAssetSignature,
+  getMyAssetSignatures,
   prepareFetch,
   sampleFetchAssetSignature,
   sampleFetchKey,
@@ -70,10 +72,10 @@ test("Get my asset signatures", async () => {
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
     await distributeVerificationKey(
-        alice.cells[0],
-        sampleFetchKey(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyProofSignature(),
+      alice.cells[0],
+      sampleFetchKey(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -97,10 +99,10 @@ test("Delete an asset signature", async () => {
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
     await distributeVerificationKey(
-        alice.cells[0],
-        sampleFetchKey(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyProofSignature(),
+      alice.cells[0],
+      sampleFetchKey(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -111,8 +113,8 @@ test("Delete an asset signature", async () => {
     });
 
     await deleteAssetSignature(alice.cells[0], {
-        fetch_url: "https://example.com/sample.csv",
-    })
+      fetch_url: "https://example.com/sample.csv",
+    });
 
     const mySignatures = await getMyAssetSignatures(alice.cells[0]);
 
@@ -208,20 +210,23 @@ test("Remote validation", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([
+      appSource,
+      appSource,
+    ]);
 
     await distributeVerificationKey(
-        alice.cells[0],
-        sampleFetchKey(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyProofSignature(),
+      alice.cells[0],
+      sampleFetchKey(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyProofSignature(),
     );
 
     await distributeVerificationKey(
-        bob.cells[0],
-        sampleFetchKeyOther(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyOtherProofSignature(),
+      bob.cells[0],
+      sampleFetchKeyOther(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyOtherProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -241,7 +246,7 @@ test("Remote validation", async () => {
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     await deleteAssetSignature(alice.cells[0], {
-        fetch_url: "https://example.com/sample.csv",
+      fetch_url: "https://example.com/sample.csv",
     });
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
@@ -250,7 +255,7 @@ test("Remote validation", async () => {
     assert.equal(bobAssetSignatures.length, 1);
 
     await deleteAssetSignature(bob.cells[0], {
-        fetch_url: "https://example.com/sample.csv",
+      fetch_url: "https://example.com/sample.csv",
     });
 
     await dhtSync([alice, bob], alice.cells[0].cell_id[0]);

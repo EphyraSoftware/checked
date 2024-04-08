@@ -156,7 +156,11 @@ pub fn get_my_asset_signatures() -> ExternResult<Vec<AssetSignatureResponse>> {
 
     // Can't query deletes by entry type (any good reason!?), so get all deletes and use their delete
     // address to filter creates.
-    let all_deletes = query(ChainQueryFilter::new().action_type(ActionType::Delete).ascending())?;
+    let all_deletes = query(
+        ChainQueryFilter::new()
+            .action_type(ActionType::Delete)
+            .ascending(),
+    )?;
     let deleted = all_deletes
         .iter()
         .filter_map(|sig| match sig.signed_action().action() {
@@ -193,7 +197,7 @@ pub fn get_my_asset_signatures() -> ExternResult<Vec<AssetSignatureResponse>> {
         })
         .collect::<ExternResult<Vec<Option<AssetSignatureResponse>>>>()?
         .into_iter()
-        .filter_map(|r| r)
+        .flatten()
         .collect::<_>())
 }
 

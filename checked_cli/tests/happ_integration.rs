@@ -255,8 +255,8 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
             format!("checked-{i}"),
             i == 2 || i == 4,
         )
-            .await
-            .context("Couldn't publish asset signature")?;
+        .await
+        .context("Couldn't publish asset signature")?;
     }
 
     install_checked_app(conductor.sweet_handle(), "checked").await?;
@@ -272,7 +272,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
         path: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
-        .await?;
+    .await?;
 
     let fetch_info = fetch(FetchArgs {
         url: url.clone(),
@@ -286,7 +286,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
         app_id: None,
         approve: Some(true),
     })
-        .await?;
+    .await?;
 
     assert!(fetch_info.signature_path.is_some());
 
