@@ -22,6 +22,11 @@ pub struct PrepareFetchRequest {
     pub fetch_url: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteAssetSignatureRequest {
+    pub fetch_url: String,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct FetchCheckSignaturePinned {
     pub key_collection: String,

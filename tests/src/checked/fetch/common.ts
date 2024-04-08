@@ -33,6 +33,17 @@ export interface CreateAssetSignature {
   verification_key: string;
 }
 
+export interface DeleteAssetSignatureRequest {
+    fetch_url: string;
+}
+
+export interface AssetSignatureResponse {
+    fetch_url: string;
+    signature: string;
+    key_dist_address: ActionHash;
+    created_at: number;
+}
+
 export const prepareFetch = async (
   cell: CallableCell,
   request: PrepareFetchRequest,
@@ -54,6 +65,22 @@ export const createAssetSignature = async (
     payload: request,
   });
 };
+
+export const getMyAssetSignatures = async (cell: CallableCell): Promise<AssetSignatureResponse[]> => {
+    return cell.callZome({
+        zome_name: "fetch",
+        fn_name: "get_my_asset_signatures",
+        payload: null,
+    });
+}
+
+export const deleteAssetSignature = async (cell: CallableCell, request: DeleteAssetSignatureRequest): Promise<null> => {
+    return cell.callZome({
+        zome_name: "fetch",
+        fn_name: "delete_asset_signature",
+        payload: request,
+    });
+}
 
 export const sampleFetchKey = () => {
   return `

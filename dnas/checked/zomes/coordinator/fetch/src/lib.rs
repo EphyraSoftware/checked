@@ -154,9 +154,24 @@ pub fn get_my_asset_signatures() -> ExternResult<Vec<AssetSignatureResponse>> {
             .ascending(),
     )?;
 
-    signatures
+    // Can't query deletes by entry type (any good reason!?), so get all deletes and use their delete
+    // address to filter creates.
+    let all_deletes = query(ChainQueryFilter::new().action_type(ActionType::Delete).ascending())?;
+    let deleted = all_deletes
+        .iter()
+        .filter_map(|sig| match sig.signed_action().action() {
+            Action::Delete(delete) => Some(delete.deletes_address.clone()),
+            _ => None,
+        })
+        .collect::<HashSet<ActionHash>>();
+
+    Ok(signatures
         .into_iter()
         .map(|sig| {
+            if deleted.contains(&sig.signed_action().hashed.hash) {
+                return Ok(None);
+            }
+
             let (action, entry) = sig.into_inner();
 
             let entry = entry
@@ -169,14 +184,54 @@ pub fn get_my_asset_signatures() -> ExternResult<Vec<AssetSignatureResponse>> {
                 ))
             })?;
 
-            Ok(AssetSignatureResponse {
+            Ok(Some(AssetSignatureResponse {
                 fetch_url: signature.fetch_url,
                 signature: signature.signature,
                 key_dist_address: signature.key_dist_address,
                 created_at: action.action().timestamp(),
-            })
+            }))
         })
-        .collect::<ExternResult<_>>()
+        .collect::<ExternResult<Vec<Option<AssetSignatureResponse>>>>()?
+        .into_iter()
+        .filter_map(|r| r)
+        .collect::<_>())
+}
+
+#[hdk_extern]
+pub fn delete_asset_signature(request: DeleteAssetSignatureRequest) -> ExternResult<()> {
+    let asset_base = make_asset_url_address(&request.fetch_url)?;
+
+    let links = get_links(
+        GetLinksInputBuilder::try_new(asset_base, LinkTypes::AssetUrlToSignature)?
+            .get_options(GetStrategy::Local)
+            .build(),
+    )?;
+
+    trace!("Found {} links from the asset fetch url", links.len());
+
+    let my_agent = agent_info()?.agent_initial_pubkey;
+
+    // This will fail if multiple links exist for the same fetch_url which shouldn't have been
+    // allowed by validation.
+    for link in links {
+        if link.author != my_agent {
+            continue;
+        }
+
+        debug!("Found a link to delete: {:?}", link);
+
+        let target: ActionHash = link.target.try_into().map_err(|_| {
+            wasm_error!(WasmErrorInner::Guest("Target is not an action".to_string()))
+        })?;
+
+        // Delete the asset signature and the link to it
+        delete(target)?;
+        delete_link(link.create_link_hash)?;
+    }
+
+    debug!("Deleted asset signature for: {}", request.fetch_url);
+
+    Ok(())
 }
 
 fn find_key_address<'a, K>(
