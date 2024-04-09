@@ -115,7 +115,7 @@ test("Get my key collections for a key which is in another agent's collection", 
 
     await scenario.shareAllAgents();
 
-    // Alice distributes a GPG key
+    // Alice distributes a MiniSign verification key
     const record: Record = await distributeVerificationKey(
       alice.cells[0],
       sampleMiniSignKey(),
@@ -126,7 +126,7 @@ test("Get my key collections for a key which is in another agent's collection", 
 
     const vf_key_dist_address = record.signed_action.hashed.hash;
 
-    // All need to be able to see Alice's GPG key
+    // All need to be able to see Alice's verification key
     await dhtSync([alice, bob, carol], alice.cells[0].cell_id[0]);
 
     // Bob creates a collection

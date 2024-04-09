@@ -5,20 +5,7 @@ import NavBar from "../component/NavBar.vue";
 <template>
   <NavBar></NavBar>
   <div class="container mx-auto mt-5">
-    <p>
-      You can learn more about protecting your E-mails with GPG from the
-      <a
-        href="https://emailselfdefense.fsf.org/en/"
-        target="_blank"
-        class="link"
-        >Free Software Foundation</a
-      >.
-    </p>
-    <p>
-      This hApp is a distributed solution for section #5. Rather than needing to
-      send your public keys to a centralized server, you can distribute them
-      using Holochain.
-    </p>
+    <p>More information coming soon...</p>
 
     <br />
     <p>

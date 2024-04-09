@@ -22,10 +22,10 @@ pub mod prelude {
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
-    VerificationKeyDist(signing_keys_types::VerificationKeyDist),
+    VerificationKeyDist(VerificationKeyDist),
     #[entry_type(visibility = "private")]
-    KeyCollection(signing_keys_types::KeyCollection),
-    VerificationKeyDistMark(signing_keys_types::VerificationKeyDistMark),
+    KeyCollection(KeyCollection),
+    VerificationKeyDistMark(VerificationKeyDistMark),
 }
 
 #[hdk_link_types]
@@ -100,10 +100,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             OpEntry::UpdateEntry {
                 app_entry, action, ..
             } => match app_entry {
-                EntryTypes::VerificationKeyDist(gpg_key) => {
+                EntryTypes::VerificationKeyDist(vf_key_dist) => {
                     verification_key_dist::validate_create_vf_key_dist(
                         EntryCreationAction::Update(action),
-                        gpg_key,
+                        vf_key_dist,
                     )
                 }
                 _ => Ok(ValidateCallbackResult::Invalid(
@@ -120,13 +120,13 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 action,
             } => match (app_entry, original_app_entry) {
                 (
-                    EntryTypes::VerificationKeyDist(gpg_key),
-                    EntryTypes::VerificationKeyDist(original_gpg_key),
+                    EntryTypes::VerificationKeyDist(vf_key_dist),
+                    EntryTypes::VerificationKeyDist(original_vf_key_dist),
                 ) => verification_key_dist::validate_update_vf_key_dist(
                     action,
-                    gpg_key,
+                    vf_key_dist,
                     original_action,
-                    original_gpg_key,
+                    original_vf_key_dist,
                 ),
                 _ => Ok(ValidateCallbackResult::Invalid(
                     "todo: register update".to_string(),
@@ -140,11 +140,11 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 original_app_entry,
                 action,
             } => match original_app_entry {
-                EntryTypes::VerificationKeyDist(gpg_key) => {
+                EntryTypes::VerificationKeyDist(vf_key_dist) => {
                     verification_key_dist::validate_delete_vf_key_dist(
                         action,
                         original_action,
-                        gpg_key,
+                        vf_key_dist,
                     )
                 }
                 _ => Ok(ValidateCallbackResult::Invalid(
@@ -229,10 +229,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 // If you want to optimize performance, you can remove the validation for an entry type here and keep it in `StoreEntry`
                 // Notice that doing so will cause `must_get_valid_record` for this record to return a valid record even if the `StoreEntry` validation failed
                 OpRecord::CreateEntry { app_entry, action } => match app_entry {
-                    EntryTypes::VerificationKeyDist(gpg_key) => {
+                    EntryTypes::VerificationKeyDist(vf_key_dist) => {
                         verification_key_dist::validate_create_vf_key_dist(
                             EntryCreationAction::Create(action),
-                            gpg_key,
+                            vf_key_dist,
                         )
                     }
                     EntryTypes::VerificationKeyDistMark(mark) => {
@@ -267,18 +267,19 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match app_entry {
-                        EntryTypes::VerificationKeyDist(gpg_key) => {
+                        EntryTypes::VerificationKeyDist(vf_key_dist) => {
                             let result = verification_key_dist::validate_create_vf_key_dist(
                                 EntryCreationAction::Update(action.clone()),
-                                gpg_key.clone(),
+                                vf_key_dist.clone(),
                             )?;
                             if let ValidateCallbackResult::Valid = result {
-                                let original_gpg_key: Option<VerificationKeyDist> = original_record
-                                    .entry()
-                                    .to_app_option()
-                                    .map_err(|e| wasm_error!(e))?;
-                                let original_gpg_key = match original_gpg_key {
-                                    Some(gpg_key) => gpg_key,
+                                let original_vf_key_dist: Option<VerificationKeyDist> =
+                                    original_record
+                                        .entry()
+                                        .to_app_option()
+                                        .map_err(|e| wasm_error!(e))?;
+                                let original_vf_key_dist = match original_vf_key_dist {
+                                    Some(vf_key_dist) => vf_key_dist,
                                     None => {
                                         return Ok(
                                             ValidateCallbackResult::Invalid(
@@ -290,9 +291,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 };
                                 verification_key_dist::validate_update_vf_key_dist(
                                     action,
-                                    gpg_key,
+                                    vf_key_dist,
                                     original_action,
-                                    original_gpg_key,
+                                    original_vf_key_dist,
                                 )
                             } else {
                                 Ok(result)
@@ -358,11 +359,11 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                         }
                     };
                     match original_app_entry {
-                        EntryTypes::VerificationKeyDist(original_gpg_key) => {
+                        EntryTypes::VerificationKeyDist(original_vf_key_dist) => {
                             verification_key_dist::validate_delete_vf_key_dist(
                                 action,
                                 original_action,
-                                original_gpg_key,
+                                original_vf_key_dist,
                             )
                         }
                         _ => Ok(ValidateCallbackResult::Invalid("todo".to_string())),

@@ -58,24 +58,6 @@ This repository is using these tools:
 - [@holochain/client](https://www.npmjs.com/package/@holochain/client): client library to connect to Holochain from the UI.
 - [@holochain-playground/cli](https://www.npmjs.com/package/@holochain-playground/cli): introspection tooling to understand what's going on in the Holochain nodes.
 
-## Keys
-
-Create a GPG key for testing
-
-```
-gpg --quick-generate-key tester
-gpg --export --armor tester > tester-key.asc
-```
-
-Revoke a GPG key for testing
-
-```
-gpg --list-keys
-gpg --output tester-revocation.asc --gen-revoke tester
-gpg --import tester-revocation.asc
-gpg --export --armor tester > tester-key-revoked.asc
-```
-
 ### Setup issues
 
 #### Running Tauri on WSL (Ubuntu 22)

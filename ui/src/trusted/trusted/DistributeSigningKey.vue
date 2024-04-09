@@ -29,7 +29,7 @@ const formStage = ref<"uploadKey" | "downloadProof" | "uploadSigned">(
 
 const utf8Encode = new TextEncoder();
 
-const isGpgKeyValid = computed(() => {
+const isVfKeyValid = computed(() => {
   return true && selected.value;
 });
 
@@ -289,7 +289,7 @@ const distributeSigningVerificationKey = async () => {
         <div class="join">
           <button
             class="btn btn-primary join-item"
-            :disabled="!isGpgKeyValid || creating"
+            :disabled="!isVfKeyValid || creating"
             @click="distributeSigningVerificationKey"
           >
             <span v-if="creating" class="loading loading-spinner"></span>

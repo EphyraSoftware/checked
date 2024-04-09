@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMyKeysStore } from "../../store/my-keys-store";
 import KeyList from "../../component/KeyList.vue";
-import DistributeGpgKey from "./DistributeSigningKey.vue";
+import DistributeSigningKey from "./DistributeSigningKey.vue";
 import { ref, watch } from "vue";
 import LoadingSpinner from "../../component/LoadingSpinner.vue";
 import { storeToRefs } from "pinia";
@@ -60,9 +60,9 @@ watch(
                   <h2 class="card-title">
                     Distribute your signing verification key
                   </h2>
-                  <DistributeGpgKey
+                  <DistributeSigningKey
                     @distributed="showDistribute = false"
-                  ></DistributeGpgKey>
+                  ></DistributeSigningKey>
                 </div>
               </div>
             </div>
