@@ -1,7 +1,5 @@
 use anyhow::Context;
-use checked_cli::cli::{DistributeArgs, FetchArgs};
-use checked_cli::prelude::{distribute, fetch, generate, GenerateArgs, SignArgs};
-use checked_cli::sign::sign;
+use checked_cli::prelude::{distribute, fetch, generate, GenerateArgs, SignArgs, DistributeArgs, FetchArgs, sign};
 use checked_types::{AssetSignatureResponse, FetchCheckSignatureReason};
 use holochain::core::AgentPubKey;
 use holochain::sweettest::{SweetAgents, SweetConductor, SweetConductorHandle, SweetZome};

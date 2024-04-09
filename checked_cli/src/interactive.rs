@@ -1,6 +1,8 @@
 use crate::cli::{DistributeArgs, FetchArgs, GenerateArgs, SignArgs};
 
+/// Common trait to allow for passwords to be retrieved from the user.
 pub trait GetPassword {
+    /// Retrieve a password.
     fn get_password(&self) -> anyhow::Result<String>;
 }
 
@@ -48,6 +50,8 @@ fn get_password_common(
 }
 
 impl FetchArgs {
+    /// Whether the asset should be downloaded even if no signatures are found. This is primarily
+    /// an interactive prompt but can be forced with [FetchArgs::allow_no_signatures].
     pub fn allow_no_signatures(&self) -> anyhow::Result<bool> {
         match self.allow_no_signatures {
             Some(allow_no_signatures) => Ok(allow_no_signatures),
@@ -57,6 +61,8 @@ impl FetchArgs {
         }
     }
 
+    /// Whether the signature checks are acceptable and the asset should be retained. This is
+    /// primarily an interactive prompt but can be forced with [FetchArgs::approve].
     pub fn approve_signature(&self) -> anyhow::Result<bool> {
         match self.approve {
             Some(approve_signature) => Ok(approve_signature),
@@ -66,6 +72,8 @@ impl FetchArgs {
         }
     }
 
+    /// Whether the asset should be signed according to [FetchArgs::sign] or use an interactive
+    /// prompt if not specified.
     pub fn sign_asset(&self) -> anyhow::Result<bool> {
         match self.sign {
             Some(sign) => Ok(sign),

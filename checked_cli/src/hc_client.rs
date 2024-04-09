@@ -14,7 +14,7 @@ use std::path::PathBuf;
 
 const DEFAULT_INSTALLED_APP_ID: &str = "checked";
 
-pub async fn get_authenticated_app_agent_client(
+pub(crate) async fn get_authenticated_app_agent_client(
     admin_port: u16,
     path: Option<PathBuf>,
     installed_app_id: Option<String>,
@@ -53,7 +53,7 @@ pub async fn get_authenticated_app_agent_client(
     })
 }
 
-pub fn maybe_handle_holochain_error(
+pub(crate) fn maybe_handle_holochain_error(
     conductor_api_error: &ConductorApiError,
     path: Option<PathBuf>,
 ) {
@@ -242,6 +242,6 @@ fn try_load_credentials(
     )))
 }
 
-fn get_credentials_path(path: Option<PathBuf>) -> anyhow::Result<std::path::PathBuf> {
+fn get_credentials_path(path: Option<PathBuf>) -> anyhow::Result<PathBuf> {
     Ok(get_store_dir(path)?.join("credentials.json"))
 }

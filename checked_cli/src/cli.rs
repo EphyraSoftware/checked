@@ -1,14 +1,17 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-#[derive(Parser)]
+/// The main CLI struct that is parsed by clap.
+#[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
+    /// The command that has been run.
     #[command(subcommand)]
     pub command: Commands,
 }
 
-#[derive(Subcommand)]
+/// The main commands that can be run by the CLI.
+#[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Generate a new signing key
     Generate(GenerateArgs),
@@ -26,7 +29,8 @@ pub enum Commands {
     Fetch(FetchArgs),
 }
 
-#[derive(clap::Args)]
+/// Arguments for the [generate](crate::generate::generate) operation.
+#[derive(clap::Args, Debug)]
 pub struct GenerateArgs {
     /// Name of the key, used to identify the key when used.
     ///
@@ -64,7 +68,8 @@ pub struct GenerateArgs {
     pub app_id: Option<String>,
 }
 
-#[derive(clap::Args)]
+/// Arguments for the [sign](crate::sign::sign) operation.
+#[derive(clap::Args, Debug)]
 pub struct SignArgs {
     /// The URL that this asset belongs at.
     pub url: Option<String>,
@@ -113,7 +118,8 @@ pub struct SignArgs {
     pub app_id: Option<String>,
 }
 
-#[derive(clap::Args)]
+/// Arguments for the [verify](crate::verify::verify) operation.
+#[derive(clap::Args, Debug)]
 pub struct VerifyArgs {
     /// The file to verify.
     #[arg(long, short)]
@@ -130,7 +136,8 @@ pub struct VerifyArgs {
     pub signature: Option<PathBuf>,
 }
 
-#[derive(clap::Args)]
+/// Arguments for the [distribute](crate::distribute::distribute) operation.
+#[derive(clap::Args, Debug)]
 pub struct DistributeArgs {
     /// The admin port for Holochain
     #[arg(long, short)]
@@ -162,7 +169,8 @@ pub struct DistributeArgs {
     pub app_id: Option<String>,
 }
 
-#[derive(clap::Args)]
+/// Arguments for the [fetch](crate::fetch::fetch) operation.
+#[derive(clap::Args, Debug)]
 pub struct FetchArgs {
     /// URL to fetch the asset from.
     pub url: String,

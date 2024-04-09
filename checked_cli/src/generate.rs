@@ -6,11 +6,16 @@ use minisign::KeyPair;
 use std::io::Write;
 use std::path::PathBuf;
 
+/// Information about the result of generating a new keypair.
+#[derive(Debug)]
 pub struct GenerateInfo {
+    /// Path to the secret key.
     pub sk_path: PathBuf,
+    /// Path to the public key.
     pub vk_path: PathBuf,
 }
 
+/// Generate a new signing keypair and optionally distribute the verification (public) key on Holochain.
 pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<GenerateInfo> {
     let store_dir = get_store_dir(generate_args.path.clone())?;
 

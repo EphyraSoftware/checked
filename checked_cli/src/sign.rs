@@ -6,11 +6,12 @@ use crate::hc_client;
 use crate::interactive::GetPassword;
 use checked_types::{CreateAssetSignature, VerificationKeyType};
 use holochain_client::ZomeCallTarget;
-use holochain_types::prelude::ExternIO;
+use holochain_types::prelude::{ActionHash, ExternIO};
 use minisign::{PublicKey, SecretKey};
 use std::io::{BufReader, Write};
 use std::path::PathBuf;
 
+/// Sign a file and optionally distribute the signature on Holochain.
 pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
     if !sign_args.file.exists() {
         anyhow::bail!("File to sign does not exist - {:?}", sign_args.file);
@@ -97,7 +98,7 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         std::fs::read_to_string(&sig_path)?
     );
 
-    app_client
+    let response = app_client
         .call_zome(
             ZomeCallTarget::RoleName("checked".to_string()),
             "fetch".into(),
@@ -113,6 +114,9 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         )
         .await
         .map_err(|e| anyhow::anyhow!("Failed to report signature to Holochain: {:?}", e))?;
+
+    let asset_signature_address: ActionHash = response.decode()?;
+    println!("Signature stored on Holochain at: {:?}", asset_signature_address);
 
     Ok(sig_path)
 }

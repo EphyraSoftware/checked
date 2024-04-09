@@ -2,6 +2,10 @@ use crate::cli::VerifyArgs;
 use minisign::{PublicKey, SignatureBox};
 use std::io::BufReader;
 
+/// Verification of an asset against a single signature.
+///
+/// Expects to find a file to verify and a signature to check against it.
+/// Prints OK if the signature is valid and exits with an error otherwise.
 pub fn verify(verify_args: VerifyArgs) -> anyhow::Result<()> {
     let vk = PublicKey::from_file(&verify_args.verification_key)?;
 

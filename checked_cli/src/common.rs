@@ -50,7 +50,7 @@ pub(crate) fn get_verification_key_path<P: AsRef<Path>>(store_dir: P, name: &str
     store_dir.as_ref().join(format!("{}.pub", name))
 }
 
-pub fn unix_timestamp() -> u64 {
+pub(crate) fn unix_timestamp() -> u64 {
     let start = SystemTime::now();
     let since_the_epoch = start
         .duration_since(UNIX_EPOCH)

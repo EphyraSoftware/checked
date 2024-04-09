@@ -24,12 +24,21 @@ use crate::interactive::GetPassword;
 use crate::prelude::SignArgs;
 use crate::sign::sign;
 
+/// Information about the result of fetching an asset.
+#[derive(Debug)]
 pub struct FetchInfo {
-    pub signature_path: Option<PathBuf>,
-    pub reports: Vec<SignatureCheckReport>,
+    /// The path to the fetched asset. This is only present if the user decided to keep the asset
+    /// and it was copied from its temporary location to the output path.
     pub output_path: Option<PathBuf>,
+    /// The results of checking existing signatures for the asset.
+    pub reports: Vec<SignatureCheckReport>,
+    /// The path to the signature created by the user performing the fetch. This is only present if
+    /// the user decided to sign the asset and the fetch process made it far enough to create the
+    /// signature.
+    pub signature_path: Option<PathBuf>,
 }
 
+#[derive(Debug)]
 struct FetchState {
     asset_size: AtomicUsize,
     downloaded_size: AtomicUsize,
@@ -38,6 +47,21 @@ struct FetchState {
 // TODO handle fetching an asset for the second time. We aren't allowed to re-sign it so that part
 //      should be automatically skipped?
 
+/// Fetch an asset from a URL, verify a selection of signatures for it and optionally distribute
+/// your own signature for it.
+///
+/// First attempts to find existing signatures for the asset on Holochain. A mixture of historical,
+/// recent and pinned keys from the user's key collections. You can proceed even if no signatures
+/// are found because this is normal, but the user is prompted to make it clear that this is the case.
+///
+/// Next, the file is downloaded to a temporary location. Each of the signatures are run against it
+/// and a report is printed. The user is prompted to check the report and decide whether to continue.
+///
+/// If the decides to reject the asset then the temporary file is deleted and the process ends.
+///
+/// Otherwise, the file is moved to the output location and the user is prompted to sign the asset.
+/// Unlike with [sign] where the user is is prompted about whether to distribute the signature, here
+/// the signature is always distributed after being created.
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
     println!("Fetching from {}", fetch_url);
@@ -113,7 +137,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let handle_err = || {
         // If the download failed, remove the temporary file
-        let _ = std::fs::remove_file(&path);
+        if let Err(e) = std::fs::remove_file(&path) {
+            eprintln!("Failed to remove temporary file {:?}: {:?}", path, e);
+        }
         // Kill the progress bar
         progress_handle.abort();
     };
@@ -189,18 +215,20 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     })
 }
 
+#[derive(Debug)]
 pub struct CheckedSignature {
     pub key_dist_address: ActionHash,
     pub author: AgentPubKey,
 }
 
+#[derive(Debug)]
 pub struct SignatureCheckReport {
     pub reason: FetchCheckSignatureReason,
     pub passed_signatures: Vec<CheckedSignature>,
     pub failed_signatures: Vec<CheckedSignature>,
 }
 
-pub fn check_signatures(
+fn check_signatures(
     check_file: PathBuf,
     signatures: Vec<FetchCheckSignature>,
 ) -> anyhow::Result<Vec<SignatureCheckReport>> {
@@ -258,7 +286,7 @@ fn check_one_signature(
     }
 }
 
-pub fn show_report(report: &[SignatureCheckReport]) {
+fn show_report(report: &[SignatureCheckReport]) {
     println!("Looking for historical signatures:");
     let maybe_historical_report = report
         .iter()
@@ -344,7 +372,9 @@ fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<Pa
                 output.join(guessed_file_name)
             } else {
                 let mut out = output.clone();
-                out.pop();
+                if !out.pop() {
+                    anyhow::bail!("Output path does not have a parent directory");
+                }
                 std::fs::create_dir_all(&out)?;
 
                 output.clone()
@@ -362,7 +392,7 @@ fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<Pa
 
 /// Download from `fetch_url` into `writer` and update `state` with the download progress.
 async fn run_download<W>(
-    fetch_url: url::Url,
+    fetch_url: Url,
     writer: &mut BufWriter<W>,
     state: Arc<FetchState>,
 ) -> anyhow::Result<()>

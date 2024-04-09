@@ -55,6 +55,9 @@ const PROOF_WORDS: [&str; 40] = [
     "tide",
 ];
 
+/// Distribute a verification key on Holochain. This can be done as part of [generate](crate::generate::generate) but if you
+/// have an existing key or wish to generate it using another tool then you can distribute it
+/// using this operation.
 pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     println!("Distributing key: {}", distribute_args.name);
 

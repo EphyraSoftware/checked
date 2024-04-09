@@ -1,3 +1,5 @@
+//! CLI tool wrapping the `checked_cli` library.
+
 use checked_cli::prelude::*;
 use clap::Parser;
 

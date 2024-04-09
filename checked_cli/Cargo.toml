@@ -34,3 +34,24 @@ rpassword = "7.3.1"
 holochain = { version = "0.3.0-beta-dev.43", default-features = false, features = ["sweetest"] }
 signing_keys_types = { path = "../types/signing_keys" }
 warp = "0.3.6"
+
+[lints.rust]
+let_underscore_drop = "forbid"
+unsafe_code = "forbid"
+
+missing_docs = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+
+# Cannot use this currently since it doesn't understand the library+binary pattern.
+# unused_crate_dependencies = "deny"
+
+absolute_paths_not_starting_with_crate = "warn"
+keyword_idents = "warn"
+missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
