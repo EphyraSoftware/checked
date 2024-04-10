@@ -200,6 +200,9 @@ test("Remote validation", async () => {
     const vf_key_dist_address =
       verification_key_record.signed_action.hashed.hash;
 
+    // Bob must know about Alice's verification key before they can add it to a key collection
+    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
+
     // Bob links Alice's verification key to the key collection
     await linkVerificationKeyToKeyCollection(
       bob.cells[0],

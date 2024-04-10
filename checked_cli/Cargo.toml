@@ -8,8 +8,8 @@ name = "checked"
 
 [dependencies]
 holochain_client = { version = "=0.5.0-dev.31", default-features = false }
-holochain_conductor_api = "0.3.0-beta-dev.40"
-holochain_types = "0.3.0-beta-dev.38"
+holochain_conductor_api = "0.3.0-beta-dev.43"
+holochain_types = "0.3.0-beta-dev.39"
 checked_types = { path = "../types/checked_types" }
 anyhow = "1.0.81"
 clap = { version = "4.5.2", features = ["derive", "cargo"] }
@@ -31,7 +31,7 @@ dirs = "5.0.1"
 rpassword = "7.3.1"
 
 [dev-dependencies]
-holochain = { version = "0.3.0-beta-dev.43", default-features = false, features = ["sweetest"] }
+holochain = { version = "0.3.0-beta-dev.44", default-features = false, features = ["sweetest"] }
 signing_keys_types = { path = "../types/signing_keys" }
 warp = "0.3.6"
 

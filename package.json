@@ -10,7 +10,7 @@
     "network": "hc s clean && npm run build:happ && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:happ\" \"echo 'Not running holochain-playground'\"",
     "test:unit": "cargo test",
     "test:integration": "npm run build:zomes && hc app pack workdir --recursive && RUST_LOG=warn WASM_LOG=info npm t -w tests",
-    "test:cli": "npm run build:happ && cargo test --manifest-path ./checked_cli/Cargo.toml -- --test-threads=1",
+    "test:cli": "npm run build:happ && cargo test --release --manifest-path ./checked_cli/Cargo.toml -- --test-threads=1",
     "test": "npm run test:unit && npm run test:integration && npm run test:cli",
     "launch:happ": "hc-spin -n $AGENTS --ui-port $UI_PORT workdir/checked.happ",
     "start:tauri": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) npm run network:tauri",

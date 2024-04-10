@@ -16,10 +16,10 @@ exclude = ["checked_cli"]
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "=0.4.0-beta-dev.32"
-hdk = "=0.3.0-beta-dev.36"
-holochain_zome_types = "0.3.0-beta-dev.31"
-holo_hash = "0.3.0-beta-dev.25"
+hdi = "=0.4.0-beta-dev.33"
+hdk = "=0.3.0-beta-dev.37"
+holochain_zome_types = "0.3.0-beta-dev.32"
+holo_hash = "0.3.0-beta-dev.26"
 serde = "1.0"
 chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
 hex = "0.4.3"
