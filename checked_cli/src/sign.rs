@@ -116,7 +116,10 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         .map_err(|e| anyhow::anyhow!("Failed to report signature to Holochain: {:?}", e))?;
 
     let asset_signature_address: ActionHash = response.decode()?;
-    println!("Signature stored on Holochain at: {:?}", asset_signature_address);
+    println!(
+        "Signature stored on Holochain at: {:?}",
+        asset_signature_address
+    );
 
     Ok(sig_path)
 }

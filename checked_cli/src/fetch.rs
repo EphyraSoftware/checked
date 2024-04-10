@@ -44,9 +44,6 @@ struct FetchState {
     downloaded_size: AtomicUsize,
 }
 
-// TODO handle fetching an asset for the second time. We aren't allowed to re-sign it so that part
-//      should be automatically skipped?
-
 /// Fetch an asset from a URL, verify a selection of signatures for it and optionally distribute
 /// your own signature for it.
 ///
@@ -108,6 +105,11 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     } else {
         println!("Found {} signatures to check against", response.len());
     }
+
+    let has_mine_signature = response
+        .iter()
+        .find(|s| s.reason == FetchCheckSignatureReason::Mine)
+        .is_some();
 
     let mut tmp_file = tempfile::Builder::new()
         .prefix("checked-")
@@ -180,11 +182,10 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
             reports,
         });
     }
-    // TODO prompt for continue or discard
 
     std::fs::rename(path.clone(), &output_path)?;
 
-    let should_sign = fetch_args.sign_asset()?;
+    let should_sign = !has_mine_signature && fetch_args.sign_asset()?;
     if !should_sign {
         return Ok(FetchInfo {
             output_path: Some(output_path),
@@ -287,6 +288,23 @@ fn check_one_signature(
 }
 
 fn show_report(report: &[SignatureCheckReport]) {
+    println!("Looking for existing signature:");
+    let maybe_mine_report = report
+        .iter()
+        .find(|r| r.reason == FetchCheckSignatureReason::Mine);
+    if let Some(mine_report) = maybe_mine_report {
+        // Always only 1 so no else case required
+        if !mine_report.passed_signatures.is_empty() && mine_report.failed_signatures.is_empty() {
+            println!("Your signature passed verification. This means you have fetched this asset before and got the same content.");
+        } else if mine_report.passed_signatures.is_empty()
+            && !mine_report.failed_signatures.is_empty()
+        {
+            println!("Your signature failed verification. This is very likely to mean that the asset you have fetched is different to the one you got previously.");
+        }
+    } else {
+        println!("No signature from you was found.");
+    }
+
     println!("Looking for historical signatures:");
     let maybe_historical_report = report
         .iter()

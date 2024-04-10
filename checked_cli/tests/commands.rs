@@ -1,4 +1,4 @@
-use checked_cli::prelude::{generate, VerifyArgs, sign, verify, GenerateArgs, SignArgs};
+use checked_cli::prelude::{generate, sign, verify, GenerateArgs, SignArgs, VerifyArgs};
 use std::fs::File;
 use std::io::Write;
 

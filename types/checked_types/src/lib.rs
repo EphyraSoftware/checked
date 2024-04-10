@@ -38,6 +38,7 @@ pub enum FetchCheckSignatureReason {
     RandomRecent,
     RandomHistorical,
     Pinned(FetchCheckSignaturePinned),
+    Mine,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -22,7 +22,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
 
     // We're online anyway to do a download so go looking for new data.
     let links = get_links(
-        GetLinksInputBuilder::try_new(asset_base, LinkTypes::AssetUrlToSignature)?
+        GetLinksInputBuilder::try_new(asset_base.clone(), LinkTypes::AssetUrlToSignature)?
             .get_options(GetStrategy::Network)
             .build(),
     )?;
@@ -81,11 +81,17 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         })
         .collect();
 
+    let my_agent = agent_info()?.agent_initial_pubkey;
+
+    let my_existing_signature = find_my_existing_signature(asset_base)?;
+
     Ok(pick_signatures(
         signatures,
         key_collections,
+        my_existing_signature,
         get_vf_key_dist,
         sys_time()?,
+        &my_agent,
     ))
 }
 
@@ -264,8 +270,10 @@ pub const MIN_SIGNATURES: usize = 30;
 fn pick_signatures(
     mut possible_signatures: Vec<(Action, AssetSignature)>,
     key_collections: Vec<KeyCollectionWithKeys>,
+    my_existing_signature: Option<AssetSignature>,
     fetcher: VfKeyDistFetcher,
     current_time: Timestamp,
+    my_agent: &AgentPubKey,
 ) -> Vec<FetchCheckSignature> {
     info!(
         "Selecting from {} possible signatures",
@@ -274,19 +282,45 @@ fn pick_signatures(
 
     let mut picked_signatures = Vec::new();
 
+    let filter_picked = |possible_signatures: &mut Vec<(Action, AssetSignature)>,
+                         picked_signatures: &Vec<FetchCheckSignature>| {
+        possible_signatures.retain(|(_, asset_signature)| {
+            !picked_signatures
+                .iter()
+                .any(|p: &FetchCheckSignature| p.signature == asset_signature.signature)
+        });
+    };
+
+    if let Some(sig) = my_existing_signature {
+        match fetcher(&sig.key_dist_address) {
+            Ok(Some(vf_key_dist)) => {
+                picked_signatures.push(FetchCheckSignature {
+                    signature: sig.signature.clone(),
+                    key_type: vf_key_dist.verification_key_dist.key_type,
+                    verification_key: vf_key_dist.verification_key_dist.verification_key,
+                    author: my_agent.clone(),
+                    key_dist_address: sig.key_dist_address.clone(),
+                    reason: FetchCheckSignatureReason::Mine,
+                });
+
+                filter_picked(&mut possible_signatures, &picked_signatures);
+            }
+            _ => {
+                warn!("Discarding my existing asset signature signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+            }
+        }
+    }
+
     picked_signatures.extend(select_pinned_signatures(
         &possible_signatures,
         key_collections,
+        my_agent,
     ));
 
     debug!("Picked {} signatures for pinned", picked_signatures.len());
 
     // Drop signatures that we've already picked from the possible set.
-    possible_signatures.retain(|(_, asset_signature)| {
-        !picked_signatures
-            .iter()
-            .any(|p| p.signature == asset_signature.signature)
-    });
+    filter_picked(&mut possible_signatures, &picked_signatures);
 
     debug!(
         "Have {} signatures to search for recent and historical signatures",
@@ -298,6 +332,7 @@ fn pick_signatures(
     picked_signatures.extend(select_historical_signatures(
         &possible_signatures,
         current_time,
+        my_agent,
         fetcher,
     ));
 
@@ -307,11 +342,7 @@ fn pick_signatures(
     );
 
     // Drop signatures that we've already picked from the possible set.
-    possible_signatures.retain(|(_, asset_signature)| {
-        !picked_signatures
-            .iter()
-            .any(|p| p.signature == asset_signature.signature)
-    });
+    filter_picked(&mut possible_signatures, &picked_signatures);
 
     debug!(
         "Have {} signatures to search for recent signatures",
@@ -321,6 +352,7 @@ fn pick_signatures(
     picked_signatures.extend(select_recent_signatures(
         &possible_signatures,
         current_time,
+        my_agent,
         fetcher,
     ));
 
@@ -332,6 +364,64 @@ fn pick_signatures(
     picked_signatures
 }
 
+/// If the calling agent has signed this asset before then this function will find and return that
+/// signature.
+///
+/// Unlike the main signature lookup, this will return the signature even if it has been deleted.
+/// This allows a client application to avoid creating a duplicate signature even if the previous
+/// one has been deleted for some reason.
+fn find_my_existing_signature(asset_base: ExternalHash) -> ExternResult<Option<AssetSignature>> {
+    let my_agent = agent_info()?.agent_initial_pubkey;
+
+    let mut my_link_creates = get_link_details(
+        asset_base,
+        LinkTypes::AssetUrlToSignature,
+        None,
+        GetOptions::local(),
+    )?
+    .into_inner()
+    .into_iter()
+    .filter_map(|(create, _)| match &create.hashed.content {
+        Action::CreateLink(create_link @ CreateLink { author, .. }) if author == &my_agent => {
+            Some(create_link.clone())
+        }
+        _ => None,
+    })
+    .collect::<Vec<_>>();
+
+    if my_link_creates.is_empty() {
+        return Ok(None);
+    }
+
+    my_link_creates.sort_by_key(|create| create.timestamp);
+    let first_create = my_link_creates.first().unwrap();
+
+    let target_address_action_hash: ActionHash = first_create
+        .target_address
+        .clone()
+        .try_into()
+        .map_err(|_| wasm_error!(WasmErrorInner::Guest("Target is not an action".to_string())))?;
+    let asset_signature_record =
+        get(target_address_action_hash, GetOptions::local())?.ok_or_else(|| {
+            wasm_error!(WasmErrorInner::Guest(
+                "No asset signature found".to_string()
+            ))
+        })?;
+
+    let asset_signature: AssetSignature = asset_signature_record
+        .entry
+        .to_app_option()
+        .map_err(|e| {
+            wasm_error!(WasmErrorInner::Guest(format!(
+                "Failed to deserialize asset signature: {:?}",
+                e
+            )))
+        })?
+        .ok_or_else(|| wasm_error!(WasmErrorInner::Guest("No entry found".to_string())))?;
+
+    Ok(Some(asset_signature))
+}
+
 /// Searches for signatures that were created by keys that are found in the key collections. It will
 /// return up to 5 signatures that match. The selection is randomised.
 ///
@@ -341,6 +431,7 @@ fn pick_signatures(
 fn select_pinned_signatures(
     possible_signatures: &[(Action, AssetSignature)],
     key_collections: Vec<KeyCollectionWithKeys>,
+    my_agent: &AgentPubKey,
 ) -> Vec<FetchCheckSignature> {
     let mut picked_signatures = Vec::new();
 
@@ -357,6 +448,10 @@ fn select_pinned_signatures(
         'keys: for key in key_collection.verification_keys {
             if picked_signatures.len() >= MAX_SIGNATURES_FROM_CATEGORY {
                 break;
+            }
+
+            if &key.author == my_agent {
+                continue;
             }
 
             for mark in key.verification_key_dist.marks {
@@ -402,6 +497,7 @@ fn select_pinned_signatures(
 fn select_historical_signatures(
     possible_signatures: &[(Action, AssetSignature)],
     current_time: Timestamp,
+    my_agent: &AgentPubKey,
     fetcher: VfKeyDistFetcher,
 ) -> Vec<FetchCheckSignature> {
     let earliest = match possible_signatures.first().map(|(a, _)| a.timestamp()) {
@@ -435,11 +531,12 @@ fn select_historical_signatures(
     let mut rng = &mut thread_rng();
     possible_signatures
         .iter()
-        .take(take_many)
-        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
-        .iter()
         .filter_map(|(action, sig)| {
             if action.timestamp() > ignore_after {
+                return None;
+            }
+
+            if action.author() == my_agent {
                 return None;
             }
 
@@ -460,7 +557,8 @@ fn select_historical_signatures(
                 },
             }
         })
-        .collect()
+        .take(take_many)
+        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
 }
 
 /// Tries to select up to [MAX_SIGNATURES_FROM_CATEGORY] random signatures from the last week of signatures.
@@ -472,6 +570,7 @@ fn select_historical_signatures(
 fn select_recent_signatures(
     possible_signatures: &[(Action, AssetSignature)],
     current_time: Timestamp,
+    my_agent: &AgentPubKey,
     fetcher: VfKeyDistFetcher,
 ) -> Vec<FetchCheckSignature> {
     let take_after = current_time
@@ -499,24 +598,28 @@ fn select_recent_signatures(
     possible_signatures
         .iter()
         .rev()
+        .filter_map(|(action, sig)| {
+            if action.author() == my_agent {
+                return None;
+            }
+
+            match fetcher(&sig.key_dist_address) {
+                Ok(Some(vf_key_dist)) => Some(FetchCheckSignature {
+                    signature: sig.signature.clone(),
+                    key_type: vf_key_dist.verification_key_dist.key_type,
+                    verification_key: vf_key_dist.verification_key_dist.verification_key,
+                    author: action.author().clone(),
+                    key_dist_address: sig.key_dist_address.clone(),
+                    reason: FetchCheckSignatureReason::RandomRecent,
+                }),
+                _ => {
+                    warn!("Discarding possible signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+                    None
+                },
+            }
+        })
         .take(take_many)
         .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
-        .iter()
-        .filter_map(|(action, sig)| match fetcher(&sig.key_dist_address) {
-            Ok(Some(vf_key_dist)) => Some(FetchCheckSignature {
-                signature: sig.signature.clone(),
-                key_type: vf_key_dist.verification_key_dist.key_type,
-                verification_key: vf_key_dist.verification_key_dist.verification_key,
-                author: action.author().clone(),
-                key_dist_address: sig.key_dist_address.clone(),
-                reason: FetchCheckSignatureReason::RandomRecent,
-            }),
-            _ => {
-                warn!("Discarding possible signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
-                None
-            },
-        })
-        .collect()
 }
 
 type VfKeyDistFetcher = fn(&ActionHash) -> ExternResult<Option<VfKeyResponse>>;
@@ -573,7 +676,7 @@ mod tests {
         EntryType, EntryVisibility, Timestamp,
     };
 
-    use checked_types::VerificationKeyType;
+    use checked_types::{FetchCheckSignatureReason, VerificationKeyType};
     use fetch_types::AssetSignature;
     use signing_keys_types::{
         KeyCollectionWithKeys, MarkVfKeyDistOpt, VerificationKeyDistResponse, VfKeyResponse,
@@ -586,7 +689,8 @@ mod tests {
 
     #[test]
     fn select_pinned_empty() {
-        let picked = select_pinned_signatures(&[], Vec::new());
+        let picked =
+            select_pinned_signatures(&[], Vec::new(), &AgentPubKey::from_raw_36(vec![0; 36]));
         assert_eq!(0, picked.len());
     }
 
@@ -624,7 +728,67 @@ mod tests {
             verification_keys: vec![test_vf_key_response(0), test_vf_key_response(2)],
         }];
 
-        let selected = select_pinned_signatures(&possible_signatures, key_collections);
+        let selected = select_pinned_signatures(
+            &possible_signatures,
+            key_collections,
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+        );
+
+        assert_eq!(2, selected.len());
+
+        let picked = selected
+            .iter()
+            .map(|s| s.signature.as_str())
+            .collect::<HashSet<_>>();
+        assert!(picked.contains("1"));
+        assert!(picked.contains("3"));
+    }
+
+    // Not supposed to happen, you are supposed to pin other keys rather than your own. But best
+    // to filter here anyway.
+    #[test]
+    fn ignore_pinned_mine() {
+        let possible_signatures = vec![
+            (
+                action_at_time(0, 0),
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: "1".to_string(),
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            ),
+            (
+                action_at_time(0, 1),
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: "2".to_string(),
+                    key_dist_address: ActionHash::from_raw_36(vec![1; 36]),
+                },
+            ),
+            (
+                action_at_time(0, 2),
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: "3".to_string(),
+                    key_dist_address: ActionHash::from_raw_36(vec![2; 36]),
+                },
+            ),
+        ];
+
+        let key_collections = vec![KeyCollectionWithKeys {
+            name: "test".to_string(),
+            verification_keys: vec![
+                test_vf_key_response(0),
+                test_vf_key_response(1),
+                test_vf_key_response(2),
+            ],
+        }];
+
+        let selected = select_pinned_signatures(
+            &possible_signatures,
+            key_collections,
+            &AgentPubKey::from_raw_36(vec![1; 36]),
+        );
 
         assert_eq!(2, selected.len());
 
@@ -674,7 +838,11 @@ mod tests {
             ],
         }];
 
-        let selected = select_pinned_signatures(&possible_signatures, key_collections);
+        let selected = select_pinned_signatures(
+            &possible_signatures,
+            key_collections,
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+        );
 
         assert_eq!(2, selected.len());
 
@@ -751,14 +919,23 @@ mod tests {
             ],
         }];
 
-        let selected = select_pinned_signatures(&possible_signatures, key_collections);
+        let selected = select_pinned_signatures(
+            &possible_signatures,
+            key_collections,
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+        );
 
         assert_eq!(MAX_SIGNATURES_FROM_CATEGORY, selected.len());
     }
 
     #[test]
     fn select_historical_signatures_empty() {
-        let picked = select_historical_signatures(&[], Timestamp::now(), test_fetcher);
+        let picked = select_historical_signatures(
+            &[],
+            Timestamp::now(),
+            &AgentPubKey::from_raw_36(vec![0; 36]),
+            test_fetcher,
+        );
         assert_eq!(0, picked.len());
     }
 
@@ -787,8 +964,12 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked =
-            select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
+        let picked = select_historical_signatures(
+            &possible_signatures,
+            Timestamp::now(),
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+            test_fetcher,
+        );
 
         // Should not return anything, leave these for recent selection
         assert_eq!(0, picked.len());
@@ -819,8 +1000,12 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked =
-            select_historical_signatures(&possible_signatures, Timestamp::now(), test_fetcher);
+        let picked = select_historical_signatures(
+            &possible_signatures,
+            Timestamp::now(),
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+            test_fetcher,
+        );
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -832,8 +1017,55 @@ mod tests {
     }
 
     #[test]
+    fn select_historical_ignore_mine() {
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24 * 100))
+            .timestamp(); // 100 days ago
+        let mut author = 0;
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 5; // 5s
+            author += 1;
+            action_at_time(time, author)
+        })
+        .take(5)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_historical_signatures(
+            &possible_signatures,
+            Timestamp::now(),
+            &AgentPubKey::from_raw_36(vec![3; 36]),
+            test_fetcher,
+        );
+
+        // Picked 4 of the possible 5 valid options
+        assert_eq!(4, picked.len());
+        assert!(picked
+            .iter()
+            .find(|p| p.author.get_raw_36()[0] == 3)
+            .is_none())
+    }
+
+    #[test]
     fn select_recent_signatures_empty() {
-        let picked = select_recent_signatures(&[], current_time(), test_fetcher);
+        let picked = select_recent_signatures(
+            &[],
+            current_time(),
+            &AgentPubKey::from_raw_36(vec![0; 36]),
+            test_fetcher,
+        );
         assert_eq!(0, picked.len());
     }
 
@@ -862,7 +1094,12 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(
+            &possible_signatures,
+            current_time(),
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+            test_fetcher,
+        );
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -895,7 +1132,12 @@ mod tests {
         })
         .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(
+            &possible_signatures,
+            current_time(),
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+            test_fetcher,
+        );
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -928,7 +1170,12 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        let picked = select_recent_signatures(&possible_signatures, current_time(), test_fetcher);
+        let picked = select_recent_signatures(
+            &possible_signatures,
+            current_time(),
+            &AgentPubKey::from_raw_36(vec![130; 36]),
+            test_fetcher,
+        );
 
         // Picked 5
         assert_eq!(5, picked.len());
@@ -937,6 +1184,48 @@ mod tests {
         assert!(picked
             .iter()
             .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+    }
+
+    #[test]
+    fn select_recent_ignore_mine() {
+        // Time in seconds
+        let mut time = chrono::prelude::Utc::now()
+            .sub(Duration::from_secs(60 * 60 * 24))
+            .timestamp(); // 1 day ago
+        let mut author = 0;
+
+        let possible_signatures = std::iter::repeat_with(|| {
+            time += 5; // +5 seconds
+            author += 1;
+            action_at_time(time, author)
+        })
+        .take(5)
+        .enumerate()
+        .map(|(idx, a)| {
+            (
+                a,
+                AssetSignature {
+                    fetch_url: "http://example.com".to_string(),
+                    signature: String::from_utf8(vec![idx as u8]).unwrap(),
+                    key_dist_address: ActionHash::from_raw_36(vec![0; 36]),
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+        let picked = select_recent_signatures(
+            &possible_signatures,
+            current_time(),
+            &AgentPubKey::from_raw_36(vec![3; 36]),
+            test_fetcher,
+        );
+
+        // Picked 4 of the possible 5 valid options
+        assert_eq!(4, picked.len());
+        assert!(picked
+            .iter()
+            .find(|p| p.author.get_raw_36()[0] == 3)
+            .is_none());
     }
 
     #[test]
@@ -950,7 +1239,7 @@ mod tests {
 
             t
         })
-        .take(12)
+        .take(13)
         .enumerate()
         .map(|(idx, time)| {
             (
@@ -976,19 +1265,54 @@ mod tests {
                 name: "test".to_string(),
                 verification_keys: key_responses,
             }],
+            Some(AssetSignature {
+                fetch_url: "http://example.com".to_string(),
+                signature: "4".to_string(),
+                key_dist_address: ActionHash::from_raw_36(vec![4; 36]),
+            }),
             test_fetcher,
             Timestamp::now()
                 .add(Duration::from_secs(60 * 60 * 24 * 15))
                 .unwrap(),
+            &AgentPubKey::from_raw_36(vec![4; 36]),
         );
 
-        assert_eq!(12, selected.len());
+        assert_eq!(13, selected.len());
+
+        assert_eq!(
+            1,
+            selected
+                .iter()
+                .filter(|s| s.reason == FetchCheckSignatureReason::Mine)
+                .count()
+        );
+        assert_eq!(
+            5,
+            selected
+                .iter()
+                .filter(|s| matches!(s.reason, FetchCheckSignatureReason::Pinned { .. }))
+                .count()
+        );
+        assert_eq!(
+            4,
+            selected
+                .iter()
+                .filter(|s| matches!(s.reason, FetchCheckSignatureReason::RandomRecent))
+                .count()
+        );
+        assert_eq!(
+            3,
+            selected
+                .iter()
+                .filter(|s| matches!(s.reason, FetchCheckSignatureReason::RandomHistorical))
+                .count()
+        );
 
         let selected_sigs_unique = selected
             .iter()
             .map(|s| s.signature.as_str())
             .collect::<HashSet<_>>();
-        assert_eq!(12, selected_sigs_unique.len());
+        assert_eq!(13, selected_sigs_unique.len());
     }
 
     fn current_time() -> Timestamp {
