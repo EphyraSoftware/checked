@@ -60,7 +60,10 @@ test("Create asset signature", async () => {
     const my_asset_signatures = await getMyAssetSignatures(alice.cells[0]);
 
     assert.equal(my_asset_signatures.length, 1);
-    assert.deepEqual(my_asset_signatures[0].key_dist_address, vf_key_dist_address);
+    assert.deepEqual(
+      my_asset_signatures[0].key_dist_address,
+      vf_key_dist_address,
+    );
   });
 });
 
@@ -68,7 +71,10 @@ test("Get my asset signatures", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([
+      appSource,
+      appSource,
+    ]);
 
     await distributeVerificationKey(
       alice.cells[0],
@@ -78,10 +84,10 @@ test("Get my asset signatures", async () => {
     );
 
     await distributeVerificationKey(
-        bob.cells[0],
-        sampleFetchKeyOther(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyOtherProofSignature(),
+      bob.cells[0],
+      sampleFetchKeyOther(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyOtherProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -101,14 +107,20 @@ test("Get my asset signatures", async () => {
     const aliceSignatures = await getMyAssetSignatures(alice.cells[0]);
 
     assert.equal(aliceSignatures.length, 1);
-    assert.equal(aliceSignatures[0].fetch_url, "https://example.com/sample.csv");
+    assert.equal(
+      aliceSignatures[0].fetch_url,
+      "https://example.com/sample.csv",
+    );
 
     const bobSignatures = await getMyAssetSignatures(bob.cells[0]);
 
     assert.equal(bobSignatures.length, 1);
     assert.equal(bobSignatures[0].fetch_url, "https://example.com/sample.csv");
 
-    assert.notEqual(aliceSignatures[0].key_dist_address, bobSignatures[0].key_dist_address);
+    assert.notEqual(
+      aliceSignatures[0].key_dist_address,
+      bobSignatures[0].key_dist_address,
+    );
   });
 });
 
@@ -149,10 +161,10 @@ test("Cannot resign an asset", async () => {
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
     await distributeVerificationKey(
-        alice.cells[0],
-        sampleFetchKey(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyProofSignature(),
+      alice.cells[0],
+      sampleFetchKey(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -176,7 +188,11 @@ test("Cannot resign an asset", async () => {
     } catch (e) {
       err_msg = e.message;
     }
-    assert.isTrue(err_msg.includes("An asset signature with the same fetch URL already exists"));
+    assert.isTrue(
+      err_msg.includes(
+        "An asset signature with the same fetch URL already exists",
+      ),
+    );
 
     const mySignaturesAfter = await getMyAssetSignatures(alice.cells[0]);
     assert.equal(mySignaturesAfter.length, 1);
@@ -190,10 +206,10 @@ test("Cannot resign an asset after deleting the original signature", async () =>
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
     await distributeVerificationKey(
-        alice.cells[0],
-        sampleFetchKey(),
-        sampleFetchKeyProof(),
-        sampleFetchKeyProofSignature(),
+      alice.cells[0],
+      sampleFetchKey(),
+      sampleFetchKeyProof(),
+      sampleFetchKeyProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -207,7 +223,7 @@ test("Cannot resign an asset after deleting the original signature", async () =>
     assert.equal(mySignatures.length, 1);
 
     await deleteAssetSignature(alice.cells[0], {
-        fetch_url: "https://example.com/sample.csv",
+      fetch_url: "https://example.com/sample.csv",
     });
 
     let err_msg = "";
@@ -221,7 +237,11 @@ test("Cannot resign an asset after deleting the original signature", async () =>
     } catch (e) {
       err_msg = e.message;
     }
-    assert.isTrue(err_msg.includes("An asset signature with the same fetch URL already exists"));
+    assert.isTrue(
+      err_msg.includes(
+        "An asset signature with the same fetch URL already exists",
+      ),
+    );
 
     const mySignaturesAfter = await getMyAssetSignatures(alice.cells[0]);
     assert.equal(mySignaturesAfter.length, 0);
