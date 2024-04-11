@@ -108,8 +108,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let has_mine_signature = response
         .iter()
-        .find(|s| s.reason == FetchCheckSignatureReason::Mine)
-        .is_some();
+        .any(|s| s.reason == FetchCheckSignatureReason::Mine);
 
     let mut tmp_file = tempfile::Builder::new()
         .prefix("checked-")

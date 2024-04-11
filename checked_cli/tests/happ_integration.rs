@@ -47,6 +47,7 @@ async fn generate_signing_keypair() -> anyhow::Result<()> {
     Ok(())
 }
 
+// With a keypair that has already been generated, distribute it on Holochain
 #[tokio::test(flavor = "multi_thread")]
 async fn distribute_existing_keypair() -> anyhow::Result<()> {
     let conductor = SweetConductor::from_standard_config().await;
@@ -94,7 +95,8 @@ async fn distribute_existing_keypair() -> anyhow::Result<()> {
     Ok(())
 }
 
-// TODO this test should `sign` not `fetch`
+// Given an asset that has already been uploaded to a location it can be downloaded from. Create a
+// signature for the local copy of the asset and distribute it on Holochain.
 #[tokio::test(flavor = "multi_thread")]
 async fn create_first_asset_signature() -> anyhow::Result<()> {
     let conductor = SweetConductor::from_standard_config().await;
@@ -118,21 +120,25 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
     let (addr, _fs_abort_handle) = start_sample_file_server().await;
     let url = format!("http://{}:{}/test.txt", addr.ip(), addr.port());
 
-    let fetch_info = fetch(FetchArgs {
-        url: url.clone(),
-        port: admin_port,
-        name,
-        output: Some(dir.as_ref().to_path_buf()),
+    let content_path = dir.as_ref().join("test.txt");
+    File::options()
+        .create_new(true)
+        .write(true)
+        .open(&content_path)?
+        .write_all(b"test")?;
+
+    let signature_path = sign(SignArgs {
+        url: Some(url.clone()),
+        name: name.clone(),
+        port: Some(admin_port),
         password: Some("test".to_string()),
         path: Some(dir.as_ref().to_path_buf()),
-        allow_no_signatures: Some(true),
-        sign: Some(true),
+        file: content_path,
+        output: None,
+        distribute: true,
         app_id: None,
-        approve: Some(true),
     })
     .await?;
-
-    assert!(fetch_info.signature_path.is_some());
 
     let zome = get_zome_handle(&conductor, "checked", "fetch").await;
 
@@ -143,13 +149,15 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
     assert_eq!(1, signatures.len());
     assert_eq!(url, signatures[0].fetch_url);
     assert_eq!(
-        std::fs::read_to_string(fetch_info.signature_path.unwrap())?,
+        std::fs::read_to_string(signature_path)?,
         signatures[0].signature
     );
 
     Ok(())
 }
 
+// Given an asset that has already been signed by other agents, fetch the asset and use those
+// signatures to verify the asset.
 #[tokio::test(flavor = "multi_thread")]
 async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
     let conductor = SweetConductor::from_standard_config().await;
@@ -238,6 +246,9 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Given an asset that has already been signed by other agents, with some signatures that don't
+// match the real asset. Check that the asset can still be fetched, assuming the the user chooses
+// to accept the signatures report.
 #[tokio::test(flavor = "multi_thread")]
 async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
     let conductor = SweetConductor::from_standard_config().await;

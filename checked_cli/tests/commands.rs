@@ -2,7 +2,7 @@ use checked_cli::prelude::{generate, sign, verify, GenerateArgs, SignArgs, Verif
 use std::fs::File;
 use std::io::Write;
 
-// Generate a signing keypair, do not distribute
+// Generate a signing keypair, do not distribute.
 #[tokio::test(flavor = "multi_thread")]
 async fn generate_signing_keypair() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
@@ -23,6 +23,7 @@ async fn generate_signing_keypair() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Create a signature for a file.
 #[tokio::test(flavor = "multi_thread")]
 async fn sign_file() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
@@ -67,6 +68,7 @@ async fn sign_file() -> anyhow::Result<()> {
     Ok(())
 }
 
+// Sign a file then check the signature is valid against the same file.
 #[tokio::test(flavor = "multi_thread")]
 async fn verify_signed_file() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
