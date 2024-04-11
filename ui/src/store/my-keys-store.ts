@@ -1,6 +1,9 @@
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { VerificationKeyDist, VfKeyResponse } from "../trusted/trusted/types";
+import {
+  VerificationKeyDist,
+  VfKeyResponse,
+} from "../checked/signing_keys/types";
 import { ActionHash, AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 

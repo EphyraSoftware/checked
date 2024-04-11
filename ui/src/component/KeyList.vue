@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useMyKeysStore } from "../store/my-keys-store";
 import { formatDistanceToNow } from "date-fns";
-import { VfKeyResponse } from "../trusted/trusted/types";
+import { VfKeyResponse } from "../checked/signing_keys/types";
 
 defineProps<{
   keyDistList: VfKeyResponse[];

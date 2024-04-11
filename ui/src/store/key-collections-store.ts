@@ -1,7 +1,7 @@
 import { AppAgentClient } from "@holochain/client";
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import { VfKeyResponse } from "../trusted/trusted/types";
+import { VfKeyResponse } from "../checked/signing_keys/types";
 import { registerSignalHandler } from "../signals";
 
 export interface KeyCollectionWithKeys {

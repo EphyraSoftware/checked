@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import MyKeys from "../trusted/trusted/MyKeys.vue";
-import KeyCollections from "../trusted/trusted/KeyCollections.vue";
+import MyKeys from "../checked/signing_keys/MyKeys.vue";
+import KeyCollections from "../checked/signing_keys/KeyCollections.vue";
 import NavBar from "../component/NavBar.vue";
 </script>
 
