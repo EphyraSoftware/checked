@@ -26,13 +26,6 @@ onMounted(async () => {
   client.value = await AppAgentWebsocket.connect("hWOT");
   loading.value = false;
 });
-
-// TODO Would be nice if this worked, but really Holochain needs to detect dropped connections and stop trying to broadcast on them
-// window.onbeforeunload = () => {
-//   if (client.value) {
-//     (client.value as AppAgentWebsocket).appWebsocket.client.close();
-//   }
-// };
 </script>
 
 <template>
