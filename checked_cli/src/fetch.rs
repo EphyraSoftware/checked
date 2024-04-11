@@ -67,7 +67,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let mut app_client = hc_client::get_authenticated_app_agent_client(
         fetch_args.port,
-        fetch_args.path.clone(),
+        fetch_args.config_dir.clone(),
         fetch_args.app_id.clone(),
     )
     .await?;
@@ -85,7 +85,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
         )
         .await
         .map_err(|e| {
-            maybe_handle_holochain_error(&e, fetch_args.path.clone());
+            maybe_handle_holochain_error(&e, fetch_args.config_dir.clone());
             anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e)
         })?;
 
@@ -167,20 +167,27 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     println!("Downloaded to {:?}", path);
 
-    let reports = check_signatures(path.clone(), response)?;
-    show_report(&reports);
+    // No point running the check and report if there are no signatures
+    let reports = if !response.is_empty() {
+        let reports = check_signatures(path.clone(), response)?;
+        show_report(&reports);
 
-    if !fetch_args.approve_signature()? {
-        println!("Discarding temporary asset...");
-        std::fs::remove_file(path.clone())?;
+        if !fetch_args.approve_signatures_report()? {
+            println!("Discarding temporary asset...");
+            std::fs::remove_file(path.clone())?;
 
-        println!("Done");
-        return Ok(FetchInfo {
-            output_path: None,
-            signature_path: None,
-            reports,
-        });
-    }
+            println!("Done");
+            return Ok(FetchInfo {
+                output_path: None,
+                signature_path: None,
+                reports,
+            });
+        }
+
+        reports
+    } else {
+        vec![]
+    };
 
     std::fs::rename(path.clone(), &output_path)?;
 
@@ -198,7 +205,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
         name: fetch_args.name.clone(),
         port: Some(fetch_args.port),
         password: Some(fetch_args.get_password()?),
-        path: fetch_args.path.clone(),
+        config_dir: fetch_args.config_dir.clone(),
         file: output_path.clone(),
         output: None,
         distribute: true,
@@ -287,7 +294,7 @@ fn check_one_signature(
 }
 
 fn show_report(report: &[SignatureCheckReport]) {
-    println!("Looking for existing signature:");
+    println!("\nLooking for existing signature:");
     let maybe_mine_report = report
         .iter()
         .find(|r| r.reason == FetchCheckSignatureReason::Mine);
@@ -304,7 +311,7 @@ fn show_report(report: &[SignatureCheckReport]) {
         println!("No signature from you was found.");
     }
 
-    println!("Looking for historical signatures:");
+    println!("\nLooking for historical signatures:");
     let maybe_historical_report = report
         .iter()
         .find(|r| r.reason == FetchCheckSignatureReason::RandomHistorical);
@@ -374,6 +381,8 @@ fn show_report(report: &[SignatureCheckReport]) {
     } else {
         println!("No recent signatures were found.");
     }
+
+    println!();
 }
 
 fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<PathBuf> {

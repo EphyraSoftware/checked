@@ -41,7 +41,7 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
 
     let mut sig_file = open_file(&sig_path)?;
 
-    let store_dir = get_store_dir(sign_args.path.clone())?;
+    let store_dir = get_store_dir(sign_args.config_dir.clone())?;
 
     // Signing key
     let sk_path = get_signing_key_path(&store_dir, &sign_args.name);
@@ -88,7 +88,7 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         sign_args
             .port
             .ok_or_else(|| anyhow::anyhow!("port is required for distribution"))?,
-        sign_args.path.clone(),
+        sign_args.config_dir.clone(),
         sign_args.app_id,
     )
     .await?;

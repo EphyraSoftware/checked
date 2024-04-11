@@ -63,12 +63,12 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
 
     let mut app_client = get_authenticated_app_agent_client(
         distribute_args.port,
-        distribute_args.path.clone(),
+        distribute_args.config_dir.clone(),
         distribute_args.app_id.clone(),
     )
     .await?;
 
-    let store_dir = get_store_dir(distribute_args.path.clone())?;
+    let store_dir = get_store_dir(distribute_args.config_dir.clone())?;
     let vk_path = get_verification_key_path(&store_dir, &distribute_args.name);
 
     let proof = generate_proof();
@@ -87,7 +87,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
         name: distribute_args.name.clone(),
         port: Some(distribute_args.port),
         password: Some(distribute_args.get_password()?),
-        path: distribute_args.path.clone(),
+        config_dir: distribute_args.config_dir.clone(),
         file: tmp_file.path().to_path_buf(),
         output: None,
         // This is a temporary file for demonstrating private key access, should not be distributed as an asset signature
@@ -114,7 +114,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
         )
         .await
         .map_err(|e| {
-            maybe_handle_holochain_error(&e, distribute_args.path);
+            maybe_handle_holochain_error(&e, distribute_args.config_dir);
             anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e)
         })?;
 

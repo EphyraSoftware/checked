@@ -57,11 +57,11 @@ pub struct GenerateArgs {
     #[arg(long, short)]
     pub distribute: Option<bool>,
 
-    /// The directory to save the key in.
+    /// The config directory for `checked`.
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long)]
-    pub path: Option<PathBuf>,
+    pub config_dir: Option<PathBuf>,
 
     /// Override the app id that `checked` has been installed with on Holochain.
     #[arg(long)]
@@ -93,11 +93,11 @@ pub struct SignArgs {
     #[arg(long)]
     pub password: Option<String>,
 
-    /// The directory to find the signing key in.
+    /// The config directory for `checked`.
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
-    pub path: Option<PathBuf>,
+    pub config_dir: Option<PathBuf>,
 
     /// The file to sign.
     #[arg(long, short)]
@@ -162,7 +162,7 @@ pub struct DistributeArgs {
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
-    pub path: Option<PathBuf>,
+    pub config_dir: Option<PathBuf>,
 
     /// Override the app id that `checked` has been installed with on Holochain.
     #[arg(long)]
@@ -211,7 +211,7 @@ pub struct FetchArgs {
     ///
     /// Defaults to `.config/checked` in your home directory.
     #[arg(long, short)]
-    pub path: Option<PathBuf>,
+    pub config_dir: Option<PathBuf>,
 
     /// Continue if no existing signatures are found.
     ///

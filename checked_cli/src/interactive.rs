@@ -63,11 +63,11 @@ impl FetchArgs {
 
     /// Whether the signature checks are acceptable and the asset should be retained. This is
     /// primarily an interactive prompt but can be forced with [FetchArgs::approve].
-    pub fn approve_signature(&self) -> anyhow::Result<bool> {
+    pub fn approve_signatures_report(&self) -> anyhow::Result<bool> {
         match self.approve {
             Some(approve_signature) => Ok(approve_signature),
             None => Ok(dialoguer::Confirm::new()
-                .with_prompt("Approve this signature?")
+                .with_prompt("Approve the download?")
                 .interact()?),
         }
     }

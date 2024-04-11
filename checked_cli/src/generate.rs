@@ -17,7 +17,7 @@ pub struct GenerateInfo {
 
 /// Generate a new signing keypair and optionally distribute the verification (public) key on Holochain.
 pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<GenerateInfo> {
-    let store_dir = get_store_dir(generate_args.path.clone())?;
+    let store_dir = get_store_dir(generate_args.config_dir.clone())?;
 
     // Signing key
     let sk_path = get_signing_key_path(&store_dir, &generate_args.name);
@@ -75,7 +75,7 @@ async fn dispatch_distribute(generate_args: GenerateArgs, password: String) -> a
         port: admin_port,
         name: generate_args.name,
         password: Some(password),
-        path: generate_args.path,
+        config_dir: generate_args.config_dir,
         app_id: generate_args.app_id,
     })
     .await?;

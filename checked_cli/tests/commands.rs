@@ -12,7 +12,7 @@ async fn generate_signing_keypair() -> anyhow::Result<()> {
         port: None,
         password: Some("test".to_string()),
         distribute: Some(false),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -34,7 +34,7 @@ async fn sign_file() -> anyhow::Result<()> {
         port: None,
         password: Some("test".to_string()),
         distribute: Some(false),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -51,7 +51,7 @@ async fn sign_file() -> anyhow::Result<()> {
         name: name.clone(),
         port: None,
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         file: test_file.clone(),
         output: None,
         distribute: false,
@@ -79,7 +79,7 @@ async fn verify_signed_file() -> anyhow::Result<()> {
         port: None,
         password: Some("test".to_string()),
         distribute: Some(false),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -96,7 +96,7 @@ async fn verify_signed_file() -> anyhow::Result<()> {
         name: name.clone(),
         port: None,
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         file: test_file.clone(),
         output: None,
         distribute: false,

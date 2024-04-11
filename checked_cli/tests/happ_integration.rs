@@ -31,7 +31,7 @@ async fn generate_signing_keypair() -> anyhow::Result<()> {
         port: Some(admin_port),
         password: Some("test".to_string()),
         distribute: Some(true),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -63,7 +63,7 @@ async fn distribute_existing_keypair() -> anyhow::Result<()> {
         port: None,
         password: Some("test".to_string()),
         distribute: Some(false),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -80,7 +80,7 @@ async fn distribute_existing_keypair() -> anyhow::Result<()> {
         port: admin_port,
         name,
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -112,7 +112,7 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
         port: Some(admin_port),
         password: Some("test".to_string()),
         distribute: Some(true),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -132,7 +132,7 @@ async fn create_first_asset_signature() -> anyhow::Result<()> {
         name: name.clone(),
         port: Some(admin_port),
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         file: content_path,
         output: None,
         distribute: true,
@@ -189,7 +189,7 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
         port: Some(admin_port),
         password: Some("test".to_string()),
         distribute: Some(true),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -200,7 +200,7 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
         name,
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         allow_no_signatures: Some(false),
         sign: Some(true),
         app_id: None,
@@ -280,7 +280,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
         port: Some(admin_port),
         password: Some("test".to_string()),
         distribute: Some(true),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
     .await?;
@@ -291,7 +291,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
         name,
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         allow_no_signatures: Some(false),
         sign: Some(true),
         app_id: None,
@@ -448,7 +448,7 @@ async fn publish_asset_signature(
         port: Some(admin_port),
         password: Some("test".to_string()),
         distribute: Some(true),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: Some(app_id.clone()),
     })
     .await
@@ -460,7 +460,7 @@ async fn publish_asset_signature(
         name: name.clone(),
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
-        path: Some(dir.as_ref().to_path_buf()),
+        config_dir: Some(dir.as_ref().to_path_buf()),
         allow_no_signatures: Some(true),
         sign: Some(!bad_signature),
         app_id: Some(app_id.clone()),
@@ -479,7 +479,7 @@ async fn publish_asset_signature(
             name: name.clone(),
             port: Some(admin_port),
             password: Some("test".to_string()),
-            path: Some(dir.as_ref().to_path_buf()),
+            config_dir: Some(dir.as_ref().to_path_buf()),
             file: output_path,
             output: None,
             distribute: true,
