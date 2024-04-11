@@ -13,6 +13,7 @@ export interface FetchCheckSignaturePinned {
 }
 
 export type FetchCheckSignatureReason =
+  | { Mine: null }
   | { RandomRecent: null }
   | { RandomHistorical: null }
   | { Pinned: FetchCheckSignaturePinned };
@@ -58,7 +59,7 @@ export const prepareFetch = async (
 export const createAssetSignature = async (
   cell: CallableCell,
   request: CreateAssetSignature,
-) => {
+): Promise<ActionHash> => {
   return cell.callZome({
     zome_name: "fetch",
     fn_name: "create_asset_signature",

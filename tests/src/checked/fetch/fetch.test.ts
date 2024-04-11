@@ -42,12 +42,13 @@ test("Create asset signature", async () => {
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
-    await distributeVerificationKey(
+    const record = await distributeVerificationKey(
       alice.cells[0],
       sampleFetchKey(),
       sampleFetchKeyProof(),
       sampleFetchKeyProofSignature(),
     );
+    const vf_key_dist_address = record.signed_action.hashed.hash;
 
     await createAssetSignature(alice.cells[0], {
       fetch_url: "https://example.com/sample.csv",
@@ -56,12 +57,10 @@ test("Create asset signature", async () => {
       verification_key: sampleFetchKey(),
     });
 
-    const check_signatures = await prepareFetch(alice.cells[0], {
-      fetch_url: "https://example.com/sample.csv",
-    });
+    const my_asset_signatures = await getMyAssetSignatures(alice.cells[0]);
 
-    assert.equal(check_signatures.length, 1);
-    assert.deepEqual(check_signatures[0].reason, { RandomRecent: null });
+    assert.equal(my_asset_signatures.length, 1);
+    assert.deepEqual(my_asset_signatures[0].key_dist_address, vf_key_dist_address);
   });
 });
 
@@ -69,13 +68,20 @@ test("Get my asset signatures", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
-    const [alice] = await scenario.addPlayersWithApps([appSource]);
+    const [alice, bob] = await scenario.addPlayersWithApps([appSource, appSource]);
 
     await distributeVerificationKey(
       alice.cells[0],
       sampleFetchKey(),
       sampleFetchKeyProof(),
       sampleFetchKeyProofSignature(),
+    );
+
+    await distributeVerificationKey(
+        bob.cells[0],
+        sampleFetchKeyOther(),
+        sampleFetchKeyProof(),
+        sampleFetchKeyOtherProofSignature(),
     );
 
     await createAssetSignature(alice.cells[0], {
@@ -85,10 +91,24 @@ test("Get my asset signatures", async () => {
       verification_key: sampleFetchKey(),
     });
 
-    const mySignatures = await getMyAssetSignatures(alice.cells[0]);
+    await createAssetSignature(bob.cells[0], {
+      fetch_url: "https://example.com/sample.csv",
+      signature: sampleFetchOtherAssetSignature(),
+      key_type: { MiniSignEd25519: null },
+      verification_key: sampleFetchKeyOther(),
+    });
 
-    assert.equal(mySignatures.length, 1);
-    assert.equal(mySignatures[0].fetch_url, "https://example.com/sample.csv");
+    const aliceSignatures = await getMyAssetSignatures(alice.cells[0]);
+
+    assert.equal(aliceSignatures.length, 1);
+    assert.equal(aliceSignatures[0].fetch_url, "https://example.com/sample.csv");
+
+    const bobSignatures = await getMyAssetSignatures(bob.cells[0]);
+
+    assert.equal(bobSignatures.length, 1);
+    assert.equal(bobSignatures[0].fetch_url, "https://example.com/sample.csv");
+
+    assert.notEqual(aliceSignatures[0].key_dist_address, bobSignatures[0].key_dist_address);
   });
 });
 
@@ -119,6 +139,92 @@ test("Delete an asset signature", async () => {
     const mySignatures = await getMyAssetSignatures(alice.cells[0]);
 
     assert.equal(mySignatures.length, 0);
+  });
+});
+
+test("Cannot resign an asset", async () => {
+  await runScenario(async (scenario) => {
+    const appSource = { appBundleSource: { path: testAppPath } };
+
+    const [alice] = await scenario.addPlayersWithApps([appSource]);
+
+    await distributeVerificationKey(
+        alice.cells[0],
+        sampleFetchKey(),
+        sampleFetchKeyProof(),
+        sampleFetchKeyProofSignature(),
+    );
+
+    await createAssetSignature(alice.cells[0], {
+      fetch_url: "https://example.com/sample.csv",
+      signature: sampleFetchAssetSignature(),
+      key_type: { MiniSignEd25519: null },
+      verification_key: sampleFetchKey(),
+    });
+
+    const mySignatures = await getMyAssetSignatures(alice.cells[0]);
+    assert.equal(mySignatures.length, 1);
+
+    let err_msg = "";
+    try {
+      await createAssetSignature(alice.cells[0], {
+        fetch_url: "https://example.com/sample.csv",
+        signature: sampleFetchAssetSignature(),
+        key_type: { MiniSignEd25519: null },
+        verification_key: sampleFetchKey(),
+      });
+    } catch (e) {
+      err_msg = e.message;
+    }
+    assert.isTrue(err_msg.includes("An asset signature with the same fetch URL already exists"));
+
+    const mySignaturesAfter = await getMyAssetSignatures(alice.cells[0]);
+    assert.equal(mySignaturesAfter.length, 1);
+  });
+});
+
+test("Cannot resign an asset after deleting the original signature", async () => {
+  await runScenario(async (scenario) => {
+    const appSource = { appBundleSource: { path: testAppPath } };
+
+    const [alice] = await scenario.addPlayersWithApps([appSource]);
+
+    await distributeVerificationKey(
+        alice.cells[0],
+        sampleFetchKey(),
+        sampleFetchKeyProof(),
+        sampleFetchKeyProofSignature(),
+    );
+
+    await createAssetSignature(alice.cells[0], {
+      fetch_url: "https://example.com/sample.csv",
+      signature: sampleFetchAssetSignature(),
+      key_type: { MiniSignEd25519: null },
+      verification_key: sampleFetchKey(),
+    });
+
+    const mySignatures = await getMyAssetSignatures(alice.cells[0]);
+    assert.equal(mySignatures.length, 1);
+
+    await deleteAssetSignature(alice.cells[0], {
+        fetch_url: "https://example.com/sample.csv",
+    });
+
+    let err_msg = "";
+    try {
+      await createAssetSignature(alice.cells[0], {
+        fetch_url: "https://example.com/sample.csv",
+        signature: sampleFetchAssetSignature(),
+        key_type: { MiniSignEd25519: null },
+        verification_key: sampleFetchKey(),
+      });
+    } catch (e) {
+      err_msg = e.message;
+    }
+    assert.isTrue(err_msg.includes("An asset signature with the same fetch URL already exists"));
+
+    const mySignaturesAfter = await getMyAssetSignatures(alice.cells[0]);
+    assert.equal(mySignaturesAfter.length, 0);
   });
 });
 
@@ -180,7 +286,7 @@ test("Signatures from multiple selection strategies", async () => {
 
     assert.equal(check_signatures_alice.length, 2);
     assert.deepEqual(check_signatures_alice[0].reason, {
-      RandomRecent: null,
+      Mine: null,
     });
     assert.deepEqual(check_signatures_alice[1].reason, {
       RandomRecent: null,
@@ -191,17 +297,16 @@ test("Signatures from multiple selection strategies", async () => {
     });
 
     assert.equal(check_signatures_bob.length, 2);
-    assert.deepEqual(check_signatures_bob[0].author, alice.agentPubKey);
+    assert.deepEqual(check_signatures_bob[0].author, bob.agentPubKey);
     assert.deepEqual(check_signatures_bob[0].reason, {
+      Mine: null,
+    });
+    assert.deepEqual(check_signatures_bob[1].author, alice.agentPubKey);
+    assert.deepEqual(check_signatures_bob[1].reason, {
       Pinned: {
         key_name: "test",
         key_collection: "bob collection",
       },
-    });
-    // TODO should self signatures be returned? Probably yes but with its own reason
-    assert.deepEqual(check_signatures_bob[1].author, bob.agentPubKey);
-    assert.deepEqual(check_signatures_bob[1].reason, {
-      RandomRecent: null,
     });
   });
 });
