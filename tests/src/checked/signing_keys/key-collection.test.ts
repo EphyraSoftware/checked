@@ -101,6 +101,8 @@ test("Link verification key distribution to collection", async () => {
     );
     assert.ok(key_collection_record);
 
+    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
+
     // Bob links Alice's verification key to the key collection
     await linkVerificationKeyToKeyCollection(
       bob.cells[0],
@@ -142,6 +144,8 @@ test("Unlink verification key from collection", async () => {
       "a test",
     );
     assert.ok(key_collection_record);
+
+    await dhtSync([alice, bob], alice.cells[0].cell_id[0]);
 
     // Bob links Alice's verification key to the key collection
     await linkVerificationKeyToKeyCollection(
