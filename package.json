@@ -17,7 +17,7 @@
     "network:tauri": "hc s clean && npm run build:happ && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:tauri\" \"echo 'Not running holochain-playground'\"",
     "launch:tauri": "concurrently \"hc run-local-services --bootstrap-port $BOOTSTRAP_PORT --signal-port $SIGNAL_PORT\" \"echo pass | RUST_LOG=warn hc launch --piped -n $AGENTS workdir/checked.happ --ui-port $UI_PORT network --bootstrap http://127.0.0.1:\"$BOOTSTRAP_PORT\" webrtc ws://127.0.0.1:\"$SIGNAL_PORT\"\"",
     "package": "npm run build:happ && npm run package -w ui && hc web-app pack workdir --recursive",
-    "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
+    "build:happ": "npm run build:zomes && find ./target/wasm32-unknown-unknown/release/*.wasm | xargs -I '{}' wasm-opt '{}' -O2 --output '{}' && hc app pack workdir --recursive",
     "build:zomes": "RUSTFLAGS='' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
     "lint": "npm run -w ui lint && npm run -w tests lint && cargo clippy && cargo clippy --manifest-path ./checked_cli/Cargo.toml",
     "format": "npm run -w ui format && npm run -w tests format && cargo fmt && cargo fmt --manifest-path ./checked_cli/Cargo.toml"

@@ -114,7 +114,8 @@
               nodejs_20
               minisign
               libsodium
-              lcov
+              upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
+              binaryen # For wasm-opt, optimising wasms before packaging
             ];
 
             shellHook = ''
