@@ -77,7 +77,7 @@ async fn distribute_existing_keypair() -> anyhow::Result<()> {
     assert_eq!(0, keys.len());
 
     distribute(DistributeArgs {
-        port: admin_port,
+        port: Some(admin_port),
         name,
         password: Some("test".to_string()),
         config_dir: Some(dir.as_ref().to_path_buf()),
@@ -196,7 +196,7 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
 
     let fetch_info = fetch(FetchArgs {
         url: url.clone(),
-        port: admin_port,
+        port: Some(admin_port),
         name,
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
@@ -287,7 +287,7 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
 
     let fetch_info = fetch(FetchArgs {
         url: url.clone(),
-        port: admin_port,
+        port: Some(admin_port),
         name,
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
@@ -456,7 +456,7 @@ async fn publish_asset_signature(
 
     let fetch_info = fetch(FetchArgs {
         url: url.to_string(),
-        port: admin_port,
+        port: Some(admin_port),
         name: name.clone(),
         output: Some(dir.as_ref().to_path_buf()),
         password: Some("test".to_string()),
