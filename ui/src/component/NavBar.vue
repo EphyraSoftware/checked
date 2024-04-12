@@ -39,7 +39,7 @@ const router = useRouter();
     </div>
     <div class="navbar-center">
       <button class="btn btn-ghost text-xl" @click="router.push('/')">
-        Web of Trust
+        Checked
       </button>
     </div>
     <div class="navbar-end">
