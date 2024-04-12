@@ -141,7 +141,7 @@ pub struct VerifyArgs {
 pub struct DistributeArgs {
     /// The admin port for Holochain
     #[arg(long, short)]
-    pub port: u16,
+    pub port: Option<u16>,
 
     /// Name of the key to distribute.
     ///
@@ -177,7 +177,7 @@ pub struct FetchArgs {
 
     /// The admin port for Holochain
     #[arg(long, short)]
-    pub port: u16,
+    pub port: Option<u16>,
 
     /// Name of the key to use for signing.
     ///

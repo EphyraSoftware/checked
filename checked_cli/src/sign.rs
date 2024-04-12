@@ -84,10 +84,10 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         return Ok(sig_path);
     }
 
+    let admin_port = sign_args.admin_port()?;
+
     let mut app_client = hc_client::get_authenticated_app_agent_client(
-        sign_args
-            .port
-            .ok_or_else(|| anyhow::anyhow!("port is required for distribution"))?,
+        admin_port,
         sign_args.config_dir.clone(),
         sign_args.app_id,
     )

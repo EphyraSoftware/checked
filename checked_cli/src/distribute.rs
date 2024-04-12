@@ -61,8 +61,10 @@ const PROOF_WORDS: [&str; 40] = [
 pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     println!("Distributing key: {}", distribute_args.name);
 
+    let admin_port = distribute_args.admin_port()?;
+
     let mut app_client = get_authenticated_app_agent_client(
-        distribute_args.port,
+        admin_port,
         distribute_args.config_dir.clone(),
         distribute_args.app_id.clone(),
     )
@@ -85,7 +87,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     let sig_path = sign(SignArgs {
         url: None,
         name: distribute_args.name.clone(),
-        port: Some(distribute_args.port),
+        port: Some(admin_port),
         password: Some(distribute_args.get_password()?),
         config_dir: distribute_args.config_dir.clone(),
         file: tmp_file.path().to_path_buf(),
@@ -115,7 +117,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
         .await
         .map_err(|e| {
             maybe_handle_holochain_error(&e, distribute_args.config_dir);
-            anyhow::anyhow!("Failed to get signatures for the asset: {:?}", e)
+            anyhow::anyhow!("Failed to distribute verification key: {:?}", e)
         })?;
 
     println!("Successfully distributed on Holochain!");

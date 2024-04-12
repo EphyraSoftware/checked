@@ -25,6 +25,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8.5"
 itertools = "0.12.1"
+proc-ctl = { version = "0.3.0" }
 
 [target.'cfg(any(windows, unix))'.dependencies]
 dirs = "5.0.1"

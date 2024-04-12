@@ -16,6 +16,7 @@ mod distribute;
 mod fetch;
 mod generate;
 pub(crate) mod hc_client;
+mod hc_discover;
 mod interactive;
 mod sign;
 mod verify;

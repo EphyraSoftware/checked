@@ -65,8 +65,10 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let output_path = get_output_path(&fetch_args, &fetch_url)?;
 
+    let admin_port = fetch_args.admin_port()?;
+
     let mut app_client = hc_client::get_authenticated_app_agent_client(
-        fetch_args.port,
+        admin_port,
         fetch_args.config_dir.clone(),
         fetch_args.app_id.clone(),
     )
@@ -203,7 +205,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let signature_path = sign(SignArgs {
         url: Some(fetch_args.url.clone()),
         name: fetch_args.name.clone(),
-        port: Some(fetch_args.port),
+        port: Some(admin_port),
         password: Some(fetch_args.get_password()?),
         config_dir: fetch_args.config_dir.clone(),
         file: output_path.clone(),

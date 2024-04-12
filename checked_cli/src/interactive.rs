@@ -1,4 +1,5 @@
 use crate::cli::{DistributeArgs, FetchArgs, GenerateArgs, SignArgs};
+use crate::hc_discover::interactive_discover_holochain;
 
 /// Common trait to allow for passwords to be retrieved from the user.
 pub trait GetPassword {
@@ -49,7 +50,61 @@ fn get_password_common(
     }
 }
 
+impl GenerateArgs {
+    /// The admin port for Holochain.
+    ///
+    /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
+    /// open ports on that process. The user will be prompted for the process and port to use where
+    /// multiple of either are found.
+    pub fn admin_port(&self) -> anyhow::Result<u16> {
+        match self.port {
+            Some(port) => Ok(port),
+            None => interactive_discover_holochain(),
+        }
+    }
+}
+
+impl SignArgs {
+    /// The admin port for Holochain.
+    ///
+    /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
+    /// open ports on that process. The user will be prompted for the process and port to use where
+    /// multiple of either are found.
+    pub fn admin_port(&self) -> anyhow::Result<u16> {
+        match self.port {
+            Some(port) => Ok(port),
+            None => interactive_discover_holochain(),
+        }
+    }
+}
+
+impl DistributeArgs {
+    /// The admin port for Holochain.
+    ///
+    /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
+    /// open ports on that process. The user will be prompted for the process and port to use where
+    /// multiple of either are found.
+    pub fn admin_port(&self) -> anyhow::Result<u16> {
+        match self.port {
+            Some(port) => Ok(port),
+            None => interactive_discover_holochain(),
+        }
+    }
+}
+
 impl FetchArgs {
+    /// The admin port for Holochain.
+    ///
+    /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
+    /// open ports on that process. The user will be prompted for the process and port to use where
+    /// multiple of either are found.
+    pub fn admin_port(&self) -> anyhow::Result<u16> {
+        match self.port {
+            Some(port) => Ok(port),
+            None => interactive_discover_holochain(),
+        }
+    }
+
     /// Whether the asset should be downloaded even if no signatures are found. This is primarily
     /// an interactive prompt but can be forced with [FetchArgs::allow_no_signatures].
     pub fn allow_no_signatures(&self) -> anyhow::Result<bool> {

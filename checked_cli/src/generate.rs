@@ -64,15 +64,8 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<GenerateInf
 }
 
 async fn dispatch_distribute(generate_args: GenerateArgs, password: String) -> anyhow::Result<()> {
-    let admin_port = match generate_args.port {
-        Some(port) => port,
-        None => dialoguer::Input::<u16>::new()
-            .with_prompt("Admin port for Holochain")
-            .interact()?,
-    };
-
     distribute(DistributeArgs {
-        port: admin_port,
+        port: Some(generate_args.admin_port()?),
         name: generate_args.name,
         password: Some(password),
         config_dir: generate_args.config_dir,
