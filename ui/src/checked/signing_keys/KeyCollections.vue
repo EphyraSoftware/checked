@@ -21,7 +21,7 @@ const { loading, keyCollections } = storeToRefs(useKeyCollectionsStore());
           <p>
             You don't have any key collections yet.
             <router-link to="/search" class="link link-neutral"
-              >Search for one to add</router-link
+              >Search for keys to get started</router-link
             >?
           </p>
         </div>

@@ -8,7 +8,7 @@ import {
   ActionHash,
 } from "@holochain/client";
 
-export type TrustedSignal =
+export type CheckedSigningKeysSignal =
   | {
       type: "EntryCreated";
       action: SignedActionHashed<Create>;
@@ -36,7 +36,9 @@ export type TrustedSignal =
       link_type: string;
     };
 
-export type EntryTypes = { type: "GpgKeyDist" } & GpgKeyDist;
+export type EntryTypes =
+    | { type: "KeyCollection" } & KeyCollection
+    | { type: "VerificationKeyDist" } & VerificationKeyDist;
 
 export interface VerificationKeyDist {
   verification_key: string;
@@ -44,14 +46,6 @@ export interface VerificationKeyDist {
   proof: string;
   proof_signature: number[];
   name: string;
-  expires_at?: Date;
-}
-
-export interface GpgKeyDist {
-  public_key: string;
-  fingerprint: string;
-  name: string;
-  email?: string;
   expires_at?: Date;
 }
 
@@ -86,7 +80,7 @@ export interface VfKeyResponse {
 }
 
 export interface SearchKeysRequest {
-  query: string;
+  agent_pub_key: string;
 }
 
 export interface KeyCollection {

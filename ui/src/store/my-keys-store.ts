@@ -1,10 +1,9 @@
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
 import {
-  VerificationKeyDist,
   VfKeyResponse,
 } from "../checked/signing_keys/types";
-import { ActionHash, AppAgentClient } from "@holochain/client";
+import { AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 
 export const useMyKeysStore = defineStore("my-keys", () => {
@@ -12,21 +11,9 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   const myKeys = ref<VfKeyResponse[]>([]);
 
   const pushVfKeyDist = (
-    keyDist: VerificationKeyDist,
-    keyDistAddress: ActionHash,
+      vfKey: VfKeyResponse,
   ) => {
-    myKeys.value.push({
-      verification_key_dist: {
-        verification_key: keyDist.verification_key,
-        key_type: keyDist.key_type,
-        name: keyDist.name,
-        expires_at: keyDist.expires_at,
-        marks: [], // Should have no marks initially
-      },
-      key_dist_address: keyDistAddress,
-      created_at: Date.now(), // Approximate creation time, will correct on next load
-      reference_count: 0, // Assume newly created keys have a 0 reference count
-    });
+    myKeys.value.push(vfKey);
   };
 
   const client = inject("client") as ComputedRef<AppAgentClient>;

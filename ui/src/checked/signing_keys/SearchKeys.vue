@@ -22,7 +22,7 @@ const searchKeys = async () => {
 
   try {
     const request: SearchKeysRequest = {
-      query: searchQuery.value,
+      agent_pub_key: searchQuery.value,
     };
 
     results.value = await client.value.callZome({
@@ -56,10 +56,10 @@ const onKeyAdded = () => {
 
 <template>
   <template v-if="!selectedKeyForAdd">
-    <p>Search for keys by user id, email or fingerprint.</p>
+    <p>Search for the keys of another agent by pasting their agent key here.</p>
     <p class="text-sm italic">
-      An exact match is required for all fields and the fingerprint should be in
-      upper-case hex.
+      You'll need somebody to send you their agent key to use here. You can copy yours from this
+      screen to send it to other people.
     </p>
 
     <form @submit="(e) => e.preventDefault()">
@@ -67,7 +67,7 @@ const onKeyAdded = () => {
         <input
           type="text"
           class="input input-bordered join-item grow"
-          placeholder="Search"
+          placeholder="Agent key"
           name="search-for-keys"
           id="search-for-keys"
           v-model="searchQuery"
