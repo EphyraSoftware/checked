@@ -1,20 +1,25 @@
 <script setup lang="ts">
 import LoadingSpinner from "../../component/LoadingSpinner.vue";
 import { storeToRefs } from "pinia";
-import {AssetSignatureResponse, useMyAssetSignaturesStore} from "../../store/my-asset-signatures-store";
+import {
+  AssetSignatureResponse,
+  useMyAssetSignaturesStore,
+} from "../../store/my-asset-signatures-store";
 import { formatDistanceToNow } from "date-fns";
-import {computed, ComputedRef} from "vue";
+import { computed, ComputedRef } from "vue";
 
 const { loading, myAssetSignatures } = storeToRefs(useMyAssetSignaturesStore());
 
-const myAssetSignaturesSorted: ComputedRef<AssetSignatureResponse[]> = computed(() => {
-  const cp = [...myAssetSignatures.value];
-  cp.sort((a, b) => {
-    return b.created_at - a.created_at;
-  });
+const myAssetSignaturesSorted: ComputedRef<AssetSignatureResponse[]> = computed(
+  () => {
+    const cp = [...myAssetSignatures.value];
+    cp.sort((a, b) => {
+      return b.created_at - a.created_at;
+    });
 
-  return cp;
-});
+    return cp;
+  },
+);
 </script>
 
 <template>

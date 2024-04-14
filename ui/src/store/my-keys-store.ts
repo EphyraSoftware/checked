@@ -1,8 +1,6 @@
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
-import {
-  VfKeyResponse,
-} from "../checked/signing_keys/types";
+import { VfKeyResponse } from "../checked/signing_keys/types";
 import { AppAgentClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
 
@@ -10,9 +8,7 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   const loading = ref(true);
   const myKeys = ref<VfKeyResponse[]>([]);
 
-  const pushVfKeyDist = (
-      vfKey: VfKeyResponse,
-  ) => {
+  const pushVfKeyDist = (vfKey: VfKeyResponse) => {
     myKeys.value.push(vfKey);
   };
 

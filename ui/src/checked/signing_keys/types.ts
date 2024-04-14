@@ -37,8 +37,8 @@ export type CheckedSigningKeysSignal =
     };
 
 export type EntryTypes =
-    | { type: "KeyCollection" } & KeyCollection
-    | { type: "VerificationKeyDist" } & VerificationKeyDist;
+  | ({ type: "KeyCollection" } & KeyCollection)
+  | ({ type: "VerificationKeyDist" } & VerificationKeyDist);
 
 export interface VerificationKeyDist {
   verification_key: string;

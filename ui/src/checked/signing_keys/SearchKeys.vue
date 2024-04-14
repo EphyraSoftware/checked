@@ -5,6 +5,7 @@ import { SearchKeysRequest, VfKeyResponse } from "./types";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
 import AddKeyToCollection from "./AddKeyToCollection.vue";
+import IconButton from "../../component/IconButton.vue";
 
 const searchQuery = ref("");
 const searching = ref(false);
@@ -52,15 +53,49 @@ const onAddKey = (key: VfKeyResponse) => {
 const onKeyAdded = () => {
   selectedKeyForAdd.value = null;
 };
+
+// Not delightful, a competent base64 library that works in the browser rather than node is needed :)
+function bytesToBase64(bytes: Uint8Array) {
+  const binString = Array.from(bytes, (byte) =>
+    String.fromCodePoint(byte),
+  ).join("");
+  return btoa(binString).replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+const onCopyAgentKey = () => {
+  if (!client.value) return;
+
+  const agentKeyText = `u${bytesToBase64(client.value.myPubKey)}`;
+  navigator.clipboard.writeText(agentKeyText);
+
+  notifications.pushNotification({
+    message: "Your agent key has been copied to the clipboard",
+    type: "info",
+    timeout: 5000,
+  });
+};
 </script>
 
 <template>
   <template v-if="!selectedKeyForAdd">
-    <p>Search for the keys of another agent by pasting their agent key here.</p>
-    <p class="text-sm italic">
-      You'll need somebody to send you their agent key to use here. You can copy yours from this
-      screen to send it to other people.
-    </p>
+    <div class="flex flex-row">
+      <div class="flex-grow">
+        <p class="pb-3 text-lg font-bold">
+          Search keys distributed by another agent
+        </p>
+        <p class="text-sm italic pb-3">
+          You'll need somebody to send you their agent key to use here.
+          You can copy yours from this screen to send it to other people.
+        </p>
+      </div>
+      <div>
+        <IconButton
+          title="Copy my agent key"
+          icon="fa-regular fa-clipboard"
+          @click="onCopyAgentKey"
+        />
+      </div>
+    </div>
 
     <form @submit="(e) => e.preventDefault()">
       <div class="join flex w-full">
@@ -84,12 +119,16 @@ const onKeyAdded = () => {
     </form>
 
     <div class="mt-5">
-      <p>Search results</p>
+      <p class="text-lg font-bold">Search results</p>
       <KeyList
+        v-if="results.length"
         :key-dist-list="results"
         :readonly="false"
         @add-key="onAddKey"
       ></KeyList>
+      <div v-else class="w-full flex justify-center">
+        <p class="text-sm italic">No results</p>
+      </div>
     </div>
   </template>
   <template v-else>

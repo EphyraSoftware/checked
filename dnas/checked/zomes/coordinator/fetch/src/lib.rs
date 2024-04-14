@@ -89,10 +89,10 @@ fn get_entry_for_action(action_hash: &ActionHash) -> ExternResult<Option<EntryTy
     };
     let (zome_index, entry_index) = match record.action().entry_type() {
         Some(EntryType::App(AppEntryDef {
-                                zome_index,
-                                entry_index,
-                                ..
-                            })) => (zome_index, entry_index),
+            zome_index,
+            entry_index,
+            ..
+        })) => (zome_index, entry_index),
         _ => {
             return Ok(None);
         }
