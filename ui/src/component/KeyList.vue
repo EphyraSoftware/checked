@@ -26,7 +26,7 @@ const isMine = (key: VfKeyResponse) => {
     <thead>
       <tr>
         <th>Name</th>
-        <th>Expiry</th>
+        <!--<th>Expiry</th>-->
         <th v-if="keyDistList.some((k) => k.reference_count !== undefined)">
           References
         </th>
@@ -36,13 +36,13 @@ const isMine = (key: VfKeyResponse) => {
     <tbody>
       <tr v-for="k in keyDistList" v-bind:key="k.key_dist_address.join('')">
         <td>{{ k.verification_key_dist.name }}</td>
-        <td>
+        <!--<td>
           {{
             k.verification_key_dist.expires_at
               ? formatDistanceToNow(k.verification_key_dist.expires_at)
               : "-"
           }}
-        </td>
+        </td>-->
         <td>
           {{ k.reference_count }}
         </td>
