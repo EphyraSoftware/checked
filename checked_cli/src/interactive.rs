@@ -56,10 +56,10 @@ impl GenerateArgs {
     /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
     /// open ports on that process. The user will be prompted for the process and port to use where
     /// multiple of either are found.
-    pub fn admin_port(&self) -> anyhow::Result<u16> {
+    pub async fn admin_port(&self) -> anyhow::Result<u16> {
         match self.port {
             Some(port) => Ok(port),
-            None => interactive_discover_holochain(),
+            None => interactive_discover_holochain().await,
         }
     }
 }
@@ -70,10 +70,10 @@ impl SignArgs {
     /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
     /// open ports on that process. The user will be prompted for the process and port to use where
     /// multiple of either are found.
-    pub fn admin_port(&self) -> anyhow::Result<u16> {
+    pub async fn admin_port(&self) -> anyhow::Result<u16> {
         match self.port {
             Some(port) => Ok(port),
-            None => interactive_discover_holochain(),
+            None => interactive_discover_holochain().await,
         }
     }
 }
@@ -84,10 +84,10 @@ impl DistributeArgs {
     /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
     /// open ports on that process. The user will be prompted for the process and port to use where
     /// multiple of either are found.
-    pub fn admin_port(&self) -> anyhow::Result<u16> {
+    pub async fn admin_port(&self) -> anyhow::Result<u16> {
         match self.port {
             Some(port) => Ok(port),
-            None => interactive_discover_holochain(),
+            None => interactive_discover_holochain().await,
         }
     }
 }
@@ -98,10 +98,10 @@ impl FetchArgs {
     /// If not specified, by [FetchArgs::port], then the tool will scan for a Holochain process and
     /// open ports on that process. The user will be prompted for the process and port to use where
     /// multiple of either are found.
-    pub fn admin_port(&self) -> anyhow::Result<u16> {
+    pub async fn admin_port(&self) -> anyhow::Result<u16> {
         match self.port {
             Some(port) => Ok(port),
-            None => interactive_discover_holochain(),
+            None => interactive_discover_holochain().await,
         }
     }
 

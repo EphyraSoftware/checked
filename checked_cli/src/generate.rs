@@ -65,7 +65,7 @@ pub async fn generate(generate_args: GenerateArgs) -> anyhow::Result<GenerateInf
 
 async fn dispatch_distribute(generate_args: GenerateArgs, password: String) -> anyhow::Result<()> {
     distribute(DistributeArgs {
-        port: Some(generate_args.admin_port()?),
+        port: Some(generate_args.admin_port().await?),
         name: generate_args.name,
         password: Some(password),
         config_dir: generate_args.config_dir,

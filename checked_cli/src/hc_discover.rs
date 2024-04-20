@@ -1,9 +1,11 @@
+use holochain_client::AdminWebsocket;
 use proc_ctl::{PortQuery, ProcQuery, ProtocolPort};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
 
 /// Search for a Holochain process interactively. For each process that is found check what ports it
 /// is listening on. Will attempt to return when there is only one option to select and will prompt
 /// the user to select a process and port when there are multiple options.
-pub(crate) fn interactive_discover_holochain() -> anyhow::Result<u16> {
+pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
     let query = ProcQuery::new().process_name("holochain");
 
     let processes = query.list_processes()?;
@@ -74,21 +76,43 @@ pub(crate) fn interactive_discover_holochain() -> anyhow::Result<u16> {
 
     let (_, ports) = &possible_processes_with_ports[selected];
 
-    if ports.is_empty() {
-        anyhow::bail!("No ports open for selected Holochain process");
-    } else if ports.len() == 1 {
-        return Ok(ports[0]);
+    // Filter down to the ports that respond to admin requests and ignore anything that is likely
+    // to be an app port.
+    let mut admin_ports = vec![];
+    for port in ports {
+        if is_admin_port(*port).await {
+            println!("Port {} is an admin port", port);
+            admin_ports.push(*port);
+        }
+    }
+
+    if admin_ports.is_empty() {
+        anyhow::bail!("No admin ports open for selected Holochain process");
+    } else if admin_ports.len() == 1 {
+        return Ok(admin_ports[0]);
     }
 
     let port_index = dialoguer::Select::new()
         .with_prompt("Choose a port")
         .items(
-            &ports
+            &admin_ports
                 .iter()
                 .map(|p| format!("Port: {}", p))
                 .collect::<Vec<_>>(),
         )
         .interact()?;
 
-    Ok(ports[port_index])
+    Ok(admin_ports[port_index])
+}
+
+async fn is_admin_port(port: u16) -> bool {
+    let ipv4_addr: SocketAddr = (Ipv4Addr::LOCALHOST, port).into();
+    let ipv6_addr: SocketAddr = (Ipv6Addr::LOCALHOST, port).into();
+
+    let mut client = match AdminWebsocket::connect(vec![ipv4_addr, ipv6_addr].as_slice()).await {
+        Ok(client) => client,
+        Err(_) => return false,
+    };
+
+    client.list_apps(None).await.is_ok()
 }

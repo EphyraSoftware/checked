@@ -61,7 +61,7 @@ const PROOF_WORDS: [&str; 40] = [
 pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
     println!("Distributing key: {}", distribute_args.name);
 
-    let admin_port = distribute_args.admin_port()?;
+    let admin_port = distribute_args.admin_port().await?;
 
     let mut app_client = get_authenticated_app_agent_client(
         admin_port,

@@ -19,6 +19,7 @@ pub(crate) async fn get_authenticated_app_agent_client(
     path: Option<PathBuf>,
     installed_app_id: Option<String>,
 ) -> anyhow::Result<AppAgentWebsocket> {
+    println!("Connecting to admin port {}", admin_port);
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
     let mut admin_client = AdminWebsocket::connect(format!("127.0.0.1:{admin_port}"))
         .await

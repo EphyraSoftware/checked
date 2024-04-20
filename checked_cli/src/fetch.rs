@@ -65,7 +65,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let output_path = get_output_path(&fetch_args, &fetch_url)?;
 
-    let admin_port = fetch_args.admin_port()?;
+    let admin_port = fetch_args.admin_port().await?;
 
     let mut app_client = hc_client::get_authenticated_app_agent_client(
         admin_port,
