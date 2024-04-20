@@ -10,7 +10,7 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
 
     let processes = query.list_processes()?;
 
-    let possible_processes_with_ports = processes
+    let mut possible_processes_with_ports = processes
         .into_iter()
         .filter_map(|p| {
             let port_query = PortQuery::new().ip_v4_only().tcp_only().process_id(p.pid);
@@ -55,7 +55,10 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
         return Ok(possible_processes_with_ports[0].1[0]);
     }
 
-    println!("{:?}", possible_processes_with_ports);
+    // Ensure consistent ordering when multiple commands are run
+    possible_processes_with_ports.sort_by_key(|(proc, _)| {
+        proc.pid
+    });
 
     let selected = dialoguer::Select::new()
         .with_prompt("Pick a Holochain process")
@@ -81,7 +84,6 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
     let mut admin_ports = vec![];
     for port in ports {
         if is_admin_port(*port).await {
-            println!("Port {} is an admin port", port);
             admin_ports.push(*port);
         }
     }

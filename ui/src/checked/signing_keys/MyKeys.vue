@@ -2,24 +2,15 @@
 import { useMyKeysStore } from "../../store/my-keys-store";
 import KeyList from "../../component/KeyList.vue";
 import DistributeSigningKey from "./DistributeSigningKey.vue";
-import { ref, watch } from "vue";
+import {computed} from "vue";
 import LoadingSpinner from "../../component/LoadingSpinner.vue";
 import { storeToRefs } from "pinia";
 
 const { loading, myKeys } = storeToRefs(useMyKeysStore());
 
-const showDistribute = ref(false);
-
 // Encourage the user to distribute a key if they don't have any yet
-watch(
-  loading,
-  (loading) => {
-    if (!loading && myKeys.value.length === 0) {
-      showDistribute.value = true;
-    }
-  },
-  { immediate: true },
-);
+const showDistribute = computed(() => myKeys.value.length === 0);
+
 </script>
 
 <template>

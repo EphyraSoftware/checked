@@ -122,7 +122,7 @@ impl FetchArgs {
         match self.approve {
             Some(approve_signature) => Ok(approve_signature),
             None => Ok(dialoguer::Confirm::new()
-                .with_prompt("Approve the download?")
+                .with_prompt("Approve the signatures for the asset?")
                 .interact()?),
         }
     }

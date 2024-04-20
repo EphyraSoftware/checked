@@ -47,7 +47,7 @@ export const registerSignalHandler = (
               created_at: action.hashed.content.timestamp,
               reference_count: 0, // Assume newly created keys have a 0 reference count
               author: action.hashed.content.author,
-            }); //(content, action.hashed.hash);
+            });
           }
         } else if (app_entry.type === "KeyCollection") {
           if (keyCollectionsStore) {
