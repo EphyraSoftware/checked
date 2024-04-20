@@ -84,8 +84,8 @@ const onCopyAgentKey = () => {
           Search keys distributed by another agent
         </p>
         <p class="text-sm italic pb-3">
-          You'll need somebody to send you their agent key to use here.
-          You can copy yours from this screen to send it to other people.
+          You'll need somebody to send you their agent key to use here. You can
+          copy yours from this screen to send it to other people.
         </p>
       </div>
       <div>

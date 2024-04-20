@@ -1,11 +1,11 @@
 import {
-  SignedActionHashed,
-  Create,
-  Update,
-  Delete,
-  CreateLink,
-  DeleteLink,
-  ActionHash,
+    SignedActionHashed,
+    Create,
+    Update,
+    Delete,
+    CreateLink,
+    DeleteLink,
+    ActionHash, AgentPubKey,
 } from "@holochain/client";
 
 export type CheckedSigningKeysSignal =
@@ -77,6 +77,7 @@ export interface VfKeyResponse {
   key_dist_address: ActionHash;
   reference_count: number;
   created_at: number;
+  author: AgentPubKey;
 }
 
 export interface SearchKeysRequest {

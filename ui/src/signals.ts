@@ -46,13 +46,14 @@ export const registerSignalHandler = (
               key_dist_address: action.hashed.hash,
               created_at: action.hashed.content.timestamp,
               reference_count: 0, // Assume newly created keys have a 0 reference count
+              author: action.hashed.content.author,
             }); //(content, action.hashed.hash);
           }
         } else if (app_entry.type === "KeyCollection") {
           if (keyCollectionsStore) {
             keyCollectionsStore.pushKeyCollection({
               name: app_entry.name,
-              keys: [],
+              verification_keys: [],
             });
           }
         } else {

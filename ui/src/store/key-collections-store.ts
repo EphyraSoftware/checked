@@ -6,7 +6,7 @@ import { registerSignalHandler } from "../signals";
 
 export interface KeyCollectionWithKeys {
   name: string;
-  keys: VfKeyResponse[];
+  verification_keys: VfKeyResponse[];
 }
 
 export const useKeyCollectionsStore = defineStore("key-collections", () => {
@@ -22,7 +22,7 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
       (c) => c.name === name,
     );
     if (existingCollection) {
-      existingCollection.keys.push(key);
+      existingCollection.verification_keys.push(key);
     }
   };
 
