@@ -2,7 +2,7 @@
 import { useMyKeysStore } from "../../store/my-keys-store";
 import KeyList from "../../component/KeyList.vue";
 import DistributeSigningKey from "./DistributeSigningKey.vue";
-import {computed} from "vue";
+import { computed } from "vue";
 import LoadingSpinner from "../../component/LoadingSpinner.vue";
 import { storeToRefs } from "pinia";
 
@@ -10,7 +10,6 @@ const { loading, myKeys } = storeToRefs(useMyKeysStore());
 
 // Encourage the user to distribute a key if they don't have any yet
 const showDistribute = computed(() => myKeys.value.length === 0);
-
 </script>
 
 <template>

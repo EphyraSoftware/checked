@@ -56,9 +56,7 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
     }
 
     // Ensure consistent ordering when multiple commands are run
-    possible_processes_with_ports.sort_by_key(|(proc, _)| {
-        proc.pid
-    });
+    possible_processes_with_ports.sort_by_key(|(proc, _)| proc.pid);
 
     let selected = dialoguer::Select::new()
         .with_prompt("Pick a Holochain process")
