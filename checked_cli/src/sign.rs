@@ -4,6 +4,7 @@ use crate::common::{
 };
 use crate::hc_client;
 use crate::interactive::GetPassword;
+use anyhow::Context;
 use checked_types::{CreateAssetSignature, VerificationKeyType};
 use holochain_client::ZomeCallTarget;
 use holochain_types::prelude::{ActionHash, ExternIO};
@@ -39,13 +40,21 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         ))
     });
 
-    let mut sig_file = open_file(&sig_path)?;
+    let mut sig_file = open_file(&sig_path)
+        .with_context(|| anyhow::anyhow!("Failed to open signature file: {:?}", &sig_path))?;
 
     let store_dir = get_store_dir(sign_args.config_dir.clone())?;
 
     // Signing key
     let sk_path = get_signing_key_path(&store_dir, &sign_args.name);
-    let sk = SecretKey::from_file(sk_path, Some(sign_args.get_password()?))?;
+    let sk = SecretKey::from_file(sk_path.clone(), Some(sign_args.get_password()?)).with_context(
+        || {
+            anyhow::anyhow!(
+                "Signing key '{}' not found, maybe you need to create it first?",
+                sign_args.name
+            )
+        },
+    )?;
 
     // Verification key
     let vk_path = get_verification_key_path(&store_dir, &sign_args.name);
@@ -73,7 +82,8 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
         &mut data_reader,
         Some(trusted_comment.as_str()),
         None,
-    )?;
+    )
+    .with_context(|| anyhow::anyhow!("Failed to sign file: {:?}", sign_args.file))?;
 
     sig_file.write_all(&sig.to_bytes())?;
     sig_file.flush()?;
