@@ -31,9 +31,7 @@ When prompted to distribute the signature, confirm and the signature will be pub
 
 If you check the "My Assets" page in the UI, you should see the asset listed.
 
-<p style="text-align:center">
-  <img src="https://github.com/ThetaSinner/hWOT/blob/main/docs/signed-asset.png?raw=true" alt="Signed asset example"/>
-</p>
+<span style="display:block;text-align:center">![Signed Asset](signed-asset.png)</span>
 
 ![signed-asset.png](signed-asset.png)
 
