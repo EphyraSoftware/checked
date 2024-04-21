@@ -4,9 +4,9 @@ A peer-to-peer app for sharing and checking signatures of digital assets.
 
 ## Getting started
 
-If you're a user, there is a [user Guide](./docs/user-guide.md) to get you started.
+If you're a user, there is a [User Guide](./docs/user-guide.md) to get you started.
 
-If you're a publisher, there is a [publisher Guide](./docs/publisher-guide.md) with some suggestions about how to make
+If you're a publisher, there is a [Publisher Guide](./docs/publisher-guide.md) with some suggestions about how to make
 use of checked.
 
 ### Setup issues
