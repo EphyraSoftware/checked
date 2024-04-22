@@ -23,7 +23,7 @@ onMounted(async () => {
   });
 
   // We pass an unused string as the url because it will dynamically be replaced in launcher environments
-  client.value = await AppAgentWebsocket.connect("hWOT");
+  client.value = await AppAgentWebsocket.connect("checked");
   loading.value = false;
 });
 </script>
