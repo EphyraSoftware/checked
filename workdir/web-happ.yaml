@@ -1,6 +1,6 @@
 ---
 manifest_version: "1"
-name: hWOT
+name: checked
 ui:
   bundled: "../ui/dist.zip"
 happ_manifest:
