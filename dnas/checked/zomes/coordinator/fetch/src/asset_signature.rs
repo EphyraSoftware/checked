@@ -682,7 +682,7 @@ mod tests {
         KeyCollectionWithKeys, MarkVfKeyDistOpt, VerificationKeyDistResponse, VfKeyResponse,
     };
 
-    use crate::{
+    use super::{
         pick_signatures, select_historical_signatures, select_pinned_signatures,
         select_recent_signatures, MAX_SIGNATURES_FROM_CATEGORY,
     };
@@ -1351,7 +1351,7 @@ mod tests {
         })
     }
 
-    fn test_fetcher(_: &ActionHash) -> crate::ExternResult<Option<crate::VfKeyResponse>> {
+    fn test_fetcher(_: &ActionHash) -> crate::ExternResult<Option<VfKeyResponse>> {
         Ok(Some(VfKeyResponse {
             verification_key_dist: VerificationKeyDistResponse {
                 verification_key: "test key".to_string(),
