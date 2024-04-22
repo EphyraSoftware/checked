@@ -359,7 +359,7 @@ async fn fetch_asset_download_error() -> anyhow::Result<()> {
         config_dir: Some(dir.as_ref().to_path_buf()),
         app_id: None,
     })
-        .await?;
+    .await?;
 
     let fetch_err = fetch(FetchArgs {
         url: url.clone() + ".nonexistent",
@@ -373,7 +373,8 @@ async fn fetch_asset_download_error() -> anyhow::Result<()> {
         app_id: None,
         approve: Some(true),
     })
-        .await.unwrap_err();
+    .await
+    .unwrap_err();
 
     assert_eq!("Download failed", fetch_err.to_string());
 
