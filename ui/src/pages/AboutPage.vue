@@ -10,7 +10,7 @@ import NavBar from "../component/NavBar.vue";
     <br />
     <p>
       You can get the
-      <a href="https://github.com/ThetaSinner/hWOT" target="_blank" class="link"
+      <a href="https://github.com/EphyraSoftware/checked" target="_blank" class="link"
         >source code</a
       >
       for this app to verify its behavior.

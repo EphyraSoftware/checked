@@ -17,7 +17,7 @@ going to use to see which version of Holochain is recommended.
 Find the latest release on the [releases page](https://github.com/holochain/launcher/releases) and download 
 the `.webhapp` file.
 
-Install the `.webhapp` in the Holochain launcher by ... TODO.
+Install the `.webhapp` in the Holochain launcher by installing from the file system and selecting the `.webhapp` file.
 
 Once it is installed, you can launch the app by clicking on it. You will need to create a signing key and fetch an 
 asset before there's much to look at!
@@ -28,7 +28,7 @@ Back on the [releases page](https://github.com/holochain/launcher/releases) you 
 need to choose the one that matches your platform and download it. For example, if you are on Linux you would download
 the `checked-linux` file.
 
-Once you have downloaded the file, you need to make sure it is executable and in your path. TODO more help here.
+Once you have downloaded the file, you need to make sure it is executable and in your path.
 
 Once you have done this, you should be able to run `checked --version` on Linux and MacOS, or `checked.exe --version`
 on Windows.
@@ -61,7 +61,7 @@ Now you can fetch an asset. You can fetch any asset you'd like at this point. Ho
 it looks like to fetch an asset that other people have signed if you fetch the recommended asset:
 
 ```bash
-checked fetch https://github.com/ThetaSinner/hWOT/releases/download/v0.1.0/user-guide.txt
+checked fetch https://github.com/EphyraSoftware/checked/releases/download/v0.1.0/user-guide.txt
 ```
 
 Again, you may be prompted to pick a Holochain instance. If this is the case and you now know which one to pick, you
@@ -88,4 +88,4 @@ signatures. You will run into assets that have no signatures, feel free to be th
 them!
 
 If you run into any issues or have questions, then please feel free to open an issue on the 
-[GitHub repository](https://github.com/ThetaSinner/hWOT/issues/new).
+[GitHub repository](https://github.com/EphyraSoftware/checked/issues/new).
