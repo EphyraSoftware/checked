@@ -134,15 +134,13 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
                 let mut writer = BufWriter::new(tmp_file.as_file_mut());
                 run_download(fetch_url, &mut writer, state).await?;
             }
+            // Only retain the file if the download was successful, otherwise it will be deleted
+            // when tmp_file goes out of scope
             anyhow::Result::<NamedTempFile>::Ok(tmp_file)
         }
     });
 
     let handle_err = || {
-        // If the download failed, remove the temporary file
-        if let Err(e) = std::fs::remove_file(&path) {
-            eprintln!("Failed to remove temporary file {:?}: {:?}", path, e);
-        }
         // Kill the progress bar
         progress_handle.abort();
     };
@@ -428,6 +426,10 @@ where
     W: Write,
 {
     let mut response = reqwest::get(fetch_url).await?;
+
+    if !response.status().is_success() {
+        anyhow::bail!("Failed to fetch asset: {:?}", response.status());
+    }
 
     let content_length = response
         .headers()
