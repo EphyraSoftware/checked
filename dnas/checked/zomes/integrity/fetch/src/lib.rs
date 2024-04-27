@@ -80,11 +80,10 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         },
         FlatOp::RegisterUpdate(update_entry) => match update_entry {
             OpUpdate::Entry {
-                original_app_entry,
                 app_entry,
                 ..
-            } => match (app_entry, original_app_entry) {
-                (EntryTypes::AssetSignature(_), EntryTypes::AssetSignature(_)) => {
+            } => match app_entry {
+                EntryTypes::AssetSignature(_) => {
                     Ok(ValidateCallbackResult::Invalid(
                         "Asset signatures cannot be updated".to_string(),
                     ))
@@ -92,17 +91,27 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
-        FlatOp::RegisterDelete(delete_entry) => match delete_entry {
-            OpDelete::Entry {
-                original_action,
-                original_app_entry,
-                action,
-            } => match original_app_entry {
-                EntryTypes::AssetSignature(_) => {
-                    asset_signature::validate_delete_asset_signature(original_action, action)
+        FlatOp::RegisterDelete(OpDelete { action }) => {
+            let prev_action = must_get_action(action.prev_action.clone())?;
+
+            match prev_action.action() {
+                Action::Create(create) => {
+                    let entry_def: AppEntryDef = UnitEntryTypes::AssetSignature.try_into()?;
+                    let prev_entry_def = match &create.entry_type {
+                        EntryType::App(app_entry_type) => app_entry_type,
+                        _ => return Ok(ValidateCallbackResult::Valid),
+                    };
+
+                    if prev_entry_def == &entry_def {
+                        asset_signature::validate_delete_asset_signature(action, prev_action)
+                    } else {
+                        Ok(ValidateCallbackResult::Valid)
+                    }
                 }
-            },
-            _ => Ok(ValidateCallbackResult::Valid),
+                _ => {
+                    return Ok(ValidateCallbackResult::Invalid("Invalid delete".to_string()))
+                }
+            }
         },
         FlatOp::RegisterCreateLink {
             base_address,
@@ -231,8 +240,8 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     match original_app_entry {
                         EntryTypes::AssetSignature(_) => {
                             asset_signature::validate_delete_asset_signature(
-                                original_action,
                                 action,
+                                original_record.signed_action,
                             )
                         }
                     }

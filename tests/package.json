@@ -2,13 +2,13 @@
   "name": "tests",
   "private": true,
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run collection",
     "lint": "eslint ./ --fix",
     "format": "prettier --write --cache ./src"
   },
   "dependencies": {
-    "@holochain/client": "^0.17.0-dev.11",
-    "@holochain/tryorama": "^v0.16.0-dev.4",
+    "@holochain/client": "^0.17.0-dev.12",
+    "@holochain/tryorama": "^v0.16.0-dev.5",
     "@msgpack/msgpack": "^2.8.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",

@@ -114,19 +114,12 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
         },
         FlatOp::RegisterUpdate(update_entry) => match update_entry {
             OpUpdate::Entry {
-                original_action,
-                original_app_entry,
                 app_entry,
                 action,
-            } => match (app_entry, original_app_entry) {
-                (
-                    EntryTypes::VerificationKeyDist(vf_key_dist),
-                    EntryTypes::VerificationKeyDist(original_vf_key_dist),
-                ) => verification_key_dist::validate_update_vf_key_dist(
+            } => match app_entry {
+                EntryTypes::VerificationKeyDist(vf_key_dist) => verification_key_dist::validate_update_vf_key_dist(
                     action,
                     vf_key_dist,
-                    original_action,
-                    original_vf_key_dist,
                 ),
                 _ => Ok(ValidateCallbackResult::Invalid(
                     "todo: register update".to_string(),
@@ -134,25 +127,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             },
             _ => Ok(ValidateCallbackResult::Valid),
         },
-        FlatOp::RegisterDelete(delete_entry) => match delete_entry {
-            OpDelete::Entry {
-                original_action,
-                original_app_entry,
-                action,
-            } => match original_app_entry {
-                EntryTypes::VerificationKeyDist(vf_key_dist) => {
-                    verification_key_dist::validate_delete_vf_key_dist(
-                        action,
-                        original_action,
-                        vf_key_dist,
-                    )
-                }
-                _ => Ok(ValidateCallbackResult::Invalid(
-                    "todo: register delete".to_string(),
-                )),
-            },
-            _ => Ok(ValidateCallbackResult::Valid),
-        },
+        FlatOp::RegisterDelete(OpDelete { action }) => Ok(ValidateCallbackResult::Invalid(
+            format!("Delete not supported while handling action: {:?}", action),
+        )),
         FlatOp::RegisterCreateLink {
             base_address,
             target_address,
@@ -256,7 +233,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                 } => {
                     let original_record = must_get_valid_record(original_action_hash)?;
                     let original_action = original_record.action().clone();
-                    let original_action = match original_action {
+                    match original_action {
                         Action::Create(create) => EntryCreationAction::Create(create),
                         Action::Update(update) => EntryCreationAction::Update(update),
                         _ => {
@@ -278,7 +255,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                         .entry()
                                         .to_app_option()
                                         .map_err(|e| wasm_error!(e))?;
-                                let original_vf_key_dist = match original_vf_key_dist {
+                                match original_vf_key_dist {
                                     Some(vf_key_dist) => vf_key_dist,
                                     None => {
                                         return Ok(
@@ -292,8 +269,6 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                                 verification_key_dist::validate_update_vf_key_dist(
                                     action,
                                     vf_key_dist,
-                                    original_action,
-                                    original_vf_key_dist,
                                 )
                             } else {
                                 Ok(result)
