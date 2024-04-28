@@ -169,7 +169,7 @@ test("Unlink verification key from collection", async () => {
   });
 });
 
-test.only("Remote validation", async () => {
+test("Remote validation", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 
