@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { inject, ComputedRef, ref, computed } from "vue";
-import { AppAgentClient } from "@holochain/client";
+import { AppClient } from "@holochain/client";
 import { useNotificationsStore } from "../../store/notifications-store";
 import { sentence } from "txtgen";
 import { VerificationKeyDist } from "./types";
 
-const client = inject("client") as ComputedRef<AppAgentClient>;
+const client = inject("client") as ComputedRef<AppClient>;
 
 const emit = defineEmits<{
   (e: "distributed"): void;

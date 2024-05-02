@@ -5,7 +5,7 @@ import { useKeyCollectionsStore } from "../../store/key-collections-store";
 import { ComputedRef, inject, ref, watch } from "vue";
 import CreateKeyCollection from "./CreateKeyCollection.vue";
 import { useNotificationsStore } from "../../store/notifications-store";
-import { AppAgentClient } from "@holochain/client";
+import { AppClient } from "@holochain/client";
 
 const props = defineProps<{
   selectedKey: VfKeyResponse;
@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: "added"): void;
 }>();
 
-const client = inject("client") as ComputedRef<AppAgentClient>;
+const client = inject("client") as ComputedRef<AppClient>;
 
 const keyCollectionsStore = useKeyCollectionsStore();
 const notificationsStore = useNotificationsStore();
