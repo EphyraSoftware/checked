@@ -243,7 +243,7 @@ fn check_signatures(
     let mut check_file_reader = BufReader::new(check_file);
 
     let mut signature_reports = Vec::new();
-    for (reason, sigs) in signatures.iter().group_by(|s| s.reason.clone()).into_iter() {
+    for (reason, sigs) in signatures.iter().chunk_by(|s| s.reason.clone()).into_iter() {
         let mut group_report = SignatureCheckReport {
             reason,
             passed_signatures: vec![],

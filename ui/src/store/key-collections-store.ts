@@ -1,4 +1,4 @@
-import { AppAgentClient } from "@holochain/client";
+import { AppClient } from "@holochain/client";
 import { defineStore } from "pinia";
 import { ComputedRef, inject, ref, watch } from "vue";
 import { VfKeyResponse } from "../checked/signing_keys/types";
@@ -26,8 +26,8 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
     }
   };
 
-  const client = inject("client") as ComputedRef<AppAgentClient>;
-  const loadKeyCollections = async (client: AppAgentClient) => {
+  const client = inject("client") as ComputedRef<AppClient>;
+  const loadKeyCollections = async (client: AppClient) => {
     try {
       const collections: KeyCollectionWithKeys[] = await client.callZome({
         role_name: "checked",

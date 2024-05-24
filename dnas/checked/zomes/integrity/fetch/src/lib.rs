@@ -92,9 +92,9 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
             _ => Ok(ValidateCallbackResult::Valid),
         },
         FlatOp::RegisterDelete(OpDelete { action }) => {
-            let prev_action = must_get_action(action.prev_action.clone())?;
+            let deleted_action = must_get_action(action.deletes_address.clone())?;
 
-            match prev_action.action() {
+            match deleted_action.action() {
                 Action::Create(create) => {
                     let entry_def: AppEntryDef = UnitEntryTypes::AssetSignature.try_into()?;
                     let prev_entry_def = match &create.entry_type {
@@ -103,7 +103,7 @@ pub fn validate(op: Op) -> ExternResult<ValidateCallbackResult> {
                     };
 
                     if prev_entry_def == &entry_def {
-                        asset_signature::validate_delete_asset_signature(action, prev_action)
+                        asset_signature::validate_delete_asset_signature(action, deleted_action)
                     } else {
                         Ok(ValidateCallbackResult::Valid)
                     }

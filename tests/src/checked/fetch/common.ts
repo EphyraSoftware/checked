@@ -13,9 +13,9 @@ export interface FetchCheckSignaturePinned {
 }
 
 export type FetchCheckSignatureReason =
-  | { Mine: null }
-  | { RandomRecent: null }
-  | { RandomHistorical: null }
+  | "Mine"
+  | "RandomRecent"
+  | "RandomHistorical"
   | { Pinned: FetchCheckSignaturePinned };
 
 export interface FetchCheckSignature {
