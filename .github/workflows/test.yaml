@@ -50,6 +50,8 @@ jobs:
         with:
           go-version: '^1.21.10'
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Run CLI tests
         run: |
           cargo install holochain_cli@0.3.1
