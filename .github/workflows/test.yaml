@@ -53,8 +53,6 @@ jobs:
       - name: Run CLI tests
         working-directory: ./checked_cli
         run: |
-          rustup target add wasm32-unknown-unknown
-          
           cargo install holochain_cli@0.3.1
           
           npm i
