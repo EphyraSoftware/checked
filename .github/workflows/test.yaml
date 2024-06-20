@@ -55,8 +55,8 @@ jobs:
         run: |
           cargo install holochain_cli@0.3.1
           
-          npm i
-          npm run build:happ
+          cargo build --release --target wasm32-unknown-unknown
+          hc app pack workdir --recursive
           
           # Tests are independent but sweettest is so resource hungry that they run slower in parallel.
-          cargo test -- --test-threads=1
+          cargo test --release -- --test-threads=1
