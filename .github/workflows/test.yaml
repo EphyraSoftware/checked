@@ -51,7 +51,6 @@ jobs:
           go-version: '^1.21.10'
 
       - name: Run CLI tests
-        working-directory: ./checked_cli
         run: |
           cargo install holochain_cli@0.3.1
           
@@ -59,4 +58,5 @@ jobs:
           hc app pack workdir --recursive
           
           # Tests are independent but sweettest is so resource hungry that they run slower in parallel.
+          cd ./checked_cli
           cargo test --release -- --test-threads=1
