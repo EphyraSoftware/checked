@@ -63,7 +63,7 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
 
     let admin_port = distribute_args.admin_port().await?;
 
-    let mut app_client = get_authenticated_app_agent_client(
+    let app_client = get_authenticated_app_agent_client(
         admin_port,
         distribute_args.config_dir.clone(),
         distribute_args.app_id.clone(),

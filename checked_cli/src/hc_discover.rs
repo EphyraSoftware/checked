@@ -109,7 +109,7 @@ async fn is_admin_port(port: u16) -> bool {
     let ipv4_addr: SocketAddr = (Ipv4Addr::LOCALHOST, port).into();
     let ipv6_addr: SocketAddr = (Ipv6Addr::LOCALHOST, port).into();
 
-    let mut client = match AdminWebsocket::connect(vec![ipv4_addr, ipv6_addr].as_slice()).await {
+    let client = match AdminWebsocket::connect(vec![ipv4_addr, ipv6_addr].as_slice()).await {
         Ok(client) => client,
         Err(_) => return false,
     };

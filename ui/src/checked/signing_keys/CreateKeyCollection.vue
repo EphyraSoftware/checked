@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { AppAgentClient } from "@holochain/client";
+import { AppClient } from "@holochain/client";
 import { ComputedRef, inject, ref } from "vue";
 import { useNotificationsStore } from "../../store/notifications-store";
 
@@ -7,7 +7,7 @@ const emit = defineEmits<{
   (e: "created", name: string): void;
 }>();
 
-const client = inject("client") as ComputedRef<AppAgentClient>;
+const client = inject("client") as ComputedRef<AppClient>;
 
 const notifications = useNotificationsStore();
 

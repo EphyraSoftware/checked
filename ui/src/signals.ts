@@ -1,4 +1,4 @@
-import { AppAgentClient } from "@holochain/client";
+import { AppClient } from "@holochain/client";
 import { KeyCollectionWithKeys } from "./store/key-collections-store";
 import {
   CheckedSigningKeysSignal,
@@ -8,7 +8,7 @@ import { AssetSignatureResponse } from "./store/my-asset-signatures-store";
 import { CheckedFetchSignal } from "./checked/fetch/types";
 
 export const registerSignalHandler = (
-  client: AppAgentClient,
+  client: AppClient,
   {
     myKeysStore,
     keyCollectionsStore,

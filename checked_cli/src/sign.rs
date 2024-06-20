@@ -96,7 +96,7 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
 
     let admin_port = sign_args.admin_port().await?;
 
-    let mut app_client = hc_client::get_authenticated_app_agent_client(
+    let app_client = hc_client::get_authenticated_app_agent_client(
         admin_port,
         sign_args.config_dir.clone(),
         sign_args.app_id,

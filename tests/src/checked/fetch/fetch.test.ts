@@ -305,12 +305,8 @@ test("Signatures from multiple selection strategies", async () => {
     });
 
     assert.equal(check_signatures_alice.length, 2);
-    assert.deepEqual(check_signatures_alice[0].reason, {
-      Mine: null,
-    });
-    assert.deepEqual(check_signatures_alice[1].reason, {
-      RandomRecent: null,
-    });
+    assert.deepEqual(check_signatures_alice[0].reason, "Mine");
+    assert.deepEqual(check_signatures_alice[1].reason, "RandomRecent");
 
     const check_signatures_bob = await prepareFetch(bob.cells[0], {
       fetch_url: "https://example.com/sample.csv",
@@ -318,9 +314,7 @@ test("Signatures from multiple selection strategies", async () => {
 
     assert.equal(check_signatures_bob.length, 2);
     assert.deepEqual(check_signatures_bob[0].author, bob.agentPubKey);
-    assert.deepEqual(check_signatures_bob[0].reason, {
-      Mine: null,
-    });
+    assert.deepEqual(check_signatures_bob[0].reason, "Mine");
     assert.deepEqual(check_signatures_bob[1].author, alice.agentPubKey);
     assert.deepEqual(check_signatures_bob[1].reason, {
       Pinned: {

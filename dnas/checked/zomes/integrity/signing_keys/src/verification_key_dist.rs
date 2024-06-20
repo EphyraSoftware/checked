@@ -92,8 +92,6 @@ pub fn validate_create_vf_key_dist(
 pub fn validate_update_vf_key_dist(
     _action: Update,
     _vf_key_dist: VerificationKeyDist,
-    _original_action: EntryCreationAction,
-    _original_vf_key_dist: VerificationKeyDist,
 ) -> ExternResult<ValidateCallbackResult> {
     Ok(ValidateCallbackResult::Invalid(String::from(
         "Verification key distributions cannot be updated",

@@ -67,7 +67,7 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
 
     let admin_port = fetch_args.admin_port().await?;
 
-    let mut app_client = hc_client::get_authenticated_app_agent_client(
+    let app_client = hc_client::get_authenticated_app_agent_client(
         admin_port,
         fetch_args.config_dir.clone(),
         fetch_args.app_id.clone(),
@@ -243,7 +243,9 @@ fn check_signatures(
     let mut check_file_reader = BufReader::new(check_file);
 
     let mut signature_reports = Vec::new();
-    for (reason, sigs) in signatures.iter().group_by(|s| s.reason.clone()).into_iter() {
+    // Note that chunk_by assumes that the input is sorted by the reason. This is true because the
+    // zome generates by reason and doesn't then sort the results.
+    for (reason, sigs) in signatures.iter().chunk_by(|s| s.reason.clone()).into_iter() {
         let mut group_report = SignatureCheckReport {
             reason,
             passed_signatures: vec![],

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, provide, onMounted } from "vue";
-import { AppAgentClient, AppAgentWebsocket } from "@holochain/client";
+import { AppClient, AppWebsocket } from "@holochain/client";
 import NotifyContainer from "./component/NotifyContainer.vue";
 import { useThemeStore } from "./store/theme-store";
 
 const themeStore = useThemeStore();
 
-const client = ref<AppAgentClient | null>(null);
+const client = ref<AppClient | null>(null);
 provide("client", client);
 const loading = ref(true);
 
@@ -23,7 +23,7 @@ onMounted(async () => {
   });
 
   // We pass an unused string as the url because it will dynamically be replaced in launcher environments
-  client.value = await AppAgentWebsocket.connect("checked");
+  client.value = await AppWebsocket.connect();
   loading.value = false;
 });
 </script>

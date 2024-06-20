@@ -65,9 +65,15 @@ pub(crate) fn validate_create_asset_signature(
 }
 
 pub(crate) fn validate_delete_asset_signature(
-    _original_action: EntryCreationAction,
-    _delete: Delete,
+    delete: Delete,
+    prev_action: SignedActionHashed,
 ) -> ExternResult<ValidateCallbackResult> {
+    if &delete.author != prev_action.action().author() {
+        return Ok(ValidateCallbackResult::Invalid(
+            "The delete author does not match the previous action author".to_string(),
+        ));
+    }
+
     Ok(ValidateCallbackResult::Valid)
 }
 
