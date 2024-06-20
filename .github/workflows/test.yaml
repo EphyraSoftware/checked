@@ -46,12 +46,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.21.10'
+
       - name: Run CLI tests
         working-directory: ./checked_cli
         run: |
           rustup target add wasm32-unknown-unknown
           
-          cargo install holochain_cli@0.3.0-beta-dev.40
+          cargo install holochain_cli@0.3.1
           
           npm i
           npm run build:happ
