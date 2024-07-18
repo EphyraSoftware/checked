@@ -45,11 +45,6 @@
         , ...
         }:
         let
-          opensslStatic =
-            if system == "x86_64-darwin"
-            then pkgs.openssl
-            else pkgs.pkgsStatic.openssl;
-
           craneLib = crane.lib.${system};
           src = craneLib.cleanCargoSource (craneLib.path ./checked_cli);
 
@@ -112,22 +107,9 @@
             ]) ++ (with pkgs; [
               nodejs_20
               minisign
-              libsodium
               upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
               binaryen # For wasm-opt, optimising wasms before packaging
             ]);
-
-            shellHook = ''
-              # This is enough to get libsodium-sys-stable to link against the libsodium we're providing
-              export SODIUM_LIB_DIR="${pkgs.libsodium}/lib/"
-              export SODIUM_SHARED="1"
-
-              # Irritatingly, the above isn't enough. Because `lair_keystore` depends on `lair_keystore_api` in its `build.rs`
-              # which apparently doesn't go through the same build process. That's probably enough justification that it should
-              # not have that dependency but for now, we get around the problem by configuring the linker directly, outside Cargo's
-              # build process...
-              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SODIUM_LIB_DIR
-            '';
           };
         };
     };
