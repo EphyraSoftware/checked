@@ -13,9 +13,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install nix
-        uses: cachix/install-nix-action@v26
+        uses: cachix/install-nix-action@v27
 
-      - uses: cachix/cachix-action@v14
+      - uses: cachix/cachix-action@v15
         with:
           name: esl-checked
           extraPullNames: holochain-ci
@@ -23,7 +23,7 @@ jobs:
 
       - name: Install NPM dependencies
         run: |
-          nix develop --command npm i
+          nix develop --command npm ci
 
       - name: Run Rust tests
         run: |
