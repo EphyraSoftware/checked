@@ -9,6 +9,34 @@ on:
         type: string
 
 jobs:
+  happ:
+    permissions:
+      contents: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v27
+
+      - uses: cachix/cachix-action@v15
+        with:
+          name: esl-checked
+          extraPullNames: holochain-ci
+
+      - name: Build happ
+        run: |
+          nix develop --command npm ci
+          nix develop --command npm run package
+          
+          cp workdir/checked.happ checked-${{ inputs.version }}.happ
+          cp workdir/checked.webhapp checked-${{ inputs.version }}.webhapp
+          
+          gh release upload ${{ inputs.version }} happ-${{ inputs.version }}.happ --clobber
+          gh release upload ${{ inputs.version }} happ-${{ inputs.version }}.webhapp --clobber
+
   checked_cli:
     permissions:
       contents: write
