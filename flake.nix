@@ -2,13 +2,19 @@
   description = "Flake for Holochain app development";
 
   inputs = {
-    versions.url = "github:holochain/holochain?dir=versions/0_3";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=24.05";
 
-    holochain-flake.url = "github:holochain/holochain";
-    holochain-flake.inputs.versions.follows = "versions";
+    holonix = {
+        url = "github:holochain/holonix/main-0.3";
 
-    nixpkgs.follows = "holochain-flake/nixpkgs";
-    flake-parts.follows = "holochain-flake/flake-parts";
+        inputs = {
+            nixpkgs.follows = "nixpkgs";
+            flake-parts.follows = "flake-parts";
+            crane.follows = "crane";
+        };
+    };
+
+    flake-parts.url = "github:hercules-ci/flake-parts";
 
     crane = {
       url = "github:ipetkov/crane";
@@ -29,7 +35,7 @@
     , ...
     }:
     flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = builtins.attrNames inputs.holochain-flake.devShells;
+      systems = builtins.attrNames inputs.holonix.devShells;
       perSystem =
         { inputs'
         , config
@@ -56,18 +62,6 @@
 
             inherit src;
             strictDeps = true;
-
-            buildInputs = with pkgs; [
-              # Some Holochain crates link against openssl
-              openssl
-              opensslStatic
-            ];
-
-            nativeBuildInputs = with pkgs; [
-              # To build openssl-sys
-              perl
-              pkg-config
-            ];
           };
 
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -108,15 +102,20 @@
           apps.default = checkedCli;
 
           devShells.default = pkgs.mkShell {
-            inputsFrom = [ inputs'.holochain-flake.devShells.holonix ];
-
-            packages = with pkgs; [
+            packages = (with inputs'.holonix.packages; [
+                holochain
+                lair-keystore
+                hc-launch
+                hc-scaffold
+                # hn-introspect
+                rust
+            ]) ++ (with pkgs; [
               nodejs_20
               minisign
               libsodium
               upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
               binaryen # For wasm-opt, optimising wasms before packaging
-            ];
+            ]);
 
             shellHook = ''
               # This is enough to get libsodium-sys-stable to link against the libsodium we're providing

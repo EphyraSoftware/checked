@@ -32,7 +32,7 @@ dirs = "5.0.1"
 rpassword = "7.3.1"
 
 [dev-dependencies]
-holochain = { version = "0.3.1", default-features = false, features = ["sweetest"] }
+holochain = { version = "0.3.1", default-features = false, features = ["sweetest", "sqlite-encrypted"] }
 signing_keys_types = { path = "../types/signing_keys" }
 warp = "0.3.6"
 

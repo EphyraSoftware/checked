@@ -60,7 +60,7 @@ struct FetchState {
 /// Unlike with [sign] where the user is is prompted about whether to distribute the signature, here
 /// the signature is always distributed after being created.
 pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
-    let fetch_url = url::Url::parse(&fetch_args.url).context("Invalid URL")?;
+    let fetch_url = Url::parse(&fetch_args.url).context("Invalid URL")?;
     println!("Fetching from {}", fetch_url);
 
     let output_path = get_output_path(&fetch_args, &fetch_url)?;
