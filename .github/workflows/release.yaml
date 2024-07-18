@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The tag to release to"
+        required: true
+        type: string
+
+jobs:
+  checked_cli:
+    permissions:
+      contents: write
+
+    strategy:
+        matrix:
+            os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
+            include:
+              - os: ubuntu-latest
+                platform: x86_64-linux
+              - os: macos-latest
+                platform: aarch64-darwin
+              - os: macos-13
+                platform: x86_64-darwin
+              - os: windows-latest
+                platform: x86_64-windows
+        fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.21.10'
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build CLI
+        if: matrix.os != 'windows-latest'
+        run: |
+          cargo build --release --manifest-path ./checked_cli/Cargo.toml
+          cp target/release/checked checked-${{ inputs.version }}-${{ matrix.platform }}
+          gh release upload ${{ inputs.version }} checked-${{ inputs.version }}-${{ matrix.platform }} --clobber
+
+      - name: Build CLI for Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          cargo build --release --manifest-path ./checked_cli/Cargo.toml
+          cp target/release/checked.exe checked-${{ inputs.version }}-${{ matrix.platform }}.exe
+          gh release upload ${{ inputs.version }} checked-${{ inputs.version }}-${{ matrix.platform }}.exe --clobber
