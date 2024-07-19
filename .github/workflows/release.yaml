@@ -69,12 +69,12 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           cargo build --release --manifest-path ./checked_cli/Cargo.toml
-          cp target/release/checked checked-${{ inputs.version }}-${{ matrix.platform }}
+          cp checked_cli/target/release/checked checked-${{ inputs.version }}-${{ matrix.platform }}
           gh release upload ${{ inputs.version }} checked-${{ inputs.version }}-${{ matrix.platform }} --clobber
 
       - name: Build CLI for Windows
         if: matrix.os == 'windows-latest'
         run: |
           cargo build --release --manifest-path ./checked_cli/Cargo.toml
-          cp target/release/checked.exe checked-${{ inputs.version }}-${{ matrix.platform }}.exe
+          cp checked_cli/target/release/checked.exe checked-${{ inputs.version }}-${{ matrix.platform }}.exe
           gh release upload ${{ inputs.version }} checked-${{ inputs.version }}-${{ matrix.platform }}.exe --clobber
