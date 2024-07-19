@@ -6,7 +6,7 @@ use to fetch and sign assets. This guide will help you get both installed and wa
 ### Pre-requisite: Holochain launcher
 
 You can run Holochain any way you like, but the recommended way to get started is to use the Holochain launcher. You
-find an appropriate launcher release on its [releases page](https://github.com/holochain/launcher/releases).
+find an appropriate launcher release on its [releases page](https://github.com/holochain/launcher-electron/releases).
 
 Each release of `checked` is built against a specific version of Holochain. Holochain apps can sometimes run on newer 
 versions of Holochain but it's not guaranteed. Check the release notes for the version of `checked` that you are 
