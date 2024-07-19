@@ -36,8 +36,8 @@ jobs:
           cp workdir/checked.happ checked-${{ inputs.version }}.happ
           cp workdir/checked.webhapp checked-${{ inputs.version }}.webhapp
           
-          gh release upload ${{ inputs.version }} happ-${{ inputs.version }}.happ --clobber
-          gh release upload ${{ inputs.version }} happ-${{ inputs.version }}.webhapp --clobber
+          gh release upload ${{ inputs.version }} checked-${{ inputs.version }}.happ --clobber
+          gh release upload ${{ inputs.version }} checked-${{ inputs.version }}.webhapp --clobber
 
   checked_cli:
     permissions:
