@@ -27,6 +27,8 @@ jobs:
           extraPullNames: holochain-ci
 
       - name: Build happ
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           nix develop --command npm ci
           nix develop --command npm run package
@@ -67,6 +69,8 @@ jobs:
 
       - name: Build CLI
         if: matrix.os != 'windows-latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cargo build --release --manifest-path ./checked_cli/Cargo.toml
           cp checked_cli/target/release/checked checked-${{ inputs.version }}-${{ matrix.platform }}
@@ -74,6 +78,8 @@ jobs:
 
       - name: Build CLI for Windows
         if: matrix.os == 'windows-latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cargo build --release --manifest-path ./checked_cli/Cargo.toml
           cp checked_cli/target/release/checked.exe checked-${{ inputs.version }}-${{ matrix.platform }}.exe
