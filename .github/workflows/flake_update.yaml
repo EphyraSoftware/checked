@@ -1,4 +1,4 @@
-name: "flake_update"
+name: Flake update
 
 on:
   workflow_dispatch:
