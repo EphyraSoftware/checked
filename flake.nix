@@ -12,11 +12,6 @@
 
     holonix = {
       url = "github:holochain/holonix?ref=main-0.3";
-#      inputs = {
-#          nixpkgs.follows = "nixpkgs";
-#          flake-parts.follows = "flake-parts";
-#          crane.follows = "crane";
-#      };
     };
 
     fenix = {
