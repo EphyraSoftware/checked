@@ -15,9 +15,7 @@ jobs:
       - name: Install nix
         uses: cachix/install-nix-action@v25
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.20.4/install
-          extra_nix_config: |
-            experimental-features = flakes nix-command
+          install_url: https://releases.nixos.org/nix/nix-2.24.10/install
 
       - name: Flake update
         run: |

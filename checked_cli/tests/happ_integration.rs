@@ -231,17 +231,15 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
     assert_eq!(5, recent_signatures.passed_signatures.len());
     assert!(recent_signatures.failed_signatures.is_empty());
 
-    assert!(fetch_info
+    assert!(!fetch_info
         .reports
         .iter()
-        .find(|r| r.reason == FetchCheckSignatureReason::RandomHistorical)
-        .is_none());
+        .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical));
 
-    assert!(fetch_info
+    assert!(!fetch_info
         .reports
         .iter()
-        .find(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_)))
-        .is_none());
+        .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_))));
 
     Ok(())
 }
@@ -322,17 +320,15 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
     assert_eq!(3, recent_signatures.passed_signatures.len());
     assert_eq!(2, recent_signatures.failed_signatures.len());
 
-    assert!(fetch_info
+    assert!(!fetch_info
         .reports
         .iter()
-        .find(|r| r.reason == FetchCheckSignatureReason::RandomHistorical)
-        .is_none());
+        .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical));
 
-    assert!(fetch_info
+    assert!(!fetch_info
         .reports
         .iter()
-        .find(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_)))
-        .is_none());
+        .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_))));
 
     Ok(())
 }
@@ -433,7 +429,7 @@ async fn get_zome_handle(conductor: &SweetConductor, app_id: &str, zome_name: &s
     let cells = app.cell_info.get("checked").unwrap();
 
     let cell_id = cells
-        .into_iter()
+        .iter()
         .filter_map(|cell| match cell {
             CellInfo::Provisioned(cell) => Some(cell.cell_id.clone()),
             _ => None,
@@ -441,8 +437,7 @@ async fn get_zome_handle(conductor: &SweetConductor, app_id: &str, zome_name: &s
         .next()
         .unwrap();
 
-    let zome = SweetZome::new(cell_id.clone(), zome_name.into());
-    zome
+    SweetZome::new(cell_id.clone(), zome_name.into())
 }
 
 async fn start_sample_file_server() -> (SocketAddr, DropAbortHandle) {

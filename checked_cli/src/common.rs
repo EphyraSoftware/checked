@@ -68,7 +68,7 @@ mod tests {
         let f = tempfile::tempdir().unwrap();
 
         let mut r = open_file(f.path().join("test.txt")).unwrap();
-        r.write("test".as_bytes()).unwrap();
+        r.write_all("test".as_bytes()).unwrap();
         r.flush().unwrap();
     }
 }

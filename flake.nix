@@ -4,20 +4,19 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=24.05";
 
-    holonix = {
-        url = "github:holochain/holonix/main-0.3";
-
-        inputs = {
-            nixpkgs.follows = "nixpkgs";
-            flake-parts.follows = "flake-parts";
-            crane.follows = "crane";
-        };
-    };
-
     flake-parts.url = "github:hercules-ci/flake-parts";
 
     crane = {
       url = "github:ipetkov/crane";
+    };
+
+    holonix = {
+      url = "github:holochain/holonix?ref=main-0.3";
+    };
+
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     advisory-db = {
@@ -97,15 +96,17 @@
 
           devShells.default = pkgs.mkShell {
             packages = (with inputs'.holonix.packages; [
-                holochain
-                lair-keystore
-                hc-launch
-                hc-scaffold
-                # hn-introspect
-                rust
+              holochain
+              lair-keystore
+              hc-launch
+              hc-scaffold
+              hn-introspect
+              rust
             ]) ++ (with pkgs; [
-              nodejs_20
+              nodejs_22
               minisign
+              libsodium
+              go
               upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
               binaryen # For wasm-opt, optimising wasms before packaging
             ]);
