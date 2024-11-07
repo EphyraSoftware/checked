@@ -1052,10 +1052,7 @@ mod tests {
 
         // Picked 4 of the possible 5 valid options
         assert_eq!(4, picked.len());
-        assert!(picked
-            .iter()
-            .find(|p| p.author.get_raw_36()[0] == 3)
-            .is_none())
+        assert!(!picked.iter().any(|p| p.author.get_raw_36()[0] == 3))
     }
 
     #[test]
@@ -1222,10 +1219,7 @@ mod tests {
 
         // Picked 4 of the possible 5 valid options
         assert_eq!(4, picked.len());
-        assert!(picked
-            .iter()
-            .find(|p| p.author.get_raw_36()[0] == 3)
-            .is_none());
+        assert!(!picked.iter().any(|p| p.author.get_raw_36()[0] == 3));
     }
 
     #[test]
