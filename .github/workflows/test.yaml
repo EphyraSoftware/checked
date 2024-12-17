@@ -60,7 +60,7 @@ jobs:
 
       - name: Run CLI tests
         run: |
-          cargo install holochain_cli@0.3.6
+          cargo install holochain_cli@0.3.6 --locked
           
           cargo build --release --target wasm32-unknown-unknown
           hc app pack workdir --recursive
