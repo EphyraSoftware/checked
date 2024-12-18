@@ -8,8 +8,8 @@ name = "checked"
 
 [dependencies]
 holochain_client = { version = "=0.5.3", default-features = false }
-holochain_conductor_api = { version = "0.3.4", features = ["sqlite-encrypted"] }
-holochain_types = "0.3.4"
+holochain_conductor_api = { version = "0.3.6", features = ["sqlite-encrypted"] }
+holochain_types = "0.3.6"
 checked_types = { path = "../types/checked_types" }
 anyhow = "1.0.81"
 clap = { version = "4.5.2", features = ["derive", "cargo"] }
@@ -32,7 +32,7 @@ dirs = "5.0.1"
 rpassword = "7.3.1"
 
 [dev-dependencies]
-holochain = { version = "0.3.4", default-features = false, features = ["sweetest", "sqlite-encrypted"] }
+holochain = { version = "0.3.6", default-features = false, features = ["sweetest", "sqlite-encrypted"] }
 signing_keys_types = { path = "../types/signing_keys" }
 warp = "0.3.6"
 
