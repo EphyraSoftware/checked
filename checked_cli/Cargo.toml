@@ -7,9 +7,9 @@ edition = "2021"
 name = "checked"
 
 [dependencies]
-holochain_client = { version = "=0.5.3", default-features = false }
-holochain_conductor_api = { version = "0.3.6", features = ["sqlite-encrypted"] }
-holochain_types = "0.3.6"
+holochain_client = { version = "=0.6.0", default-features = false }
+holochain_conductor_api = { version = "0.4.0", features = ["sqlite-encrypted"] }
+holochain_types = "0.4.0"
 checked_types = { path = "../types/checked_types" }
 anyhow = "1.0.81"
 clap = { version = "4.5.2", features = ["derive", "cargo"] }
@@ -24,7 +24,7 @@ ed25519-dalek = "2.1.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8.5"
-itertools = "0.13.0"
+itertools = "0.14.0"
 proc-ctl = { version = "0.4.0" }
 
 [target.'cfg(any(windows, unix))'.dependencies]
@@ -32,7 +32,7 @@ dirs = "5.0.1"
 rpassword = "7.3.1"
 
 [dev-dependencies]
-holochain = { version = "0.3.6", default-features = false, features = ["sweetest", "sqlite-encrypted"] }
+holochain = { version = "0.4.0", default-features = false, features = ["sweettest", "wasmer_sys", "sqlite-encrypted"] }
 signing_keys_types = { path = "../types/signing_keys" }
 warp = "0.3.6"
 

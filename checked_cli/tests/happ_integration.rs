@@ -10,7 +10,6 @@ use holochain_types::app::InstallAppPayload;
 use holochain_types::prelude::AppBundleSource;
 use holochain_types::websocket::AllowedOrigins;
 use signing_keys_types::VfKeyResponse;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::net::SocketAddr;
@@ -387,10 +386,12 @@ async fn install_checked_app(
         .clone()
         .install_app_bundle(InstallAppPayload {
             source: AppBundleSource::Path("../workdir/checked.happ".into()),
-            agent_key: agent.clone(),
+            agent_key: Some(agent.clone()),
             installed_app_id: Some(app_id.into()),
-            membrane_proofs: HashMap::with_capacity(0),
+            roles_settings: None,
             network_seed: None,
+            allow_throwaway_random_agent_key: false,
+            ignore_genesis_failure: false,
         })
         .await?;
 
