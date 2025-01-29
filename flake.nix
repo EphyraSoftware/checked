@@ -2,17 +2,13 @@
   description = "Flake for Holochain app development";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-24.11";
-
-    flake-parts.url = "github:hercules-ci/flake-parts";
-
-    crane = {
-      url = "github:ipetkov/crane";
-    };
-
     holonix = {
       url = "github:holochain/holonix?ref=main-0.4";
     };
+
+    nixpkgs.follows = "holonix/nixpkgs";
+    flake-parts.follows = "holonix/flake-parts";
+    crane.follows = "holonix/crane";
 
     fenix = {
       url = "github:nix-community/fenix";
