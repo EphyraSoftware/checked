@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@holochain/client": "^0.18.0",
-    "@holochain/tryorama": "^v0.17.0",
+    "@holochain/tryorama": "^v0.17.1",
     "@msgpack/msgpack": "^2.8.0",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
