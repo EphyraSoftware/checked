@@ -126,10 +126,10 @@ pub async fn distribute(distribute_args: DistributeArgs) -> anyhow::Result<()> {
 }
 
 fn generate_proof() -> String {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut proof = String::new();
     for _ in 0..10 {
-        proof.push_str(PROOF_WORDS[rng.gen_range(0..PROOF_WORDS.len())]);
+        proof.push_str(PROOF_WORDS[rng.random_range(0..PROOF_WORDS.len())]);
         proof.push(' ');
     }
     proof

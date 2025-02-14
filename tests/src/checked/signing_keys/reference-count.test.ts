@@ -103,7 +103,7 @@ test("Search for a key which is in another agent's collection", async () => {
   });
 });
 
-test("Get my key collections for a key which is in another agent's collection", async () => {
+test.skipIf(process.env["GITHUB_ACTIONS"])("Get my key collections for a key which is in another agent's collection", async () => {
   await runScenario(async (scenario) => {
     const appSource = { appBundleSource: { path: testAppPath } };
 

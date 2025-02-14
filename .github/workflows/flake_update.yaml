@@ -15,7 +15,7 @@ jobs:
       - name: Install nix
         uses: cachix/install-nix-action@v30
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.24.10/install
+          install_url: https://releases.nixos.org/nix/nix-2.25.4/install
 
       - name: Flake update
         run: |
@@ -24,7 +24,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: "Update flake.lock"
+          commit-message: "chore: Update flake.lock"
           title: "Update flake.lock"
           body: "This PR updates the flake.lock file."
           branch: "update-flake-lock"
