@@ -4,6 +4,7 @@ use checked_cli::prelude::{
 };
 use checked_types::{AssetSignatureResponse, FetchCheckSignatureReason};
 use holochain::core::AgentPubKey;
+use holochain::prelude::InitCallbackResult;
 use holochain::sweettest::{SweetAgents, SweetConductor, SweetConductorHandle, SweetZome};
 use holochain_conductor_api::{AdminInterfaceConfig, AppStatusFilter, CellInfo, InterfaceDriver};
 use holochain_types::app::InstallAppPayload;
@@ -382,7 +383,7 @@ async fn install_checked_app(
 ) -> anyhow::Result<AgentPubKey> {
     let agent = SweetAgents::one(conductor.keystore().clone()).await;
 
-    conductor
+    let installed = conductor
         .clone()
         .install_app_bundle(InstallAppPayload {
             source: AppBundleSource::Path("../workdir/checked.happ".into()),
@@ -396,6 +397,29 @@ async fn install_checked_app(
         .await?;
 
     conductor.clone().enable_app(app_id.to_string()).await?;
+
+    let app_info = conductor
+        .get_app_info(&installed.installed_app_id)
+        .await?
+        .unwrap();
+    let checked_cells = app_info.cell_info.get("checked").unwrap();
+    let first_checked_dna_cell = checked_cells
+        .iter()
+        .find_map(|cell_info| match cell_info {
+            CellInfo::Provisioned(provisioned) => Some(provisioned.cell_id.clone()),
+            _ => None,
+        })
+        .unwrap();
+    conductor
+        .easy_call_zome::<_, InitCallbackResult, _>(
+            &agent,
+            None,
+            first_checked_dna_cell,
+            "signing_keys", // Can call any zome in this DNA to force compilation
+            "init",
+            (),
+        )
+        .await?;
 
     Ok(agent)
 }
@@ -511,8 +535,12 @@ async fn publish_asset_signature(
 
     if bad_signature {
         let output_path = fetch_info.output_path.clone().unwrap();
-        let mut f = File::options().append(true).open(&output_path).unwrap();
-        f.write_all("bad signature".as_bytes()).unwrap();
+        let mut f = File::options()
+            .append(true)
+            .open(&output_path)
+            .context("Failed to create bad signature file")?;
+        f.write_all("bad signature".as_bytes())
+            .context("Failed to write bad signature")?;
 
         sign(SignArgs {
             url: Some(url.to_string()),

@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install nix
         uses: cachix/install-nix-action@v30
         with:
@@ -26,6 +28,17 @@ jobs:
           name: esl-checked
           extraPullNames: holochain-ci
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Lint Rust (hApp)
+        run: |
+          nix develop --command cargo fmt --all -- --check
+          nix develop --command cargo clippy -- --deny warnings
+
+      - name: Lint Rust (CLI)
+        run: |
+          cd checked_cli
+          nix develop --command cargo fmt --all -- --check
+          nix develop --command cargo clippy -- --deny warnings
 
       - name: Install NPM dependencies
         run: |
