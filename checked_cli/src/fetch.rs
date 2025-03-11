@@ -445,7 +445,7 @@ where
         .store(content_length, std::sync::atomic::Ordering::Relaxed);
 
     while let Some(c) = response.chunk().await? {
-        writer.write_all(&c)?;
+        writer.write_all(c.as_ref())?;
         state
             .downloaded_size
             .fetch_add(c.len(), std::sync::atomic::Ordering::Release);

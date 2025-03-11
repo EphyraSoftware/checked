@@ -8,7 +8,7 @@ use holochain_conductor_api::{CellInfo, IssueAppAuthenticationTokenPayload};
 use holochain_types::prelude::{AgentPubKey, CapSecret, CellId};
 use holochain_types::websocket::AllowedOrigins;
 use serde::{Deserialize, Serialize};
-use std::fs::{File, Permissions};
+use std::fs::File;
 use std::io::Write;
 use std::net::Ipv6Addr;
 use std::path::PathBuf;
@@ -205,6 +205,7 @@ fn dump_credentials(
 
     #[cfg(target_family = "unix")]
     {
+        use std::fs::Permissions;
         use std::os::unix::fs::PermissionsExt;
         f.set_permissions(Permissions::from_mode(0o660))
             .map_err(|e| {
@@ -242,7 +243,11 @@ fn try_load_credentials(
     };
 
     let keypair = match ed25519_dalek::SigningKey::from_keypair_bytes(
-        saved.keypair.as_slice().try_into().unwrap(),
+        saved
+            .keypair
+            .as_slice()
+            .try_into()
+            .context("Could not create signing key from saved data")?,
     ) {
         Ok(keypair) => keypair,
         Err(e) => {
