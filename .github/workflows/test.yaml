@@ -50,7 +50,7 @@ jobs:
 
       - name: Build UI
         run: |
-          nix develop --command npm --workspace ui build
+          nix develop --command npm --workspace ui run build
 
       - name: Run Tryorama tests
         run: |
