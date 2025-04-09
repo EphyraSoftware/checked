@@ -4,7 +4,6 @@ name: checked
 integrity:
   network_seed: ~
   properties: ~
-  origin_time: 1708106482076894
   zomes:
     - name: signing_keys_integrity
       hash: ~

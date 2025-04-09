@@ -5,7 +5,6 @@ use std::time::Duration;
 use hdk::prelude::hash_type::AnyLinkable;
 use hdk::prelude::*;
 use rand::prelude::{IteratorRandom, SliceRandom};
-use rand::thread_rng;
 
 use checked_types::*;
 use fetch_integrity::prelude::*;
@@ -435,7 +434,7 @@ fn select_pinned_signatures(
 ) -> Vec<FetchCheckSignature> {
     let mut picked_signatures = Vec::new();
 
-    let mut rng = &mut thread_rng();
+    let mut rng = &mut rand::thread_rng();
 
     // Search key collections for signatures from agents we've chosen to reference.
     for mut key_collection in key_collections {
@@ -528,7 +527,7 @@ fn select_historical_signatures(
         .sub(Duration::from_secs(60 * 60 * 24 * 7)) // 1 week
         .unwrap();
 
-    let mut rng = &mut thread_rng();
+    let mut rng = &mut rand::thread_rng();
     possible_signatures
         .iter()
         .filter_map(|(action, sig)| {
@@ -588,7 +587,7 @@ fn select_recent_signatures(
         Some(x) => x,
     };
 
-    let mut rng = &mut thread_rng();
+    let mut rng = &mut rand::thread_rng();
 
     info!(
         "Selecting up to {} signatures randomly from {} possible recent signatures",
