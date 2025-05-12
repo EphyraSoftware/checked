@@ -21,7 +21,7 @@ jobs:
       - name: Install nix
         uses: cachix/install-nix-action@v31
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.25.4/install
+          install_url: https://releases.nixos.org/nix/nix-2.28.3/install
 
       - uses: cachix/cachix-action@v16
         with:
@@ -71,15 +71,11 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '^1.23.5'
-
       - uses: Swatinem/rust-cache@v2
 
       - name: Run CLI tests
         run: |
-          cargo install holochain_cli@0.4.2 --locked
+          cargo install holochain_cli@0.5.2 --locked
           
           cargo build --release --target wasm32-unknown-unknown
           hc app pack workdir --recursive
