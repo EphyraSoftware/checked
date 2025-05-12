@@ -31,7 +31,6 @@ const searchKeys = async () => {
       zome_name: "signing_keys",
       fn_name: "search_keys",
       payload: request,
-      cap_secret: null,
     });
   } catch (e) {
     notifications.pushNotification({

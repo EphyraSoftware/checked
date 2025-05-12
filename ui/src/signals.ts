@@ -26,8 +26,8 @@ export const registerSignalHandler = (
   }>,
 ) => {
   client.on("signal", (sig: Signal) => {
-    if (SignalType.App in sig) {
-      const signal = sig[SignalType.App];
+    if (sig.type == "app") {
+      const signal = sig.value;
 
       if (signal.zome_name === "signing_keys") {
         const payload = signal.payload as CheckedSigningKeysSignal;

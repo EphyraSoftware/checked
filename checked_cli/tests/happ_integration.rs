@@ -1,3 +1,5 @@
+//! Test that the CLI commands work as expected when run against a Holochain conductor.
+
 use anyhow::Context;
 use checked_cli::prelude::{
     distribute, fetch, generate, sign, DistributeArgs, FetchArgs, GenerateArgs, SignArgs,

@@ -34,7 +34,6 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
         zome_name: "signing_keys",
         fn_name: "get_my_key_collections",
         payload: null,
-        cap_secret: null,
       });
 
       keyCollections.value = [...collections, ...keyCollections.value];

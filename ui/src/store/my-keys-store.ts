@@ -20,7 +20,6 @@ export const useMyKeysStore = defineStore("my-keys", () => {
         zome_name: "signing_keys",
         fn_name: "get_my_verification_key_distributions",
         payload: null,
-        cap_secret: null,
       });
 
       myKeys.value = [...r, ...myKeys.value];

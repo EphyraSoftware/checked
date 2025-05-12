@@ -7,13 +7,13 @@
     "format": "prettier --write --cache ./src"
   },
   "dependencies": {
-    "@holochain/client": "^0.18.0",
-    "@holochain/tryorama": "^v0.17.1",
-    "@msgpack/msgpack": "^2.8.0",
+    "@holochain/client": "^0.19.0",
+    "@holochain/tryorama": "^v0.18.1",
+    "@msgpack/msgpack": "^3.1.1",
     "eslint": "^8.57.0",
-    "prettier": "^3.2.5",
-    "typescript": "^5.4.5",
-    "typescript-eslint": "^7.7.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.0",
     "vitest": "^1.6.1"
   },
   "type": "module"

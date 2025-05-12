@@ -3,7 +3,7 @@
 
   inputs = {
     holonix = {
-      url = "github:holochain/holonix?ref=main-0.4";
+      url = "github:holochain/holonix?ref=main-0.5";
     };
 
     nixpkgs.follows = "holonix/nixpkgs";
@@ -93,6 +93,8 @@
           devShells.default = pkgs.mkShell {
             packages = (with inputs'.holonix.packages; [
               holochain
+              hc
+              bootstrap-srv
               lair-keystore
               hc-launch
               hc-scaffold
@@ -102,10 +104,18 @@
               nodejs_22
               minisign
               libsodium
-              go
+              # pkg-config
+              perl # For building Holochain in sweettest
+              clang # For building Holochain in sweettest
+              cmake # For building Holochain in sweettest
               upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
               binaryen # For wasm-opt, optimising wasms before packaging
             ]);
+
+            shellHook = ''
+                export LIBCLANG_PATH="${pkgs.llvmPackages_18.libclang.lib}/lib"
+                export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib/"
+            '';
           };
         };
     };

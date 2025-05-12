@@ -24,7 +24,7 @@ import {
 
 test("Prepare fetch with no existing signatures", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -38,7 +38,7 @@ test("Prepare fetch with no existing signatures", async () => {
 
 test("Create asset signature", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -69,7 +69,7 @@ test("Create asset signature", async () => {
 
 test("Get my asset signatures", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,
@@ -126,7 +126,7 @@ test("Get my asset signatures", async () => {
 
 test("Delete an asset signature", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -156,7 +156,7 @@ test("Delete an asset signature", async () => {
 
 test("Cannot resign an asset", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -201,7 +201,7 @@ test("Cannot resign an asset", async () => {
 
 test("Cannot resign an asset after deleting the original signature", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -250,7 +250,7 @@ test("Cannot resign an asset after deleting the original signature", async () =>
 
 test("Signatures from multiple selection strategies", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,
@@ -327,7 +327,7 @@ test("Signatures from multiple selection strategies", async () => {
 
 test("Remote validation", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,
