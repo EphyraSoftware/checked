@@ -30,7 +30,6 @@ export const useMyAssetSignaturesStore = defineStore(
             zome_name: "fetch",
             fn_name: "get_my_asset_signatures",
             payload: null,
-            cap_secret: null,
           },
         );
 

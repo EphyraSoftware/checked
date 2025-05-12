@@ -17,7 +17,7 @@ import { testAppPath } from "../common";
 
 test("Create key collection", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -29,7 +29,7 @@ test("Create key collection", async () => {
 
 test("Create key collection limit", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -54,7 +54,7 @@ test("Create key collection limit", async () => {
 
 test("Get my key collections", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice] = await scenario.addPlayersWithApps([appSource]);
 
@@ -75,7 +75,7 @@ test("Get my key collections", async () => {
 
 test("Link verification key distribution to collection", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,
@@ -119,7 +119,7 @@ test("Link verification key distribution to collection", async () => {
 
 test("Unlink verification key from collection", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,
@@ -171,7 +171,7 @@ test("Unlink verification key from collection", async () => {
 
 test("Remote validation", async () => {
   await runScenario(async (scenario) => {
-    const appSource = { appBundleSource: { path: testAppPath } };
+    const appSource = { appBundleSource: { type: "path", value: testAppPath } };
 
     const [alice, bob] = await scenario.addPlayersWithApps([
       appSource,

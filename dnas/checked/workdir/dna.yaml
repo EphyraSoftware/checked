@@ -6,26 +6,18 @@ integrity:
   properties: ~
   zomes:
     - name: signing_keys_integrity
-      hash: ~
       bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys_integrity.wasm"
       dependencies: ~
-      dylib: ~
     - name: fetch_integrity
-      hash: ~
       bundled: "../../../target/wasm32-unknown-unknown/release/fetch_integrity.wasm"
       dependencies: ~
-      dylib: ~
 coordinator:
   zomes:
     - name: signing_keys
-      hash: ~
       bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys.wasm"
       dependencies:
         - name: signing_keys_integrity
-      dylib: ~
     - name: fetch
-      hash: ~
       bundled: "../../../target/wasm32-unknown-unknown/release/fetch.wasm"
       dependencies:
           - name: fetch_integrity
-      dylib: ~

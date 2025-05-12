@@ -3,7 +3,7 @@
 
   inputs = {
     holonix = {
-      url = "github:holochain/holonix?ref=main";
+      url = "github:holochain/holonix?ref=main-0.5";
     };
 
     nixpkgs.follows = "holonix/nixpkgs";
@@ -93,6 +93,7 @@
           devShells.default = pkgs.mkShell {
             packages = (with inputs'.holonix.packages; [
               holochain
+              hc
               bootstrap-srv
               lair-keystore
               hc-launch
@@ -103,6 +104,7 @@
               nodejs_22
               minisign
               libsodium
+              # pkg-config
               perl # For building Holochain in sweettest
               clang # For building Holochain in sweettest
               cmake # For building Holochain in sweettest
