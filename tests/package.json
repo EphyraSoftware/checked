@@ -10,7 +10,7 @@
     "@holochain/client": "^0.19.0",
     "@holochain/tryorama": "^v0.18.1",
     "@msgpack/msgpack": "^3.1.1",
-    "eslint": "^8.57.0",
+    "eslint": "^9.26.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0",
