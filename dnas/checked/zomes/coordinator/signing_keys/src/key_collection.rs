@@ -32,13 +32,12 @@ pub fn get_my_key_collections() -> ExternResult<Vec<KeyCollectionWithKeys>> {
         };
 
         let linked_vf_keys = get_links(
-            GetLinksInputBuilder::try_new(
+            LinkQuery::try_new(
                 collection_action_hash,
                 LinkTypes::KeyCollectionToVfKeyDist,
-            )?
+            )?,
             // We created these links so only look locally.
-            .get_options(GetStrategy::Local)
-            .build(),
+            GetStrategy::Local
         )?;
 
         for link in linked_vf_keys {
@@ -135,14 +134,13 @@ pub fn unlink_verification_key_from_key_collection(
     let agent_info = agent_info()?;
 
     let links_from_vf_key_dist = get_links(
-        GetLinksInputBuilder::try_new(
+        LinkQuery::try_new(
             request.verification_key_dist_address.clone(),
-            LinkTypes::VfKeyDistToKeyCollection.try_into_filter()?,
+            LinkTypes::VfKeyDistToKeyCollection,
         )?
         // Always created by the current agent so only look locally.
-        .get_options(GetStrategy::Local)
-        .author(agent_info.agent_initial_pubkey.clone())
-        .build(),
+        .author(agent_info.agent_initial_pubkey.clone()),
+        GetStrategy::Local,
     )?;
 
     // Unlink the key fingerprint from the key collection
@@ -151,17 +149,17 @@ pub fn unlink_verification_key_from_key_collection(
         // Find the links from this collection that target the key to remove
         if link.target == kc_action.clone().into() {
             removing_tags.insert(link.tag);
-            delete_link(link.create_link_hash)?;
+            delete_link(link.create_link_hash, GetOptions::local())?;
         }
     }
 
     let links_from_selected_collection = get_links(
-        GetLinksInputBuilder::try_new(
+        LinkQuery::try_new(
             kc_action,
-            LinkTypes::KeyCollectionToVfKeyDist.try_into_filter()?,
+            LinkTypes::KeyCollectionToVfKeyDist,
         )?
-        .author(agent_info.agent_initial_pubkey)
-        .build(),
+        .author(agent_info.agent_initial_pubkey),
+        GetStrategy::Local,
     )?;
 
     let target_as_any: AnyLinkableHash = request.verification_key_dist_address.clone().into();
@@ -175,7 +173,7 @@ pub fn unlink_verification_key_from_key_collection(
                     link.tag
                 ))));
             }
-            delete_link(link.create_link_hash)?;
+            delete_link(link.create_link_hash, GetOptions::local())?;
         }
     }
 
@@ -266,9 +264,8 @@ pub fn get_key_collections_reference_count(
     get_options: &GetOptions,
 ) -> ExternResult<usize> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(key_dist_address, LinkTypes::VfKeyDistToKeyCollection)?
-            .get_options(get_options.strategy)
-            .build(),
+        LinkQuery::try_new(key_dist_address, LinkTypes::VfKeyDistToKeyCollection)?,
+        get_options.strategy(),
     )?;
     Ok(links
         .into_iter()

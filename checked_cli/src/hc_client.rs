@@ -24,7 +24,7 @@ pub(crate) async fn get_authenticated_app_agent_client(
 
     println!("Connecting to admin port {}", admin_port);
     // TODO connect timeout not configurable! Really slow if Holochain is not running.
-    let mut admin_client = AdminWebsocket::connect(format!("127.0.0.1:{admin_port}"))
+    let mut admin_client = AdminWebsocket::connect(format!("127.0.0.1:{admin_port}"), None)
         .await
         .with_context(|| {
             format!("Failed to connect to Holochain admin interface at {admin_port}")
@@ -56,6 +56,7 @@ pub(crate) async fn get_authenticated_app_agent_client(
         (Ipv6Addr::LOCALHOST, app_port),
         issued.token,
         signer.into(),
+        None,
     )
         .await.with_context(|| {
         format!(
@@ -106,7 +107,7 @@ async fn find_or_create_app_interface(admin_client: &mut AdminWebsocket) -> anyh
     let app_port = match matching_interfaces {
         Some(interface_info) => interface_info.port,
         None => admin_client
-            .attach_app_interface(0, AllowedOrigins::Any, None)
+            .attach_app_interface(0, None, AllowedOrigins::Any, None)
             .await
             .map_err(|e| anyhow::anyhow!("Error attaching app interface: {:?}", e))?,
     };
@@ -138,7 +139,7 @@ async fn create_new_credentials(
     installed_app_id: String,
 ) -> anyhow::Result<(CellId, SigningCredentials)> {
     let apps = client
-        .list_apps(Some(AppStatusFilter::Running))
+        .list_apps(Some(AppStatusFilter::Enabled))
         .await
         .map_err(|e| anyhow::anyhow!("Error listing apps: {:?}", e))?;
 

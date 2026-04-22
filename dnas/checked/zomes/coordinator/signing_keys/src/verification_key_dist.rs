@@ -106,9 +106,8 @@ fn search_keys_with_get_options(
     match request.agent_pub_key {
         Some(agent_pub_key) => {
             let links = get_links(
-                GetLinksInputBuilder::try_new(agent_pub_key, LinkTypes::AgentToVfKeyDist)?
-                    .get_options(get_options.strategy)
-                    .build(),
+                LinkQuery::try_new(agent_pub_key, LinkTypes::AgentToVfKeyDist)?,
+                get_options.strategy()
             )?;
 
             let mut out = Vec::with_capacity(links.len());
@@ -270,9 +269,8 @@ pub fn get_key_marks(
     get_options: GetOptions,
 ) -> ExternResult<Vec<VerificationKeyDistMark>> {
     let links = get_links(
-        GetLinksInputBuilder::try_new(vf_key_dist_address, LinkTypes::VfKeyDistToMark)?
-            .get_options(get_options.strategy)
-            .build(),
+        LinkQuery::try_new(vf_key_dist_address, LinkTypes::VfKeyDistToMark)?,
+        get_options.strategy()
     )?;
 
     let mut out = Vec::with_capacity(links.len());

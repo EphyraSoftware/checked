@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 hdk = { workspace = true }
+holochain_serialized_bytes = { workspace = true }
 serde = { workspace = true }
 
 checked_types = { workspace = true }

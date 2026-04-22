@@ -1,7 +1,7 @@
 use anyhow::Context;
 use holochain_client::ZomeCallTarget;
 use holochain_types::prelude::ExternIO;
-use rand::Rng;
+use rand::RngExt;
 
 use checked_types::{DistributeVfKeyRequest, VerificationKeyType};
 

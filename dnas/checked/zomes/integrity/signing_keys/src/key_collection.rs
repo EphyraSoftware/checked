@@ -265,7 +265,7 @@ pub fn validate_delete_key_collection_to_vf_key_dist_link(
     };
     let activity = must_get_agent_activity(
         action.author,
-        ChainFilter::new(action_hash).until(original_action_hash),
+        ChainFilter::new(action_hash).until_hash(original_action_hash),
     )?;
 
     // Look for the reverse create link, needed to find the associated delete.
