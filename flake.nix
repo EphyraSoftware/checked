@@ -39,7 +39,7 @@
         , ...
         }:
         let
-          craneLib = crane.lib.${system};
+          craneLib = crane.mkLib pkgs;
           src = craneLib.cleanCargoSource (craneLib.path ./checked_cli);
 
           checkedCliCrateInfo = craneLib.crateNameFromCargoToml { cargoToml = ./checked_cli/Cargo.toml; };
