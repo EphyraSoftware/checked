@@ -1,6 +1,6 @@
 //! Tests the commands that are exposed through the CLI.
 
-use checked_cli::prelude::{generate, sign, verify, GenerateArgs, SignArgs, VerifyArgs};
+use checked_cli::prelude::{GenerateArgs, SignArgs, VerifyArgs, generate, sign, verify};
 use std::fs::File;
 use std::io::Write;
 

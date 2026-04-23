@@ -107,7 +107,7 @@ fn search_keys_with_get_options(
         Some(agent_pub_key) => {
             let links = get_links(
                 LinkQuery::try_new(agent_pub_key, LinkTypes::AgentToVfKeyDist)?,
-                get_options.strategy()
+                get_options.strategy(),
             )?;
 
             let mut out = Vec::with_capacity(links.len());
@@ -270,7 +270,7 @@ pub fn get_key_marks(
 ) -> ExternResult<Vec<VerificationKeyDistMark>> {
     let links = get_links(
         LinkQuery::try_new(vf_key_dist_address, LinkTypes::VfKeyDistToMark)?,
-        get_options.strategy()
+        get_options.strategy(),
     )?;
 
     let mut out = Vec::with_capacity(links.len());

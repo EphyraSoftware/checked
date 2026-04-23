@@ -72,12 +72,14 @@ pub(crate) fn maybe_handle_holochain_error(
     match conductor_api_error {
         // TODO brittle, would be nice if the errors for some important failures were more specific.
         ConductorApiError::SignZomeCallError(e) if e == "Provenance not found" => {
-            eprintln!("Saved credentials for Holochain appear invalid, removing them. Please re-run this command");
-            if let Ok(e) = get_credentials_path(path) {
-                if std::fs::remove_file(e).is_ok() {
-                    println!("Successfully removed credentials");
-                    return;
-                }
+            eprintln!(
+                "Saved credentials for Holochain appear invalid, removing them. Please re-run this command"
+            );
+            if let Ok(e) = get_credentials_path(path)
+                && std::fs::remove_file(e).is_ok()
+            {
+                println!("Successfully removed credentials");
+                return;
             }
 
             eprintln!("Failed to remove");
@@ -95,10 +97,10 @@ async fn find_or_create_app_interface(admin_client: &mut AdminWebsocket) -> anyh
         .map_err(|e| anyhow::anyhow!("Error listing app interfaces: {:?}", e))?;
 
     let matching_interfaces = app_interfaces.iter().find(|interface_info| {
-        if let Some(installed_app_id) = &interface_info.installed_app_id {
-            if installed_app_id.as_str() != DEFAULT_INSTALLED_APP_ID {
-                return false;
-            }
+        if let Some(installed_app_id) = &interface_info.installed_app_id
+            && installed_app_id.as_str() != DEFAULT_INSTALLED_APP_ID
+        {
+            return false;
         }
 
         interface_info.allowed_origins == AllowedOrigins::Any

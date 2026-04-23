@@ -22,7 +22,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
     // We're online anyway to do a download so go looking for new data.
     let links = get_links(
         LinkQuery::try_new(asset_base.clone(), LinkTypes::AssetUrlToSignature)?,
-        GetStrategy::Network
+        GetStrategy::Network,
     )?;
 
     info!("Found {} signature links", links.len());
@@ -59,7 +59,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         _ => {
             return Err(wasm_error!(WasmErrorInner::Guest(
                 "Unexpected response from signing_keys".into()
-            )))
+            )));
         }
     };
 
@@ -110,7 +110,7 @@ pub fn create_asset_signature(
         _ => {
             return Err(wasm_error!(WasmErrorInner::Guest(
                 "Unexpected response from signing_keys".into()
-            )))
+            )));
         }
     };
 
@@ -211,7 +211,7 @@ pub fn delete_asset_signature(request: DeleteAssetSignatureRequest) -> ExternRes
 
     let links = get_links(
         LinkQuery::try_new(asset_base, LinkTypes::AssetUrlToSignature)?,
-        GetStrategy::Local
+        GetStrategy::Local,
     )?;
 
     trace!("Found {} links from the asset fetch url", links.len());
@@ -303,7 +303,10 @@ fn pick_signatures(
                 filter_picked(&mut possible_signatures, &picked_signatures);
             }
             _ => {
-                warn!("Discarding my existing asset signature signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+                warn!(
+                    "Discarding my existing asset signature signature because the key distribution could not be fetched: {:?}",
+                    sig.key_dist_address
+                );
             }
         }
     }
@@ -678,8 +681,8 @@ mod tests {
     };
 
     use super::{
-        pick_signatures, select_historical_signatures, select_pinned_signatures,
-        select_recent_signatures, MAX_SIGNATURES_FROM_CATEGORY,
+        MAX_SIGNATURES_FROM_CATEGORY, pick_signatures, select_historical_signatures,
+        select_pinned_signatures, select_recent_signatures,
     };
 
     #[test]
@@ -1006,9 +1009,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the first 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] <= 30 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] <= 30 })
+        );
     }
 
     #[test]
@@ -1135,9 +1140,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] >= 70 })
+        );
     }
 
     #[test]
@@ -1173,9 +1180,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] >= 70 })
+        );
     }
 
     #[test]

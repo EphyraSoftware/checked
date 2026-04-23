@@ -32,12 +32,9 @@ pub fn get_my_key_collections() -> ExternResult<Vec<KeyCollectionWithKeys>> {
         };
 
         let linked_vf_keys = get_links(
-            LinkQuery::try_new(
-                collection_action_hash,
-                LinkTypes::KeyCollectionToVfKeyDist,
-            )?,
+            LinkQuery::try_new(collection_action_hash, LinkTypes::KeyCollectionToVfKeyDist)?,
             // We created these links so only look locally.
-            GetStrategy::Local
+            GetStrategy::Local,
         )?;
 
         for link in linked_vf_keys {
@@ -154,11 +151,8 @@ pub fn unlink_verification_key_from_key_collection(
     }
 
     let links_from_selected_collection = get_links(
-        LinkQuery::try_new(
-            kc_action,
-            LinkTypes::KeyCollectionToVfKeyDist,
-        )?
-        .author(agent_info.agent_initial_pubkey),
+        LinkQuery::try_new(kc_action, LinkTypes::KeyCollectionToVfKeyDist)?
+            .author(agent_info.agent_initial_pubkey),
         GetStrategy::Local,
     )?;
 
@@ -178,7 +172,10 @@ pub fn unlink_verification_key_from_key_collection(
     }
 
     if !removing_tags.is_empty() {
-        warn!("There were links from the verification key dist that did not correspond to a link from the key collection. Validation is supposed to prevent this. {:?}", removing_tags);
+        warn!(
+            "There were links from the verification key dist that did not correspond to a link from the key collection. Validation is supposed to prevent this. {:?}",
+            removing_tags
+        );
     }
 
     Ok(())

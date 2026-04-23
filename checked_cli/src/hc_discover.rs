@@ -61,7 +61,7 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
     let selected = dialoguer::Select::new()
         .with_prompt("Pick a Holochain process")
         .items(
-            &possible_processes_with_ports
+            possible_processes_with_ports
                 .iter()
                 .map(|(p, ports)| {
                     format!(
@@ -95,7 +95,7 @@ pub(crate) async fn interactive_discover_holochain() -> anyhow::Result<u16> {
     let port_index = dialoguer::Select::new()
         .with_prompt("Choose a port")
         .items(
-            &admin_ports
+            admin_ports
                 .iter()
                 .map(|p| format!("Port: {}", p))
                 .collect::<Vec<_>>(),

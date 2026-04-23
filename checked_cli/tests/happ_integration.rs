@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use checked_cli::prelude::{
-    distribute, fetch, generate, sign, DistributeArgs, FetchArgs, GenerateArgs, SignArgs,
+    DistributeArgs, FetchArgs, GenerateArgs, SignArgs, distribute, fetch, generate, sign,
 };
 use checked_types::{AssetSignatureResponse, FetchCheckSignatureReason};
 use holochain::core::AgentPubKey;
@@ -233,15 +233,19 @@ async fn fetch_asset_signed_by_others() -> anyhow::Result<()> {
     assert_eq!(5, recent_signatures.passed_signatures.len());
     assert!(recent_signatures.failed_signatures.is_empty());
 
-    assert!(!fetch_info
-        .reports
-        .iter()
-        .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical));
+    assert!(
+        !fetch_info
+            .reports
+            .iter()
+            .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical)
+    );
 
-    assert!(!fetch_info
-        .reports
-        .iter()
-        .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_))));
+    assert!(
+        !fetch_info
+            .reports
+            .iter()
+            .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_)))
+    );
 
     Ok(())
 }
@@ -322,15 +326,19 @@ async fn fetch_asset_signed_by_others_with_mismatches() -> anyhow::Result<()> {
     assert_eq!(3, recent_signatures.passed_signatures.len());
     assert_eq!(2, recent_signatures.failed_signatures.len());
 
-    assert!(!fetch_info
-        .reports
-        .iter()
-        .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical));
+    assert!(
+        !fetch_info
+            .reports
+            .iter()
+            .any(|r| r.reason == FetchCheckSignatureReason::RandomHistorical)
+    );
 
-    assert!(!fetch_info
-        .reports
-        .iter()
-        .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_))));
+    assert!(
+        !fetch_info
+            .reports
+            .iter()
+            .any(|r| matches!(r.reason, FetchCheckSignatureReason::Pinned(_)))
+    );
 
     Ok(())
 }

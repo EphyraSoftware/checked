@@ -61,7 +61,10 @@ pub async fn sign(sign_args: SignArgs) -> anyhow::Result<PathBuf> {
     let vk = match PublicKey::from_file(&vk_path) {
         Ok(vk) => Some(vk),
         Err(e) => {
-            println!("Verification key not found, signature will not be checked after it is created: {:?}", e);
+            println!(
+                "Verification key not found, signature will not be checked after it is created: {:?}",
+                e
+            );
             None
         }
     };

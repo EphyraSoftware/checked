@@ -9,10 +9,10 @@ use hdi::prelude::*;
 use signing_keys_types::*;
 
 pub mod prelude {
+    pub use crate::LinkTypes;
     pub use crate::key_collection::*;
     pub use crate::key_util::*;
     pub use crate::verification_key_dist::*;
-    pub use crate::LinkTypes;
     pub use crate::{EntryTypes, UnitEntryTypes};
     pub use signing_keys_types::*;
 }
