@@ -401,7 +401,6 @@ async fn install_checked_app(
             installed_app_id: Some(app_id.into()),
             roles_settings: None,
             network_seed: None,
-            allow_throwaway_random_agent_key: false,
             ignore_genesis_failure: false,
         })
         .await?;
@@ -440,6 +439,7 @@ async fn add_admin_port(conductor: SweetConductorHandle) -> anyhow::Result<u16> 
         .add_admin_interfaces(vec![AdminInterfaceConfig {
             driver: InterfaceDriver::Websocket {
                 port: 0,
+                danger_bind_addr: None,
                 allowed_origins: AllowedOrigins::Any,
             },
         }])
@@ -452,7 +452,7 @@ async fn add_admin_port(conductor: SweetConductorHandle) -> anyhow::Result<u16> 
 
 async fn get_zome_handle(conductor: &SweetConductor, app_id: &str, zome_name: &str) -> SweetZome {
     let apps = conductor
-        .list_apps(Some(AppStatusFilter::Running))
+        .list_apps(Some(AppStatusFilter::Enabled))
         .await
         .unwrap();
 
@@ -481,13 +481,14 @@ async fn start_sample_file_server() -> (SocketAddr, DropAbortHandle) {
     let (tx, rx) = tokio::sync::oneshot::channel::<SocketAddr>();
 
     let join_handle = tokio::task::spawn(async move {
-        let test_txt = warp::path!("test.txt").map(|| "test");
+        let test_txt = warp::path!("test.txt").map(|| "test".to_string());
 
-        let (addr, srv) = warp::serve(test_txt).bind_ephemeral(([127, 0, 0, 1], 0));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
 
         tx.send(addr).unwrap();
 
-        srv.await;
+        warp::serve(test_txt).incoming(listener).run().await;
     });
 
     let addr = rx.await.unwrap();
