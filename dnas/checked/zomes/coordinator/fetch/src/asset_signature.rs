@@ -556,7 +556,7 @@ fn select_historical_signatures(
             }
         })
         .take(take_many)
-        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
+        .sample(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
 }
 
 /// Tries to select up to [MAX_SIGNATURES_FROM_CATEGORY] random signatures from the last week of signatures.
@@ -617,7 +617,7 @@ fn select_recent_signatures(
             }
         })
         .take(take_many)
-        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
+        .sample(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
 }
 
 type VfKeyDistFetcher = fn(&ActionHash) -> ExternResult<Option<VfKeyResponse>>;
