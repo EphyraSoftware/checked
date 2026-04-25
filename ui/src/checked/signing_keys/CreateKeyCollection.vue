@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { AppClient } from "@holochain/client";
-import { ComputedRef, inject, ref } from "vue";
+import { ref } from "vue";
 import { useNotificationsStore } from "../../store/notifications-store";
+import { holochainClient as client } from "../../holochain-client";
 
 const emit = defineEmits<{
   (e: "created", name: string): void;
 }>();
-
-const client = inject("client") as ComputedRef<AppClient>;
 
 const notifications = useNotificationsStore();
 
@@ -31,7 +29,7 @@ const createKeyCollection = async () => {
     emit("created", keyCollectionName.value);
 
     keyCollectionName.value = "";
-  } catch (e: any) {
+  } catch (e: unknown) {
     notifications.pushNotification({
       message: `Error creating key collection - ${e}`,
       type: "error",

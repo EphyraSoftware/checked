@@ -4,8 +4,8 @@ mod common;
 use hdi::prelude::*;
 
 pub mod prelude {
-    pub use crate::common::make_asset_url_address;
     pub use crate::LinkTypes;
+    pub use crate::common::make_asset_url_address;
     pub use crate::{EntryTypes, UnitEntryTypes};
     pub use fetch_types::*;
 }

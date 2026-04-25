@@ -49,16 +49,15 @@ fn signal_action(action: SignedActionHashed) -> ExternResult<()> {
             Ok(())
         }
         Action::Update(update) => {
-            if let Ok(Some(app_entry)) = get_entry_for_action(&action.hashed.hash) {
-                if let Ok(Some(original_app_entry)) =
+            if let Ok(Some(app_entry)) = get_entry_for_action(&action.hashed.hash)
+                && let Ok(Some(original_app_entry)) =
                     get_entry_for_action(&update.original_action_address)
-                {
-                    emit_signal(Signal::EntryUpdated {
-                        action,
-                        app_entry,
-                        original_app_entry,
-                    })?;
-                }
+            {
+                emit_signal(Signal::EntryUpdated {
+                    action,
+                    app_entry,
+                    original_app_entry,
+                })?;
             }
             Ok(())
         }

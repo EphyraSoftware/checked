@@ -1,3 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@source "../index.html";
+@source "./**/*.{vue,ts}";
+
+@plugin "daisyui/index.js" {
+  themes: bumblebee --default, luxury --prefersdark;
+}

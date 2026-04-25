@@ -11,24 +11,25 @@ members = [
     "types/*"
 ]
 
-exclude = ["checked_cli"]
+exclude = ["checked_cli", "tests"]
 
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "=0.6.2"
-hdk = "=0.5.2"
-holochain_zome_types = "0.5.2"
-holo_hash = "0.5.2"
+hdi = "=0.7.1-rc.5"
+hdk = "=0.6.1-rc.5"
+holochain_zome_types = "0.6.1-rc.5"
+holo_hash = "0.6.1-rc.5"
+holochain_serialized_bytes = "0.0.57"
 serde = "1.0"
-chrono = { version = "0.4.34", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.44", default-features = false, features = ["clock", "std"] }
 hex = "0.4.3"
-regex = "1.10.3"
-nanoid = "0.4.0"
-anyhow = "1.0.81"
-minisign-verify = "0.2.1"
-url = "2.5.0"
-rand = { version = "0.8.5", default-features = false, features = ["std", "std_rng"] }
+regex = "1.12.3"
+nanoid = "0.5.0"
+anyhow = "1.0.102"
+minisign-verify = "0.2.5"
+url = "2.5.8"
+rand = { version = "0.10.1", default-features = false, features = ["std", "std_rng", "thread_rng"] }
 
 signing_keys_types = { path = "types/signing_keys" }
 signing_keys_integrity = { path = "dnas/checked/zomes/integrity/signing_keys" }

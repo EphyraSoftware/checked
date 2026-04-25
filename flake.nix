@@ -3,7 +3,7 @@
 
   inputs = {
     holonix = {
-      url = "github:holochain/holonix?ref=main-0.5";
+      url = "github:holochain/holonix?ref=main-0.6";
     };
 
     nixpkgs.follows = "holonix/nixpkgs";
@@ -39,7 +39,7 @@
         , ...
         }:
         let
-          craneLib = crane.lib.${system};
+          craneLib = crane.mkLib pkgs;
           src = craneLib.cleanCargoSource (craneLib.path ./checked_cli);
 
           checkedCliCrateInfo = craneLib.crateNameFromCargoToml { cargoToml = ./checked_cli/Cargo.toml; };
@@ -96,26 +96,18 @@
               hc
               bootstrap-srv
               lair-keystore
-              hc-launch
               hc-scaffold
               hn-introspect
               rust
             ]) ++ (with pkgs; [
-              nodejs_22
+              nodejs_24
               minisign
               libsodium
               # pkg-config
               perl # For building Holochain in sweettest
-              clang # For building Holochain in sweettest
-              cmake # For building Holochain in sweettest
               upx # For binary size optimisation. Not currently working with `checked_cli`, try again later
               binaryen # For wasm-opt, optimising wasms before packaging
             ]);
-
-            shellHook = ''
-                export LIBCLANG_PATH="${pkgs.llvmPackages_18.libclang.lib}/lib"
-                export LD_LIBRARY_PATH="${pkgs.stdenv.cc.cc.lib}/lib/"
-            '';
           };
         };
     };

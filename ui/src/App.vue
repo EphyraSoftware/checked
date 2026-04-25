@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { ref, provide, onMounted } from "vue";
-import { AppClient, AppWebsocket } from "@holochain/client";
+import { ref, onMounted } from "vue";
+import { AppWebsocket } from "@holochain/client";
 import NotifyContainer from "./component/NotifyContainer.vue";
 import { useThemeStore } from "./store/theme-store";
+import { holochainClient } from "./holochain-client";
 
 const themeStore = useThemeStore();
 
-const client = ref<AppClient | null>(null);
-provide("client", client);
 const loading = ref(true);
 
 const applyTheme = (theme: string) => {
@@ -23,7 +22,7 @@ onMounted(async () => {
   });
 
   // We pass an unused string as the url because it will dynamically be replaced in launcher environments
-  client.value = await AppWebsocket.connect();
+  holochainClient.value = await AppWebsocket.connect();
   loading.value = false;
 });
 </script>

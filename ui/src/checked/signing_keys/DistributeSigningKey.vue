@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { inject, ComputedRef, ref, computed } from "vue";
-import { AppClient } from "@holochain/client";
+import { ref, computed } from "vue";
 import { useNotificationsStore } from "../../store/notifications-store";
 import { sentence } from "txtgen";
 import { VerificationKeyDist } from "./types";
-
-const client = inject("client") as ComputedRef<AppClient>;
+import { holochainClient as client } from "../../holochain-client";
 
 const emit = defineEmits<{
   (e: "distributed"): void;
@@ -153,7 +151,7 @@ const distributeSigningVerificationKey = async () => {
 
     resetForm();
     emit("distributed");
-  } catch (e: any) {
+  } catch (e: unknown) {
     notifications.pushNotification({
       message: `Failed to distribute the verification key key: ${e}`,
       type: "error",

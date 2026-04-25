@@ -25,8 +25,8 @@ mod verify;
 pub mod prelude {
     pub use crate::cli::*;
     pub use crate::distribute::distribute;
-    pub use crate::fetch::{fetch, FetchInfo};
-    pub use crate::generate::{generate, GenerateInfo};
+    pub use crate::fetch::{FetchInfo, fetch};
+    pub use crate::generate::{GenerateInfo, generate};
     pub use crate::interactive::GetPassword;
     pub use crate::sign::sign;
     pub use crate::verify::verify;

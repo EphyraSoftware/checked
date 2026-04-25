@@ -1,7 +1,8 @@
 import { ActionHash, AppClient } from "@holochain/client";
 import { defineStore } from "pinia";
-import { ComputedRef, inject, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { registerSignalHandler } from "../signals";
+import { holochainClient } from "../holochain-client";
 
 export interface AssetSignatureResponse {
   fetch_url: string;
@@ -19,8 +20,6 @@ export const useMyAssetSignaturesStore = defineStore(
     const pushAssetSignature = (assetSignature: AssetSignatureResponse) => {
       myAssetSignatures.value.push(assetSignature);
     };
-
-    const client = inject("client") as ComputedRef<AppClient>;
 
     const loadMyAssetSignatures = async (client: AppClient) => {
       try {
@@ -46,8 +45,9 @@ export const useMyAssetSignaturesStore = defineStore(
     };
 
     watch(
-      client,
+      holochainClient,
       (client) => {
+        if (!client) return;
         registerSignalHandler(client, {
           myAssetSignaturesStore: { pushAssetSignature },
         });

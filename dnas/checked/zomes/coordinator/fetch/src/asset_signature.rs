@@ -21,9 +21,8 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
 
     // We're online anyway to do a download so go looking for new data.
     let links = get_links(
-        GetLinksInputBuilder::try_new(asset_base.clone(), LinkTypes::AssetUrlToSignature)?
-            .get_options(GetStrategy::Network)
-            .build(),
+        LinkQuery::try_new(asset_base.clone(), LinkTypes::AssetUrlToSignature)?,
+        GetStrategy::Network,
     )?;
 
     info!("Found {} signature links", links.len());
@@ -60,7 +59,7 @@ fn prepare_fetch(request: PrepareFetchRequest) -> ExternResult<Vec<FetchCheckSig
         _ => {
             return Err(wasm_error!(WasmErrorInner::Guest(
                 "Unexpected response from signing_keys".into()
-            )))
+            )));
         }
     };
 
@@ -111,7 +110,7 @@ pub fn create_asset_signature(
         _ => {
             return Err(wasm_error!(WasmErrorInner::Guest(
                 "Unexpected response from signing_keys".into()
-            )))
+            )));
         }
     };
 
@@ -211,9 +210,8 @@ pub fn delete_asset_signature(request: DeleteAssetSignatureRequest) -> ExternRes
     let asset_base = make_asset_url_address(&request.fetch_url)?;
 
     let links = get_links(
-        GetLinksInputBuilder::try_new(asset_base, LinkTypes::AssetUrlToSignature)?
-            .get_options(GetStrategy::Local)
-            .build(),
+        LinkQuery::try_new(asset_base, LinkTypes::AssetUrlToSignature)?,
+        GetStrategy::Local,
     )?;
 
     trace!("Found {} links from the asset fetch url", links.len());
@@ -235,7 +233,7 @@ pub fn delete_asset_signature(request: DeleteAssetSignatureRequest) -> ExternRes
 
         // Delete the asset signature and the link to it
         delete(target)?;
-        delete_link(link.create_link_hash)?;
+        delete_link(link.create_link_hash, GetOptions::local())?;
     }
 
     debug!("Deleted asset signature for: {}", request.fetch_url);
@@ -305,7 +303,10 @@ fn pick_signatures(
                 filter_picked(&mut possible_signatures, &picked_signatures);
             }
             _ => {
-                warn!("Discarding my existing asset signature signature because the key distribution could not be fetched: {:?}", sig.key_dist_address);
+                warn!(
+                    "Discarding my existing asset signature signature because the key distribution could not be fetched: {:?}",
+                    sig.key_dist_address
+                );
             }
         }
     }
@@ -372,16 +373,14 @@ fn pick_signatures(
 fn find_my_existing_signature(asset_base: ExternalHash) -> ExternResult<Option<AssetSignature>> {
     let my_agent = agent_info()?.agent_initial_pubkey;
 
-    let mut my_link_creates = get_link_details(
-        asset_base,
-        LinkTypes::AssetUrlToSignature,
-        None,
-        GetOptions::local(),
+    let mut my_link_creates = get_links_details(
+        LinkQuery::try_new(asset_base, LinkTypes::AssetUrlToSignature)?,
+        GetStrategy::Local,
     )?
     .into_inner()
     .into_iter()
     .filter_map(|(create, _)| match &create.hashed.content {
-        Action::CreateLink(create_link @ CreateLink { author, .. }) if author == &my_agent => {
+        Action::CreateLink(create_link @ CreateLink { author, .. }) if *author == my_agent => {
             Some(create_link.clone())
         }
         _ => None,
@@ -434,7 +433,7 @@ fn select_pinned_signatures(
 ) -> Vec<FetchCheckSignature> {
     let mut picked_signatures = Vec::new();
 
-    let mut rng = &mut rand::thread_rng();
+    let mut rng = &mut rand::rng();
 
     // Search key collections for signatures from agents we've chosen to reference.
     for mut key_collection in key_collections {
@@ -527,7 +526,7 @@ fn select_historical_signatures(
         .sub(Duration::from_secs(60 * 60 * 24 * 7)) // 1 week
         .unwrap();
 
-    let mut rng = &mut rand::thread_rng();
+    let mut rng = &mut rand::rng();
     possible_signatures
         .iter()
         .filter_map(|(action, sig)| {
@@ -557,7 +556,7 @@ fn select_historical_signatures(
             }
         })
         .take(take_many)
-        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
+        .sample(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
 }
 
 /// Tries to select up to [MAX_SIGNATURES_FROM_CATEGORY] random signatures from the last week of signatures.
@@ -587,7 +586,7 @@ fn select_recent_signatures(
         Some(x) => x,
     };
 
-    let mut rng = &mut rand::thread_rng();
+    let mut rng = &mut rand::rng();
 
     info!(
         "Selecting up to {} signatures randomly from {} possible recent signatures",
@@ -618,7 +617,7 @@ fn select_recent_signatures(
             }
         })
         .take(take_many)
-        .choose_multiple(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
+        .sample(&mut rng, MAX_SIGNATURES_FROM_CATEGORY)
 }
 
 type VfKeyDistFetcher = fn(&ActionHash) -> ExternResult<Option<VfKeyResponse>>;
@@ -682,8 +681,8 @@ mod tests {
     };
 
     use super::{
-        pick_signatures, select_historical_signatures, select_pinned_signatures,
-        select_recent_signatures, MAX_SIGNATURES_FROM_CATEGORY,
+        MAX_SIGNATURES_FROM_CATEGORY, pick_signatures, select_historical_signatures,
+        select_pinned_signatures, select_recent_signatures,
     };
 
     #[test]
@@ -1010,9 +1009,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the first 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] <= 30 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] <= 30 })
+        );
     }
 
     #[test]
@@ -1139,9 +1140,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] >= 70 })
+        );
     }
 
     #[test]
@@ -1177,9 +1180,11 @@ mod tests {
         assert_eq!(5, picked.len());
 
         // All from the last 30
-        assert!(picked
-            .iter()
-            .all(|sig| { sig.signature.as_bytes()[0] >= 70 }));
+        assert!(
+            picked
+                .iter()
+                .all(|sig| { sig.signature.as_bytes()[0] >= 70 })
+        );
     }
 
     #[test]

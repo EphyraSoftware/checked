@@ -1,4 +1,4 @@
-import {AppClient, Signal, SignalType} from "@holochain/client";
+import { AppClient, Signal } from "@holochain/client";
 import { KeyCollectionWithKeys } from "./store/key-collections-store";
 import {
   CheckedSigningKeysSignal,

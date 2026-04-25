@@ -1,5 +1,5 @@
 ---
-manifest_version: "1"
+manifest_version: "0"
 name: checked
 description: ~
 roles:
@@ -8,7 +8,7 @@ roles:
       strategy: create
       deferred: false
     dna:
-      bundled: "../dnas/checked/workdir/checked.dna"
+      path: "../dnas/checked/workdir/checked.dna"
       modifiers:
         network_seed: ~
         properties: ~

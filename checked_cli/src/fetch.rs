@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
 use std::path::PathBuf;
-use std::sync::atomic::AtomicUsize;
 use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
 
 use anyhow::Context;
 use holochain_client::ZomeCallTarget;
@@ -94,7 +94,9 @@ pub async fn fetch(fetch_args: FetchArgs) -> anyhow::Result<FetchInfo> {
     let response: Vec<FetchCheckSignature> = response.decode()?;
 
     if response.is_empty() {
-        println!("No signatures found for this asset. This is normal but please consider asking the author to create a signature!");
+        println!(
+            "No signatures found for this asset. This is normal but please consider asking the author to create a signature!"
+        );
 
         let allow = fetch_args.allow_no_signatures()?;
         if !allow {
@@ -303,11 +305,15 @@ fn show_report(report: &[SignatureCheckReport]) {
     if let Some(mine_report) = maybe_mine_report {
         // Always only 1 so no else case required
         if !mine_report.passed_signatures.is_empty() && mine_report.failed_signatures.is_empty() {
-            println!("Your signature passed verification. This means you have fetched this asset before and got the same content.");
+            println!(
+                "Your signature passed verification. This means you have fetched this asset before and got the same content."
+            );
         } else if mine_report.passed_signatures.is_empty()
             && !mine_report.failed_signatures.is_empty()
         {
-            println!("Your signature failed verification. This is very likely to mean that the asset you have fetched is different to the one you got previously.");
+            println!(
+                "Your signature failed verification. This is very likely to mean that the asset you have fetched is different to the one you got previously."
+            );
         }
     } else {
         println!("No signature from you was found.");
@@ -321,13 +327,34 @@ fn show_report(report: &[SignatureCheckReport]) {
         if !historical_report.passed_signatures.is_empty()
             && historical_report.failed_signatures.is_empty()
         {
-            println!("{} historical signature{} passed verification. This means that you are likely to have the same asset that was originally published.", historical_report.passed_signatures.len(), if historical_report.passed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} historical signature{} passed verification. This means that you are likely to have the same asset that was originally published.",
+                historical_report.passed_signatures.len(),
+                if historical_report.passed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else if historical_report.passed_signatures.is_empty()
             && !historical_report.failed_signatures.is_empty()
         {
-            println!("{} historical signature{} failed verification. This means that you may not have the same asset that was originally published.", historical_report.failed_signatures.len(), if historical_report.failed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} historical signature{} failed verification. This means that you may not have the same asset that was originally published.",
+                historical_report.failed_signatures.len(),
+                if historical_report.failed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else {
-            println!("{}/{} historical signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.", historical_report.passed_signatures.len(), historical_report.passed_signatures.len() + historical_report.failed_signatures.len());
+            println!(
+                "{}/{} historical signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.",
+                historical_report.passed_signatures.len(),
+                historical_report.passed_signatures.len()
+                    + historical_report.failed_signatures.len()
+            );
         }
     } else {
         println!("No historical signatures were found.");
@@ -353,13 +380,33 @@ fn show_report(report: &[SignatureCheckReport]) {
 
         if !pinned_report.passed_signatures.is_empty() && pinned_report.failed_signatures.is_empty()
         {
-            println!("{} pinned signature{} passed verification. This means that the asset you have fetched is likely to be the same as other pinned signatories are seeing.", pinned_report.passed_signatures.len(), if pinned_report.passed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} pinned signature{} passed verification. This means that the asset you have fetched is likely to be the same as other pinned signatories are seeing.",
+                pinned_report.passed_signatures.len(),
+                if pinned_report.passed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else if pinned_report.passed_signatures.is_empty()
             && !pinned_report.failed_signatures.is_empty()
         {
-            println!("{} pinned signature{} failed verification. This means that the asset you have fetched is likely not the same as other pinned signatories are seeing.", pinned_report.failed_signatures.len(), if pinned_report.failed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} pinned signature{} failed verification. This means that the asset you have fetched is likely not the same as other pinned signatories are seeing.",
+                pinned_report.failed_signatures.len(),
+                if pinned_report.failed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else {
-            println!("{}/{} pinned signatures failed verification. Please ensure that your key collections only contain keys from signatories you trust. If you are happy with your pinned keys then consider contacting the author to see if you have received different assets.", pinned_report.passed_signatures.len(), pinned_report.passed_signatures.len() + pinned_report.failed_signatures.len());
+            println!(
+                "{}/{} pinned signatures failed verification. Please ensure that your key collections only contain keys from signatories you trust. If you are happy with your pinned keys then consider contacting the author to see if you have received different assets.",
+                pinned_report.passed_signatures.len(),
+                pinned_report.passed_signatures.len() + pinned_report.failed_signatures.len()
+            );
         }
     } else {
         println!("No pinned signatures were found.");
@@ -372,13 +419,33 @@ fn show_report(report: &[SignatureCheckReport]) {
     if let Some(recent_report) = maybe_recent_report {
         if !recent_report.passed_signatures.is_empty() && recent_report.failed_signatures.is_empty()
         {
-            println!("{} recent signature{} passed verification. This means that the asset you have fetched is likely to be the same as the one that others have been getting recently.", recent_report.passed_signatures.len(), if recent_report.passed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} recent signature{} passed verification. This means that the asset you have fetched is likely to be the same as the one that others have been getting recently.",
+                recent_report.passed_signatures.len(),
+                if recent_report.passed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else if recent_report.passed_signatures.is_empty()
             && !recent_report.failed_signatures.is_empty()
         {
-            println!("{} recent signature{} failed verification. This means that the asset you have fetched is likely not the same as the one that others have been getting recently.", recent_report.failed_signatures.len(), if recent_report.failed_signatures.len() == 1 { "" } else { "s" });
+            println!(
+                "{} recent signature{} failed verification. This means that the asset you have fetched is likely not the same as the one that others have been getting recently.",
+                recent_report.failed_signatures.len(),
+                if recent_report.failed_signatures.len() == 1 {
+                    ""
+                } else {
+                    "s"
+                }
+            );
         } else {
-            println!("{}/{} recent signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.", recent_report.passed_signatures.len(), recent_report.passed_signatures.len() + recent_report.failed_signatures.len());
+            println!(
+                "{}/{} recent signatures failed verification. Inconsistent signatures do not mean that the asset you have fetched is valid or invalid but provides you with a piece of information you can use in making a judgement for yourself.",
+                recent_report.passed_signatures.len(),
+                recent_report.passed_signatures.len() + recent_report.failed_signatures.len()
+            );
         }
     } else {
         println!("No recent signatures were found.");
@@ -391,7 +458,7 @@ fn get_output_path(fetch_args: &FetchArgs, fetch_url: &Url) -> anyhow::Result<Pa
     let guessed_file_name = fetch_url
         .path_segments()
         .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?
-        .last()
+        .next_back()
         .ok_or_else(|| anyhow::anyhow!("Invalid URL"))?;
 
     let output_path = match &fetch_args.output {

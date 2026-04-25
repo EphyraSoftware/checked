@@ -1,8 +1,9 @@
 [package]
 name = "fetch_types"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 hdi = { workspace = true }
+holochain_serialized_bytes = { workspace = true }
 serde = { workspace = true }

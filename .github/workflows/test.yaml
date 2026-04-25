@@ -14,16 +14,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Install nix
         uses: cachix/install-nix-action@v31
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.28.3/install
+          install_url: https://releases.nixos.org/nix/nix-2.34.6/install
 
-      - uses: cachix/cachix-action@v16
+      - uses: cachix/cachix-action@v17
         with:
           name: esl-checked
           extraPullNames: holochain-ci
@@ -52,7 +52,7 @@ jobs:
         run: |
           nix develop --command npm --workspace ui run build
 
-      - name: Run Tryorama tests
+      - name: Run integration tests
         run: |
           nix develop --command npm run test:integration
 
@@ -63,21 +63,21 @@ jobs:
   cli-test:
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        # ubuntu-latest is already covered by the nix-based `test` job above,
+        # which runs `npm run test:cli` against the same CLI suite.
+        os: [ macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/checkout@v6
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Run CLI tests
         run: |
-          cargo install holochain_cli@0.5.2 --locked
+          cargo install holochain_cli@0.6.1-rc.8 --locked
           
-          cargo build --release --target wasm32-unknown-unknown
+          RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
           hc app pack workdir --recursive
           
           # Tests are independent but sweettest is so resource hungry that they run slower in parallel.

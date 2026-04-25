@@ -1,23 +1,23 @@
 ---
-manifest_version: "1"
+manifest_version: "0"
 name: checked
 integrity:
   network_seed: ~
   properties: ~
   zomes:
     - name: signing_keys_integrity
-      bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys_integrity.wasm"
+      path: "../../../target/wasm32-unknown-unknown/release/signing_keys_integrity.wasm"
       dependencies: ~
     - name: fetch_integrity
-      bundled: "../../../target/wasm32-unknown-unknown/release/fetch_integrity.wasm"
+      path: "../../../target/wasm32-unknown-unknown/release/fetch_integrity.wasm"
       dependencies: ~
 coordinator:
   zomes:
     - name: signing_keys
-      bundled: "../../../target/wasm32-unknown-unknown/release/signing_keys.wasm"
+      path: "../../../target/wasm32-unknown-unknown/release/signing_keys.wasm"
       dependencies:
         - name: signing_keys_integrity
     - name: fetch
-      bundled: "../../../target/wasm32-unknown-unknown/release/fetch.wasm"
+      path: "../../../target/wasm32-unknown-unknown/release/fetch.wasm"
       dependencies:
           - name: fetch_integrity
