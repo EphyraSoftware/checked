@@ -1,6 +1,5 @@
 
 /node_modules/
-/tests/node_modules/
 /dist/
 /target/
 /.cargo/
@@ -16,3 +15,4 @@
 *.pub
 *.minisig
 checked_cli/target
+tests/target

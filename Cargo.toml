@@ -11,7 +11,7 @@ members = [
     "types/*"
 ]
 
-exclude = ["checked_cli"]
+exclude = ["checked_cli", "tests"]
 
 resolver = "2"
 

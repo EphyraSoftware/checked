@@ -2,14 +2,13 @@
   "name": "checked-dev",
   "private": true,
   "workspaces": [
-    "ui",
-    "tests"
+    "ui"
   ],
   "scripts": {
     "start": "AGENTS=2 BOOTSTRAP_PORT=$(port) SIGNAL_PORT=$(port) npm run network",
     "network": "hc s clean && npm run build:happ:opt && UI_PORT=8888 concurrently \"npm start -w ui\" \"npm run launch:happ\"",
     "test:unit": "cargo test",
-    "test:integration": "npm run build:zomes && hc app pack workdir --recursive && RUST_LOG=warn WASM_LOG=info npm t -w tests",
+    "test:integration": "npm run build:zomes && hc app pack workdir --recursive && RUST_LOG=warn WASM_LOG=info cargo test --release --manifest-path ./tests/Cargo.toml -- --test-threads=1",
     "test:cli": "npm run build:happ:opt && cargo test --release --manifest-path ./checked_cli/Cargo.toml -- --test-threads=1",
     "test": "npm run test:unit && npm run test:integration && npm run test:cli",
     "launch:happ": "hc-spin -n $AGENTS --ui-port $UI_PORT workdir/checked.happ",
@@ -20,8 +19,8 @@
     "build:happ": "npm run build:zomes && hc app pack workdir --recursive",
     "build:happ:opt": "npm run build:zomes && find ./target/wasm32-unknown-unknown/release/*.wasm | xargs -I '{}' wasm-opt '{}' -O2 --output '{}' && hc app pack workdir --recursive",
     "build:zomes": "RUSTFLAGS='--cfg getrandom_backend=\"custom\"' CARGO_TARGET_DIR=target cargo build --release --target wasm32-unknown-unknown",
-    "lint": "npm run -w ui lint && npm run -w tests lint && cargo clippy && cargo clippy --manifest-path ./checked_cli/Cargo.toml",
-    "format": "npm run -w ui format && npm run -w tests format && cargo fmt && cargo fmt --manifest-path ./checked_cli/Cargo.toml"
+    "lint": "npm run -w ui lint && cargo clippy && cargo clippy --manifest-path ./checked_cli/Cargo.toml && cargo clippy --manifest-path ./tests/Cargo.toml",
+    "format": "npm run -w ui format && cargo fmt && cargo fmt --manifest-path ./checked_cli/Cargo.toml && cargo fmt --manifest-path ./tests/Cargo.toml"
   },
   "devDependencies": {
     "@holochain/hc-spin": "^0.600.3-rc.0",
