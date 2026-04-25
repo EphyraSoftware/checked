@@ -2,10 +2,10 @@
 import { VfKeyResponse } from "./types";
 import KeyList from "../../component/KeyList.vue";
 import { useKeyCollectionsStore } from "../../store/key-collections-store";
-import { ComputedRef, inject, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import CreateKeyCollection from "./CreateKeyCollection.vue";
 import { useNotificationsStore } from "../../store/notifications-store";
-import { AppClient } from "@holochain/client";
+import { holochainClient as client } from "../../holochain-client";
 
 const props = defineProps<{
   selectedKey: VfKeyResponse;
@@ -14,8 +14,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "added"): void;
 }>();
-
-const client = inject("client") as ComputedRef<AppClient>;
 
 const keyCollectionsStore = useKeyCollectionsStore();
 const notificationsStore = useNotificationsStore();
@@ -85,7 +83,7 @@ const addKeyToCollection = () => {
       message: `Key added to collection '${selectedCollection.value}'`,
       type: "info",
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     notificationsStore.pushNotification({
       message: `Error adding key to collection - ${e}`,
       type: "error",

@@ -1,8 +1,9 @@
 import { AppClient } from "@holochain/client";
 import { defineStore } from "pinia";
-import { ComputedRef, inject, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { VfKeyResponse } from "../checked/signing_keys/types";
 import { registerSignalHandler } from "../signals";
+import { holochainClient } from "../holochain-client";
 
 export interface KeyCollectionWithKeys {
   name: string;
@@ -26,7 +27,6 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
     }
   };
 
-  const client = inject("client") as ComputedRef<AppClient>;
   const loadKeyCollections = async (client: AppClient) => {
     try {
       const collections: KeyCollectionWithKeys[] = await client.callZome({
@@ -46,8 +46,9 @@ export const useKeyCollectionsStore = defineStore("key-collections", () => {
   };
 
   watch(
-    client,
+    holochainClient,
     (client) => {
+      if (!client) return;
       registerSignalHandler(client, {
         keyCollectionsStore: { pushKeyCollection },
       });

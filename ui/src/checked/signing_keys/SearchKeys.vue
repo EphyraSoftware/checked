@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { AppClient } from "@holochain/client";
-import { ComputedRef, inject, ref } from "vue";
+import { ref } from "vue";
 import { SearchKeysRequest, VfKeyResponse } from "./types";
 import { useNotificationsStore } from "../../store/notifications-store";
 import KeyList from "../../component/KeyList.vue";
 import AddKeyToCollection from "./AddKeyToCollection.vue";
 import IconButton from "../../component/IconButton.vue";
+import { holochainClient as client } from "../../holochain-client";
 
 const searchQuery = ref("");
 const searching = ref(false);
 const results = ref<VfKeyResponse[]>([]);
 const selectedKeyForAdd = ref<VfKeyResponse | null>(null);
-
-const client = inject("client") as ComputedRef<AppClient>;
 
 const notifications = useNotificationsStore();
 

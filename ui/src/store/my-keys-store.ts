@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
-import { ComputedRef, inject, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { VfKeyResponse } from "../checked/signing_keys/types";
 import { AppClient } from "@holochain/client";
 import { registerSignalHandler } from "../signals";
+import { holochainClient } from "../holochain-client";
 
 export const useMyKeysStore = defineStore("my-keys", () => {
   const loading = ref(true);
@@ -12,7 +13,6 @@ export const useMyKeysStore = defineStore("my-keys", () => {
     myKeys.value.push(vfKey);
   };
 
-  const client = inject("client") as ComputedRef<AppClient>;
   const loadKeys = async (client: AppClient) => {
     try {
       const r: VfKeyResponse[] = await client.callZome({
@@ -32,8 +32,9 @@ export const useMyKeysStore = defineStore("my-keys", () => {
   };
 
   watch(
-    client,
+    holochainClient,
     (client) => {
+      if (!client) return;
       registerSignalHandler(client, {
         myKeysStore: { pushVfKeyDist },
       });
