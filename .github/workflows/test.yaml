@@ -52,7 +52,7 @@ jobs:
         run: |
           nix develop --command npm --workspace ui run build
 
-      - name: Run Tryorama tests
+      - name: Run integration tests
         run: |
           nix develop --command npm run test:integration
 
@@ -63,7 +63,9 @@ jobs:
   cli-test:
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        # ubuntu-latest is already covered by the nix-based `test` job above,
+        # which runs `npm run test:cli` against the same CLI suite.
+        os: [ macos-latest, windows-latest ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
